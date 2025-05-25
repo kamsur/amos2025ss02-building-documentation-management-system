@@ -123,10 +123,6 @@ namespace Build.ING.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("GroupId")
                         .IsRequired()
                         .HasColumnType("text");
