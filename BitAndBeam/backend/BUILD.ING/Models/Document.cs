@@ -8,7 +8,6 @@ namespace BUILD.ING.Models
         public int DocumentId { get; set; }
         public string Title { get; set; }
         public string FilePath { get; set; }
-        public string FileUrl { get; set; }
         public string FileType { get; set; }
         public int FileSize { get; set; }
         public int? CategoryId { get; set; }
