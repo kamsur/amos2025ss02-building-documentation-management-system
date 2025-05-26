@@ -118,7 +118,6 @@ jobs:
               docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
               docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
               docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
-              docker rmi ghcr.io/amosproj/bitandbeam-web:latest || true
             else
               echo "BitAndBeam unchanged – keeping existing images."
             fi
