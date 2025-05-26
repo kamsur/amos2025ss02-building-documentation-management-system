@@ -1,11 +1,14 @@
 <!-- file-view.component.html -->
 <div class="layout">
-  <app-sidebar (viewFileEvent)="selectFileToView($event)"></app-sidebar>
+  <app-sidebar </app-sidebar>
   <div class="main-area">
     <div class="file-view-container">
 
       <!-- Not Found Message -->
-      <div *ngIf="notFound" style="padding: 2rem;">Document Not Found</div>
+      <div *ngIf="notFound" class="not-found">
+        <p>Document Not Found</p>
+      </div>
+
       <!-- Main File Content -->
       <div class="file-main-content" *ngIf="selectedFile">
 
@@ -22,10 +25,9 @@
         <!-- Metadata Panel-->
         <aside class="metadata-panel">
           <h3>Metadata</h3>
-          <div
-            class="metadata-item"
-            *ngFor="let meta of selectedFile.metadata || []">
-            <strong>{{ meta.label }}</strong>: {{ meta.value }}
+
+          <div class="metadata-item" *ngFor="let meta of selectedFile.metadata">
+            <strong>{{ meta.label }}:</strong> {{ meta.value }}
           </div>
 
           <div class="meta-actions">

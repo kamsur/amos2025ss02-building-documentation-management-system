@@ -15,7 +15,6 @@ import { DocumentItem } from '../../services/building.service';
 })
 export class SidebarComponent {
   isExplorerCollapsed = false;
-  @Output() viewFileEvent = new EventEmitter<DocumentItem>();
 
   constructor(
     public authService: AuthService,
@@ -40,14 +39,15 @@ export class SidebarComponent {
     this.buildingService.deleteBuilding(index);
   }
 
-  viewDocument(doc: DocumentItem) {
+  viewDocument(doc: DocumentItem): void {
     if (!doc.id) {
-      console.error('Document has no ID. Cannot route to /documents/:id');
+      console.error('Document has no ID');
       return;
     }
 
     this.router.navigate(['/documents', doc.id]);
   }
+
   logout() {
     this.authService.logout();
     this.router.navigate(['/']); // redirect to home/landing

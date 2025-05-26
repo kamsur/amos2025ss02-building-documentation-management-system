@@ -20,8 +20,9 @@ export interface DocumentResponse {
 }
 
 export interface Building {
+  id: number;
   name: string;
-  documents: DocumentItem[];
+  documents?: DocumentItem[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,7 +31,19 @@ export class BuildingService {
   buildings$ = this.buildingsSubject.asObservable();
 
   constructor(private http: HttpClient) {}
+// Buildings
+  getBuildings(): Observable<Building[]> {
+    return this.http.get<Building[]>('/api/Buildings');
+  }
 
+  addBuilding(name: string): Observable<Building> {
+    return this.http.post<Building>('/api/Buildings', { name });
+  }
+
+  deleteBuilding(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/Buildings/${id}`);
+  }
+  // Documents
   getDocumentById(id: number): Observable<DocumentResponse> {
     return this.http.get<DocumentResponse>(`/api/documents/${id}`);
   }
