@@ -3,7 +3,7 @@ import { Router ,ActivatedRoute} from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
-import { BuildingService, DocumentItem } from '../../services/building.service';
+import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
 
 
 @Component({
@@ -20,26 +20,24 @@ export class FileViewComponent {
 
   constructor(private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.buildingService.getDocumentById(+id).subscribe({
-        next: (doc) => {
-          this.selectedFile = {
-            id: doc.id,
-            name: doc.name,
-            url: doc.url,
-            metadata: doc.metadata
-          };
-        },
-        error: () => {
-          this.notFound = true;
-        }
-      });
-    }
-  }
-
-  selectFileToView(file: { name: string; url: string }) {
-    this.selectedFile = file;
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.buildingService.getDocumentById(id).subscribe({
+      next: (doc: DocumentResponse) => {
+        this.selectedFile = {
+          id: doc.id,
+          name: doc.fileName,
+          url: doc.url ?? `/documents/${doc.fileName}`,
+          metadata: [
+            { label: 'Uploaded', value: doc.uploadDate },
+            { label: 'Size', value: `${(doc.fileSize / 1024).toFixed(2)} KB` },
+            { label: 'Type', value: doc.fileType }
+          ]
+        };
+      },
+      error: () => {
+        this.notFound = true;
+      }
+    });
   }
 
   downloadFile(): void {
@@ -50,10 +48,10 @@ export class FileViewComponent {
 
   deleteFile(): void {
     if (!this.selectedFile?.id) return;
+
     this.buildingService.deleteDocument(this.selectedFile.id).subscribe({
       next: () => this.router.navigate(['/upload']),
       error: (err) => console.error('Delete failed:', err)
     });
   }
-
 }

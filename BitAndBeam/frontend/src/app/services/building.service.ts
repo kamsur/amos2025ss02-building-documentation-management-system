@@ -4,11 +4,19 @@ import { HttpClient } from '@angular/common/http';
 
 
 export interface DocumentItem {
-  id?: number;
+  id: number;
   name: string;
-  file?: File;
   url: string;
-  metadata?: { label: string; value: string }[];
+  metadata: { label: string; value: string }[];
+}
+
+export interface DocumentResponse {
+  id: number;
+  fileName: string;
+  url?: string;
+  fileSize: number;
+  fileType: string;
+  uploadDate: string;
 }
 
 export interface Building {
@@ -23,42 +31,8 @@ export class BuildingService {
 
   constructor(private http: HttpClient) {}
 
-  getBuildings(): Building[] {
-    return this.buildingsSubject.getValue();
-  }
-
-  updateBuildings(buildings: Building[]): void {
-    this.buildingsSubject.next(buildings);
-  }
-
-  addBuilding(name: string): void {
-    const updated = [...this.getBuildings(), { name, documents: [] }];
-    this.updateBuildings(updated);
-  }
-
-  addDocumentToBuilding(index: number, file: File): void {
-    const url = URL.createObjectURL(file);
-    const newDoc: DocumentItem = {
-      name: file.name,
-      file,
-      url,
-      metadata: [
-        { label: 'Uploaded', value: new Date().toISOString() }
-      ]
-    };
-
-    const buildings = this.getBuildings();
-    buildings[index].documents.push(newDoc);
-    this.updateBuildings([...buildings]);
-  }
-
-  deleteBuilding(index: number): void {
-    const updated = this.getBuildings().filter((_, i) => i !== index);
-    this.updateBuildings(updated);
-  }
-
-  getDocumentById(id: number): Observable<DocumentItem> {
-    return this.http.get<any>(`/api/documents/${id}`);
+  getDocumentById(id: number): Observable<DocumentResponse> {
+    return this.http.get<DocumentResponse>(`/api/documents/${id}`);
   }
 
   deleteDocument(id: number): Observable<void> {
@@ -68,6 +42,9 @@ export class BuildingService {
   downloadDocument(id: number): void {
     window.open(`/api/documents/${id}/download`, '_blank');
   }
+
+  // --- Selected document state for UI (optional, used for state sharing) ---
+
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();
 
