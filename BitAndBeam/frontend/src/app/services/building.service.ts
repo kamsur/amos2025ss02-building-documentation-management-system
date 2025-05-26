@@ -1,9 +1,12 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+
 
 export interface DocumentItem {
+  id?: number;
   name: string;
-  file: File;
+  file?: File;
   url: string;
   metadata?: { label: string; value: string }[];
 }
@@ -17,6 +20,8 @@ export interface Building {
 export class BuildingService {
   private buildingsSubject = new BehaviorSubject<Building[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
+
+  constructor(private http: HttpClient) {}
 
   getBuildings(): Building[] {
     return this.buildingsSubject.getValue();
@@ -52,6 +57,17 @@ export class BuildingService {
     this.updateBuildings(updated);
   }
 
+  getDocumentById(id: number): Observable<DocumentItem> {
+    return this.http.get<any>(`/api/documents/${id}`);
+  }
+
+  deleteDocument(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/documents/${id}`);
+  }
+
+  downloadDocument(id: number): void {
+    window.open(`/api/documents/${id}/download`, '_blank');
+  }
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();
 
