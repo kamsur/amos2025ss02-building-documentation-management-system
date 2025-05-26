@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router ,ActivatedRoute} from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
-import { BuildingService } from '../../services/building.service';
+import { BuildingService, DocumentItem } from '../../services/building.service';
 
 
 @Component({
@@ -15,40 +15,45 @@ import { BuildingService } from '../../services/building.service';
 })
 export class FileViewComponent {
 
-  selectedFile: {
-    name: string;
-    url: string;
-    metadata?: { label: string; value: string }[];
-  } | null = null;
+  selectedFile: DocumentItem | null = null;
+  notFound = false;
 
-  constructor(private router: Router, private buildingService: BuildingService) {}
-  ngOnInit() {
-    this.buildingService.selectedFile$.subscribe(file => {
-      this.selectedFile = file;
-    });
+  constructor(private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.buildingService.getDocumentById(+id).subscribe({
+        next: (doc) => {
+          this.selectedFile = {
+            id: doc.id,
+            name: doc.name,
+            url: doc.url,
+            metadata: doc.metadata
+          };
+        },
+        error: () => {
+          this.notFound = true;
+        }
+      });
+    }
   }
 
   selectFileToView(file: { name: string; url: string }) {
     this.selectedFile = file;
   }
 
-  downloadFile(file: { name: string; url: string }) {
-    try {
-      const a = document.createElement('a');
-      a.href = file.url;
-      a.download = file.name;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Download failed:', error);
+  downloadFile(): void {
+    if (this.selectedFile?.id) {
+      this.buildingService.downloadDocument(this.selectedFile.id);
     }
   }
 
-
-  clearViewer() {
-    this.selectedFile = null;
+  deleteFile(): void {
+    if (!this.selectedFile?.id) return;
+    this.buildingService.deleteDocument(this.selectedFile.id).subscribe({
+      next: () => this.router.navigate(['/upload']),
+      error: (err) => console.error('Delete failed:', err)
+    });
   }
 
 }
