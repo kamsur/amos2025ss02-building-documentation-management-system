@@ -29,12 +29,13 @@ namespace BUILD.ING.Controllers
         /// <param name="file">The file to upload</param>
         /// <returns>Document ID</returns>
         [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> UploadDocument(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File is required");
 
-            var uploadsPath = Path.Combine(_env.ContentRootPath, "Uploads");
+            var uploadsPath = Path.Combine("/app/documents");
             Directory.CreateDirectory(uploadsPath);
 
             var filePath = Path.Combine(uploadsPath, file.FileName);
@@ -42,20 +43,22 @@ namespace BUILD.ING.Controllers
             using var stream = new FileStream(filePath, FileMode.Create);
             await file.CopyToAsync(stream).ConfigureAwait(false);
 
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
                 FileName = file.FileName,
-                FilePath = filePath,
+                FilePath = $"{baseUrl}/documents/{file.FileName}",
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.').ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
+                FileSize = (int)file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
                 Status = "draft",
                 IsPublic = false,
                 Description = "No description provided",
-                Metadata = "{}", // or "{}" for JSON structure if you plan to support that later
+                Metadata = "{}",
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
                 GroupId = GetCurrentUserGroupId()
@@ -64,8 +67,10 @@ namespace BUILD.ING.Controllers
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            return Ok(new { document.DocumentId });
+            return Ok(new { document.DocumentId, document.FilePath });
         }
+
+
         /// <summary>
         /// Update a document (for example: title)
         /// </summary>
