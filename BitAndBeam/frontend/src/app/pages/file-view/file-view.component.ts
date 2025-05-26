@@ -26,7 +26,7 @@ export class FileViewComponent {
         this.selectedFile = {
           id: doc.id,
           name: doc.fileName,
-          url: doc.url ?? `/documents/${doc.fileName}`,
+          url: `/documents/${doc.fileName}`,
           metadata: [
             { label: 'Uploaded', value: doc.uploadDate },
             { label: 'Size', value: `${(doc.fileSize / 1024).toFixed(2)} KB` },
