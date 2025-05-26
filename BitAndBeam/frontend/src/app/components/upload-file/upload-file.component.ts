@@ -18,7 +18,8 @@ export class UploadFileComponent implements OnInit {
   uploading = false;
   uploadSuccess = false;
   uploadError = '';
-  selectedBuildingIndex: number = 0;
+  selectedBuildingId: number | null = null;
+  buildings: any[] = [];
 
   constructor(
     private config: ConfigService,
@@ -29,24 +30,16 @@ export class UploadFileComponent implements OnInit {
 ) {}
   ngOnInit() {
     console.log('API URL from config service:', this.config.apiUrl);
+    this.buildingService.getBuildings().subscribe({
+      next: (data) => this.buildings = data,
+      error: (err) => console.error('Failed to fetch buildings', err)
+    });
   }
   uploadedFile: File | null = null; // Change to single file
 
   // Handle file selection
   onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    this.uploading = true;
-    this.uploadSuccess = false;
-    this.uploadError = '';
-
-    // Simulate upload with delay (replace this with actual HTTP upload later)
-    setTimeout(() => {
-      this.uploading = false;
-      this.uploadSuccess = true;
-      this.uploadedFile = file;
-    }, 2000);
+    this.uploadedFile = event.target.files[0];
   }
 
 
@@ -66,24 +59,41 @@ export class UploadFileComponent implements OnInit {
     event.preventDefault();
   }
 
-  assignFileToFolder() {
-    if (this.uploadedFile && this.buildingService.getBuildings()[this.selectedBuildingIndex]) {
-      this.buildingService.addDocumentToBuilding(this.selectedBuildingIndex, this.uploadedFile);
-      this.uploadedFile = null;
-    }
+  uploadDocumentToBuilding() {
+    if (!this.uploadedFile || this.selectedBuildingId == null) return;
+    const formData = new FormData();
+    formData.append('file', this.uploadedFile);
+    formData.append('buildingId', this.selectedBuildingId.toString());
+
+    fetch(`${this.config.apiUrl}/api/documents`, {
+      method: 'POST',
+      body: formData
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Upload failed');
+        this.uploadSuccess = true;
+        this.uploadedFile = null;
+      })
+      .catch(err => {
+        this.uploadError = err.message;
+      })
+      .finally(() => {
+        this.uploading = false;
+      });
   }
 
-  createAndAssignFolder() {
+  createBuildingAndUpload() {
     const name = prompt('New building name:');
-    if (name?.trim() && this.uploadedFile) {
-      this.buildingService.addBuilding(name);
-      const newIndex = this.buildingService.getBuildings().length - 1;
-      this.buildingService.addDocumentToBuilding(newIndex, this.uploadedFile);
-      this.selectedBuildingIndex = newIndex;
-      this.uploadedFile = null;
-    }
-}
+    if (!name?.trim() || !this.uploadedFile) return;
 
+    this.buildingService.addBuilding(name).subscribe({
+      next: (building) => {
+        this.selectedBuildingId = building.id;
+        this.uploadDocumentToBuilding();
+      },
+      error: (err) => console.error('Failed to create building', err)
+    });
+  }
 }
 
 
