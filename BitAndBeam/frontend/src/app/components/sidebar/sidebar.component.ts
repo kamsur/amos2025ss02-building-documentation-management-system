@@ -41,16 +41,12 @@ export class SidebarComponent {
   }
 
   viewDocument(doc: DocumentItem) {
-    this.buildingService.setSelectedFile({
-      ...doc,
-      metadata: [
-        {
-          label: 'Date',
-          value: new Date().toLocaleDateString()
-        }
-      ]
-    });
-    this.router.navigate(['/file-view']);
+    if (!doc.id) {
+      console.error('Document has no ID. Cannot route to /documents/:id');
+      return;
+    }
+
+    this.router.navigate(['/documents', doc.id]);
   }
   logout() {
     this.authService.logout();
