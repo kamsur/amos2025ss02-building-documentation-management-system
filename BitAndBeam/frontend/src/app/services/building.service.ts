@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable , from} from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ConfigService } from '../config.service';
-import { of } from 'rxjs';
+import { AxiosResponse } from 'axios';
+import { map } from 'rxjs/operators';
+import { Configuration, DocumentsApi, Document as ApiDocument, BuildingsApi,
+  Building as ApiBuilding } from '../../api';
 
 export interface DocumentItem {
   id: number;
@@ -29,37 +32,64 @@ export interface Building {
 
 @Injectable({ providedIn: 'root' })
 export class BuildingService {
-  private buildingsSubject = new BehaviorSubject<Building[]>([]);
+  private documentsApi: DocumentsApi;
+  private buildingsApi: BuildingsApi;
+  private buildingsSubject = new BehaviorSubject<ApiBuilding[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
 
-  constructor(private http: HttpClient, private config: ConfigService) {}
-
+  constructor(private config: ConfigService) {
+    const configuration = new Configuration({ basePath: this.config.apiUrl });
+    this.documentsApi = new DocumentsApi(configuration);
+    this.buildingsApi = new BuildingsApi(configuration);
+  }
+  //Buildings
   getBuildings(): Observable<Building[]> {
-    return this.http.get<Building[]>(`${this.config.apiUrl}/api/Buildings`);
+    return from(
+        this.buildingsApi.apiBuildingsGet().then(res =>
+            res.data.map(apiB => ({
+              id: apiB.buildingId!,
+              name: apiB.name ?? '',
+              documents: [] // you can map documents if needed
+            }))
+        )
+    );
   }
 
   addBuilding(name: string): Observable<Building> {
-    return this.http.post<Building>(`${this.config.apiUrl}/api/Buildings`, { name });
+    return from(
+        this.buildingsApi.apiBuildingsPost({ name }).then(() =>
+            this.buildingsApi.apiBuildingsGet().then(res => {
+              const last = res.data[res.data.length - 1];
+              return {
+                id: last.buildingId!,
+                name: last.name ?? '',
+                documents: []
+              };
+            })
+        )
+    );
   }
+
 
   deleteBuilding(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.config.apiUrl}/api/Buildings/${id}`);
+    return from(this.buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
   }
 
-  getDocumentById(id: number): Observable<DocumentResponse> {
-    return this.http.get<DocumentResponse>(`${this.config.apiUrl}/api/documents/${id}`);
+  //Docs
+  getDocumentById(id: number): Observable<ApiDocument> {
+    return from(
+        this.documentsApi.apiDocumentsIdGet(id)
+            .then(res => (res as unknown as AxiosResponse<ApiDocument>).data)
+    );
   }
-
-
-
   deleteDocument(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.config.apiUrl}/api/documents/${id}`);
+    return from(this.documentsApi.apiDocumentsIdDelete(id).then(() => {}));
   }
 
   downloadDocument(id: number): void {
-    window.open(`${this.config.apiUrl}/api/documents/${id}/download`, '_blank');
+    const downloadUrl = `${this.config.apiUrl}/api/Documents/${id}/download`;
+    window.open(downloadUrl, '_blank');
   }
-  // --- Selected document state for UI (optional, used for state sharing) ---
 
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();

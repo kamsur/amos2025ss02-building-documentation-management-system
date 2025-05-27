@@ -5,7 +5,7 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { ConfigService } from '../../config.service';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
-
+import { Configuration, DocumentsApi, Document as ApiDocument } from '../../../api';
 
 @Component({
   standalone: true,
@@ -31,18 +31,18 @@ export class FileViewComponent {
     }
 
     this.buildingService.getDocumentById(id).subscribe({
-      next: (doc: DocumentResponse) => {
+      next: (doc: ApiDocument)  => {
         console.log('📄 Loaded document:', doc);
         console.log('🔧 Config API URL:', this.config.apiUrl);
 
         this.selectedFile = {
-          id: doc.documentId,
-          name: doc.fileName,
+          id: doc.documentId!,
+          name: doc.fileName ?? '',
           url: `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`,
           metadata: [
-            {label: 'Uploaded', value: doc.uploadDate},
-            {label: 'Size', value: `${(doc.fileSize / 1024).toFixed(2)} KB`},
-            {label: 'Type', value: doc.fileType}
+            { label: 'Uploaded', value: doc.uploadDate ?? '' },
+            { label: 'Size', value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB` },
+            { label: 'Type', value: doc.fileType ?? 'unknown' }
           ]
         };
       },
@@ -52,7 +52,7 @@ export class FileViewComponent {
       }
     });
   }
-    downloadFile(): void {
+  downloadFile(): void {
     if (this.selectedFile?.id) {
       this.buildingService.downloadDocument(this.selectedFile.id);
     }
