@@ -121,5 +121,36 @@ namespace BUILD.ING.Controllers
 
             return NoContent(); // 204 - success, no body
         }
+        [HttpGet("{id}/preview")]
+        public async Task<IActionResult> PreviewDocument(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+            if (document == null || string.IsNullOrEmpty(document.FilePath))
+                return NotFound("Document not found or file path missing.");
+
+            var filePath = Path.Combine("documents", document.FileName); // adjust path if needed
+            if (!System.IO.File.Exists(filePath))
+                return NotFound($"File not found at path: {filePath}");
+
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            return File(stream, "application/pdf");
+        }
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> DownloadDocument(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+            if (document == null || string.IsNullOrEmpty(document.FilePath))
+                return NotFound();
+
+            var filePath = Path.Combine("documents", document.FileName); // same as above
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            return File(stream, "application/octet-stream", document.FileName);
+        }
+
+
     }
 }
