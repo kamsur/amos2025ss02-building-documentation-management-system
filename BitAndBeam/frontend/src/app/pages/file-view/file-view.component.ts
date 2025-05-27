@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router ,ActivatedRoute} from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
+import { ConfigService } from '../../config.service';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
 
@@ -18,29 +19,40 @@ export class FileViewComponent {
   selectedFile: DocumentItem | null = null;
   notFound = false;
 
-  constructor(private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
+  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const idParam = this.route.snapshot.paramMap.get('id');
+    const id = Number(idParam);
+
+    if (!idParam || isNaN(id)) {
+      console.error('❌ Invalid document ID in route:', idParam);
+      this.notFound = true;
+      return;
+    }
+
     this.buildingService.getDocumentById(id).subscribe({
       next: (doc: DocumentResponse) => {
+        console.log('📄 Loaded document:', doc);
+        console.log('🔧 Config API URL:', this.config.apiUrl);
+
         this.selectedFile = {
-          id: doc.id,
+          id: doc.documentId,
           name: doc.fileName,
-          url: `/documents/${doc.fileName}`,
+          url: `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`,
           metadata: [
-            { label: 'Uploaded', value: doc.uploadDate },
-            { label: 'Size', value: `${(doc.fileSize / 1024).toFixed(2)} KB` },
-            { label: 'Type', value: doc.fileType }
+            {label: 'Uploaded', value: doc.uploadDate},
+            {label: 'Size', value: `${(doc.fileSize / 1024).toFixed(2)} KB`},
+            {label: 'Type', value: doc.fileType}
           ]
         };
       },
-      error: () => {
+      error: (err) => {
+        console.error('❌ Failed to load document:', err);
         this.notFound = true;
       }
     });
   }
-
-  downloadFile(): void {
+    downloadFile(): void {
     if (this.selectedFile?.id) {
       this.buildingService.downloadDocument(this.selectedFile.id);
     }

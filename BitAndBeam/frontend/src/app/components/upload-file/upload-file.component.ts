@@ -51,30 +51,32 @@ export class UploadFileComponent implements OnInit {
     this.uploadError = '';
 
     const formData = new FormData();
-
-    if(this.uploadedFile){
-      formData.append('file', this.uploadedFile);
-    }
-    
+    formData.append('file', file); // 👈 use `file` directly
 
     this.http.post(`${this.config.apiUrl}/api/documents`, formData).subscribe({
-    next: () => {
-      this.uploading = false;
-      this.uploadSuccess = true;
-    },
-    error: (error: HttpErrorResponse) => {
-      this.uploading = false;
-      this.uploadError = 'Upload failed: ' + error.message;
-    }
-  });
+      next: (response: any) => {
+        this.uploading = false;
+        this.uploadSuccess = true;
+
+        const documentId = response.documentId; // 👈 FIXED: match backend case exactly
+        if (!documentId) {
+          console.error('❌ No documentId returned from server:', response);
+          this.uploadError = 'Upload succeeded, but no document ID returned.';
+          return;
+        }
+
+
+        this.router.navigate(['/documents', documentId]);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.uploading = false;
+        this.uploadError = 'Upload failed: ' + error.message;
+      }
+    });
+  }
 
     // Simulate upload with delay (replace this with actual HTTP upload later)
-    setTimeout(() => {
-      this.uploading = false;
-      this.uploadSuccess = true;
-      this.uploadedFile = file;
-    }, 2000);
-  }
+
 
 
   // Handle drag-and-drop file selection
@@ -94,26 +96,21 @@ export class UploadFileComponent implements OnInit {
   }
 
   uploadDocumentToBuilding() {
-    if (!this.uploadedFile || this.selectedBuildingId == null) return;
-    const formData = new FormData();
-    formData.append('file', this.uploadedFile);
-    formData.append('buildingId', this.selectedBuildingId.toString());
+    if (!this.uploadedFile) return;
 
-    fetch(`${this.config.apiUrl}/api/documents`, {
-      method: 'POST',
-      body: formData
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Upload failed');
-        this.uploadSuccess = true;
-        this.uploadedFile = null;
-      })
-      .catch(err => {
-        this.uploadError = err.message;
-      })
-      .finally(() => {
+    const formData = new FormData();
+    formData.append('file', this.uploadedFile); // Backend expects 'file'
+
+    this.http.post(`${this.config.apiUrl}/api/documents`, formData).subscribe({
+      next: (response: any) => {
+        const documentId = response.documentId; // Make sure this matches the backend response key!
+        this.router.navigate(['/documents', documentId]); // 🔥 Navigate right after upload
+      },
+      error: (error) => {
         this.uploading = false;
-      });
+        this.uploadError = 'Upload failed: ' + error.message;
+      }
+    });
   }
 
   createBuildingAndUpload() {
@@ -128,6 +125,16 @@ export class UploadFileComponent implements OnInit {
       error: (err) => console.error('Failed to create building', err)
     });
   }
+  uploadDummyForPreview() {
+    if (!this.uploadedFile) return;
+
+    // Simulate assigning a hardcoded document ID
+    const dummyId = 1;
+
+    // Navigate to the file view page to simulate preview
+    this.router.navigate(['/documents', dummyId]);
+  }
+
 
 }
 

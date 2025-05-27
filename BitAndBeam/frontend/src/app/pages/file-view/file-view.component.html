@@ -14,11 +14,12 @@
 
         <!-- PDF Viewer -->
         <section class="pdf-viewer">
-          <pdf-viewer
-            [src]="selectedFile.url"
-            [show-all]="true"
-            style="display: block; height: 100%; width: 100%;">
-          </pdf-viewer>
+            <pdf-viewer
+                    *ngIf="selectedFile?.url"
+                    [src]="selectedFile.url"
+                    [show-all]="true"
+                    style="display: block; height: 100%; width: 100%;">
+            </pdf-viewer>
 
         </section>
 
