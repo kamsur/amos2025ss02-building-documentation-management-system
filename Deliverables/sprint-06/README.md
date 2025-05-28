@@ -4,7 +4,7 @@ This folder contains the deliverables for Sprint 6.
 
 ## Task Checklist
 
--   [ ] Snapshot of the feature board (.tsv & .jpg)
+-   [X] Snapshot of the feature board (.tsv & .jpg)
 -   [X] Planning documents (.pdf & .xlsx)
 -   [ ] Snapshot of the imp-squared backlog (.tsv & .jpg)
 -   [X] Initialized Wiki Documentation pages (sprint-06/{user|design|build}-documentation.pdf)
