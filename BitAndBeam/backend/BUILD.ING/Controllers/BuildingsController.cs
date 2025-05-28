@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging; //
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,10 +15,11 @@ namespace BUILD.ING.Controllers
     public class BuildingsController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public BuildingsController(AppDbContext context)
+        private readonly ILogger<BuildingsController> _logger;  // ADDED: Inject ILogger for logging
+        public BuildingsController(AppDbContext context, ILogger<BuildingsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // POST: api/Buildings
@@ -24,11 +27,23 @@ namespace BUILD.ING.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBuilding(Building building)
         {
+            _logger.LogInformation("CreateBuilding called at {Time}", DateTime.UtcNow); // ADDED: Log method entry
+
             building.CreatedAt = DateTime.UtcNow;
             building.UpdatedAt = DateTime.UtcNow;
 
             _context.Buildings.Add(building);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _logger.LogInformation("Building created successfully with ID {BuildingId}", building.BuildingId); // ADDED: Log success
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating building"); // ADDED: Log exception
+                return StatusCode(500, ex.Message);
+            }
 
             return Ok(new { id = building.BuildingId });
         }
