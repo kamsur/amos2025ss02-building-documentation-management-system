@@ -16,7 +16,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:8080") // <-- Angular dev server
+                          //policy.WithOrigins("http://localhost:8080") // <-- Angular dev server
+                                policy.AllowAnyOrigin() // Allow requests from any origin - only for development
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
                       });
@@ -66,6 +67,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(MyAllowSpecificOrigins);
 
+app.UseAuthorization();
 app.UseHttpsRedirection();
 app.MapControllers();
 
@@ -96,11 +98,11 @@ app.MapHealthChecks("/healthz");
 app.MapGet("/", () => "🚀 API is running! Visit /swagger , /weatherforecast or /healthz.");
 
 // Ensure the documents folder exists
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider("/app/documents"),
-    RequestPath = "/documents"
-});
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider("/app/documents"),
+//    RequestPath = "/documents"
+//});
 
 
 app.Run();
