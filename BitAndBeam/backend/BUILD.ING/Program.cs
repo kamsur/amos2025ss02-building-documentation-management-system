@@ -5,7 +5,26 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
+using Serilog;                      // Added: Serilog namespace
+using Serilog.Context;              // Added: for log context enrichment
+using System.Diagnostics;          // Added: for Activity (trace IDs)
+
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------- SERILOG CONFIGURATION ----------
+// Configure Serilog as the logging provider for the application
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()      // Enrich logs with contextual info (we'll add TraceId later)
+    .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()) // Log JSON to console
+    .WriteTo.File(
+        new Serilog.Formatting.Json.JsonFormatter(),
+        "Logs/log-.json",         // Path with rolling files by date
+        rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+// Tell ASP.NET Core to use Serilog instead of the default logger
+builder.Host.UseSerilog();
+
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"⛳ Connection String: {conn ?? "null"}");
 
@@ -30,7 +49,7 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
            .EnableSensitiveDataLogging()
-           .LogTo(Console.WriteLine, LogLevel.Information));
+           .LogTo(Log.Information, LogLevel.Information));
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -58,6 +77,28 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate(); //führt Migration beim Start automatisch aus
 }
 
+// ---------- MIDDLEWARE TO ADD TRACE ID TO LOG CONTEXT ----------
+app.Use(async (context, next) =>
+{
+    // Check if incoming request already has a trace ID header
+    const string traceIdHeaderName = "X-Correlation-ID";
+    string traceId = context.Request.Headers.ContainsKey(traceIdHeaderName)
+        ? context.Request.Headers[traceIdHeaderName].ToString()
+        : Guid.NewGuid().ToString();
+
+    // Add trace ID to response headers so clients can see it
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers[traceIdHeaderName] = traceId;
+        return Task.CompletedTask;
+    });
+    // Push TraceId into Serilog’s LogContext so all logs within this request include it
+    using (Serilog.Context.LogContext.PushProperty("TraceId", traceId))
+    {
+        await next.Invoke(); // Call the next middleware in the pipeline
+    }
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -69,6 +110,7 @@ app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
 app.UseHttpsRedirection();
+
 app.MapControllers();
 
 var summaries = new[]
