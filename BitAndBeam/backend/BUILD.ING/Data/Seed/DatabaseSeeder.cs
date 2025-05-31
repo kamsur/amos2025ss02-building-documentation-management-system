@@ -19,8 +19,10 @@ namespace BUILD.ING.Data.Seed
                     Name = "Organization Alpha",
                     Users = new List<User>
                     {
-                        new User { Username = "alpha_user1", Email = "alpha1@example.com" },
-                        new User { Username = "alpha_user2", Email = "alpha2@example.com" }
+                        new User { Username = "alpha_user1", Email = "alpha1@example.com", PasswordHash = "dummyhash123",
+                        FirstName = "Alice", LastName = "Anderson"  },
+                        new User { Username = "alpha_user2", Email = "alpha2@example.com", PasswordHash = "dummyhash456",
+                        FirstName = "Alice", LastName = "Anderson" }
                     }
                 };
 
@@ -29,8 +31,10 @@ namespace BUILD.ING.Data.Seed
                     Name = "Organization Beta",
                     Users = new List<User>
                     {
-                        new User { Username = "beta_user1", Email = "beta1@example.com" },
-                        new User { Username = "beta_user2", Email = "beta2@example.com" }
+                        new User { Username = "beta_user1", Email = "beta1@example.com", PasswordHash = "dummyhash234", 
+                        FirstName = "Alice", LastName = "Anderson" },
+                        new User { Username = "beta_user2", Email = "beta2@example.com", PasswordHash = "dummyhash345",
+                        FirstName = "Alice", LastName = "Anderson" }
                     }
                 };
 
