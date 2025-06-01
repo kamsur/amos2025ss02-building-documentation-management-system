@@ -11,7 +11,4 @@ openapi-generator-cli generate \
   -i /tmp/swagger.json \
   -g typescript-axios \
   -o /local/generated-sdk \
-  -c /config.json \
-  -t /templates \
-  --type-mappings=DateTime=Date \
-  --additional-properties=supportsES6=true,withSeparateModelsAndApi=true,modelPropertyNaming=camelCase
+  -t /templates

@@ -12,8 +12,7 @@ RUN echo '#!/bin/sh' > /usr/local/bin/openapi-generator-cli && \
     echo 'exec java -jar /usr/local/bin/openapi-generator-cli.jar "$@"' >> /usr/local/bin/openapi-generator-cli && \
     chmod +x /usr/local/bin/openapi-generator-cli
 
-# Copy configuration files and templates
-COPY config.json /config.json
+# Copy templates and script
 COPY templates /templates
 COPY generate-sdk.sh /generate-sdk.sh
 RUN chmod +x /generate-sdk.sh
