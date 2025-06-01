@@ -10,5 +10,4 @@ echo "Swagger spec available. Generating SDK..."
 openapi-generator-cli generate \
   -i /tmp/swagger.json \
   -g typescript-axios \
-  -o /local/generated-sdk \
-  -t /templates
+  -o /local/generated-sdk

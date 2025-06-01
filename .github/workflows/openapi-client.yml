@@ -39,8 +39,6 @@ jobs:
 
       - name: Build and start services
         working-directory: BitAndBeam
-        env:
-          BACKEND_URL: http://localhost:5001
         run: |
           # Ensure the api directory has correct permissions
           sudo chown -R $USER:$USER frontend/src/api
