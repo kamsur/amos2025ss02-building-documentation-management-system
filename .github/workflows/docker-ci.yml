@@ -65,25 +65,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # - name: Build and push ollama image
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: ./BitAndBeam/ollama
-      #     push: true
-      #     tags: |
-      #       ghcr.io/amosproj/bitandbeam-ollama:latest
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
-
-      # - name: Build and push web image
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: ./BitAndBeam/web
-      #     push: true
-      #     tags: |
-      #       ghcr.io/amosproj/bitandbeam-web:latest
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
+      - name: Build and push ollama image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./BitAndBeam/ollama
+          push: true
+          tags: |
+            ghcr.io/amosproj/bitandbeam-ollama:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Upload project to server
         uses: appleboy/scp-action@v0.1.4
@@ -118,7 +108,6 @@ jobs:
               docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
               docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
               docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
-              docker rmi ghcr.io/amosproj/bitandbeam-web:latest || true
             else
               echo "BitAndBeam unchanged – keeping existing images."
             fi
