@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+/**
+ * Request model for updating document metadata
+ * @export
+ * @interface DocumentUpdateRequest
+ */
+export interface DocumentUpdateRequest {
+    /**
+     * New title of the document
+     * @type {string}
+     * @memberof DocumentUpdateRequest
+     */
+    'title'?: string | null;
+}
+

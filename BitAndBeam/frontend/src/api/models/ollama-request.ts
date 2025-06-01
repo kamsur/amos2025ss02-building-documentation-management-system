@@ -13,6 +13,24 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+/**
+ * 
+ * @export
+ * @interface OllamaRequest
+ */
+export interface OllamaRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof OllamaRequest
+     */
+    'prompt'?: string | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof OllamaRequest
+     */
+    'context'?: any | null;
+}
+
