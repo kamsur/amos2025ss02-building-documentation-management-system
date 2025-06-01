@@ -13,10 +13,17 @@ on:
     paths:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
+  workflow_call:
+    outputs:
+      sdk_updated:
+        description: "Whether the SDK was updated"
+        value: ${{ jobs.generate-client.outputs.sdk_updated }}
 
 jobs:
   generate-client:
     runs-on: ubuntu-latest
+    outputs:
+      sdk_updated: ${{ steps.check_changes.outputs.sdk_updated }}
 
     steps:
       - name: Checkout repository
@@ -45,16 +52,17 @@ jobs:
           # Fix permissions of generated files
           sudo chown -R $USER:$USER frontend/src/api
 
-      - name: Verify generated client
-        working-directory: BitAndBeam/frontend
+      - name: Check for SDK changes
+        id: check_changes
         run: |
-          if [ ! -d "src/api" ] || [ -z "$(ls -A src/api)" ]; then
-            echo "Error: Generated API client is missing or empty"
-            exit 1
+          if [[ -n $(git status --porcelain BitAndBeam/frontend/src/api) ]]; then
+            echo "sdk_updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "sdk_updated=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Create Pull Request with updated client
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.check_changes.outputs.sdk_updated == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: "chore: update generated OpenAPI client"

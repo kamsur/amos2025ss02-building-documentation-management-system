@@ -10,8 +10,13 @@ permissions:
   packages: write
 
 jobs:
+  check-openapi:
+    uses: ./.github/workflows/openapi-client.yml
+
   build-and-deploy:
+    needs: check-openapi
     runs-on: ubuntu-latest
+    if: always() && (needs.check-openapi.result == 'success' || needs.check-openapi.result == 'skipped')
 
     steps:
       - name: Checkout code
