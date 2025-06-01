@@ -10,4 +10,7 @@ echo "Swagger spec available. Generating SDK..."
 openapi-generator-cli generate \
   -i /tmp/swagger.json \
   -g typescript-axios \
-  -o /local/generated-sdk
+  -o /local/generated-sdk \
+  -c /config.json \
+  -t /templates \
+  --additional-properties=basePath=process.env.BACKEND_URL

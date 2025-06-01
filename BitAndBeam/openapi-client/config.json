@@ -1,0 +1,17 @@
+{
+  "supportsES6": true,
+  "withSeparateModelsAndApi": true,
+  "apiPackage": "api",
+  "modelPackage": "models",
+  "useSingleRequestParameter": true,
+  "ensureUniqueParams": true,
+  "legacyDiscriminatorBehavior": false,
+  "enumPropertyNaming": "UPPERCASE",
+  "stringEnums": true,
+  "baseUrlEnvironmentVariable": "BACKEND_URL",
+  "npmName": "@bitandbeam/api-client",
+  "npmVersion": "1.0.0",
+  "snapshot": false,
+  "useObjectParameters": true,
+  "withInterfaces": true
+} 
