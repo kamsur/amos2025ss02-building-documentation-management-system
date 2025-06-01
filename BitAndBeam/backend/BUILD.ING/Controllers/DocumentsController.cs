@@ -29,7 +29,6 @@ namespace BUILD.ING.Controllers
         /// <param name="file">The file to upload</param>
         /// <returns>Document ID</returns>
         [HttpPost]
-        [HttpPost]
         public async Task<IActionResult> UploadDocument(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -51,7 +50,7 @@ namespace BUILD.ING.Controllers
                 FileName = file.FileName,
                 FilePath = $"{baseUrl}/documents/{file.FileName}",
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.').ToLower() ?? "unknown",
-                FileSize = (int)file.Length,
+                FileSize = (int) file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -67,7 +66,8 @@ namespace BUILD.ING.Controllers
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            return Ok(new { document.DocumentId, document.FilePath });
+            return Ok(new { DocumentId = document.DocumentId, FilePath = document.FilePath });
+
         }
 
 
@@ -121,36 +121,40 @@ namespace BUILD.ING.Controllers
 
             return NoContent(); // 204 - success, no body
         }
-        [HttpGet("{id}/preview")]
-        public async Task<IActionResult> PreviewDocument(int id)
-        {
-            var document = await _context.Documents.FindAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.FilePath))
-                return NotFound("Document not found or file path missing.");
-
-            var filePath = Path.Combine("documents", document.FileName); // adjust path if needed
-            if (!System.IO.File.Exists(filePath))
-                return NotFound($"File not found at path: {filePath}");
-
-            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            return File(stream, "application/pdf");
-        }
-
         [HttpGet("{id}/download")]
-        public async Task<IActionResult> DownloadDocument(int id)
+        public IActionResult DownloadDocument(int id)
         {
-            var document = await _context.Documents.FindAsync(id);
-            if (document == null || string.IsNullOrEmpty(document.FilePath))
+            var groupId = GetCurrentUserGroupId();
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            if (document == null)
                 return NotFound();
 
-            var filePath = Path.Combine("documents", document.FileName); // same as above
+            var filePath = Path.Combine("/app/documents", document.FileName);
             if (!System.IO.File.Exists(filePath))
                 return NotFound();
 
-            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            return File(stream, "application/octet-stream", document.FileName);
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+
+            // 👇 Forces browser to download the file
+            return File(fileBytes, "application/octet-stream", document.FileName);
         }
 
+        [HttpGet("{id}/preview")]
+        public IActionResult PreviewDocument(int id)
+        {
+            var groupId = GetCurrentUserGroupId();
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            if (document == null)
+                return NotFound();
+
+            var filePath = Path.Combine("/app/documents", document.FileName);
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(fileBytes, "application/pdf", document.FileName);
+
+        }
 
     }
 }
