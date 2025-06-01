@@ -25,13 +25,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Clean up existing generated files
+        run: |
+          rm -rf BitAndBeam/frontend/src/api/*
+          mkdir -p BitAndBeam/frontend/src/api
+
       - name: Build and start services
         working-directory: BitAndBeam
         env:
           BACKEND_URL: http://backend:5000
         run: |
+          # Ensure the api directory has correct permissions
+          sudo chown -R $USER:$USER frontend/src/api
+          
+          # Start services
           docker compose up -d backend
           docker compose up openapi-client
+          
+          # Fix permissions of generated files
+          sudo chown -R $USER:$USER frontend/src/api
 
       - name: Verify generated client
         working-directory: BitAndBeam/frontend
