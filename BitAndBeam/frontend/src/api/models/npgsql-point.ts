@@ -13,6 +13,24 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+/**
+ * 
+ * @export
+ * @interface NpgsqlPoint
+ */
+export interface NpgsqlPoint {
+    /**
+     * 
+     * @type {number}
+     * @memberof NpgsqlPoint
+     */
+    'x'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof NpgsqlPoint
+     */
+    'y'?: number;
+}
+
