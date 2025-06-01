@@ -1,3 +1,5 @@
+// ----------------- SETUP -----------------
+// Using directives and configuration setup
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
@@ -15,7 +17,7 @@ using System.Diagnostics;          // Added: for Activity (trace IDs)
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------- SERILOG CONFIGURATION ----------
+#region ---------- SERILOG CONFIGURATION ----------
 // Configure Serilog as the logging provider for the application
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()      // Enrich logs with contextual info
@@ -28,10 +30,13 @@ Log.Logger = new LoggerConfiguration()
 
 // Tell ASP.NET Core to use Serilog instead of the default logger
 builder.Host.UseSerilog();
+#endregion
 
+// ----------------- CONNECTION -----------------
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"⛳ Connection String: {conn ?? "null"}");
 
+// ----------------- CORS POLICY -----------------
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 builder.Services.AddCors(options =>
@@ -48,7 +53,7 @@ builder.Services.AddCors(options =>
 
 
 
-// Add global authorization
+// ----------------- GLOBAL AUTHORIZATION POLICY -----------------
 builder.Services.AddControllers(options =>
 {
     var policy = new AuthorizationPolicyBuilder()
@@ -57,12 +62,13 @@ builder.Services.AddControllers(options =>
 
     options.Filters.Add(new AuthorizeFilter(policy));
 });
-// Add services to the container.
+// ----------------- DATABASE & SERVICES -----------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
            .EnableSensitiveDataLogging()
            .LogTo(Log.Information, LogLevel.Information));
 
+// ----------------- SWAGGER CONFIGURATION -----------------
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -207,7 +213,7 @@ app.Use(async (context, next) =>
     }
 });
 
-// Configure the HTTP request pipeline.
+// ----------------- MIDDLEWARE PIPELINE -----------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -224,6 +230,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// ----------------- PUBLIC ROUTES -----------------
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
