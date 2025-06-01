@@ -3,7 +3,7 @@
   "withSeparateModelsAndApi": true,
   "apiPackage": "api",
   "modelPackage": "models",
-  "useSingleRequestParameter": true,
+  "useSingleRequestParameter": false,
   "ensureUniqueParams": true,
   "legacyDiscriminatorBehavior": false,
   "enumPropertyNaming": "UPPERCASE",
@@ -12,6 +12,10 @@
   "npmName": "@bitandbeam/api-client",
   "npmVersion": "1.0.0",
   "snapshot": false,
-  "useObjectParameters": true,
-  "withInterfaces": true
+  "useObjectParameters": false,
+  "withInterfaces": true,
+  "paramNaming": "camelCase",
+  "modelPropertyNaming": "camelCase",
+  "sortParamsByRequiredFlag": true,
+  "removeEnumValuePrefix": true
 } 

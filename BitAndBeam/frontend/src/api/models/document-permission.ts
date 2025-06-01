@@ -58,10 +58,10 @@ export interface DocumentPermission {
     'permissionType'?: string | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof DocumentPermission
      */
-    'grantedAt'?: string;
+    'grantedAt'?: Date;
     /**
      * 
      * @type {number}

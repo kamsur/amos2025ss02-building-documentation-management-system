@@ -49,10 +49,10 @@ export interface DocumentCategory {
     'parentCategoryId'?: number | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof DocumentCategory
      */
-    'createdAt'?: string;
+    'createdAt'?: Date;
     /**
      * 
      * @type {DocumentCategory}

@@ -37,10 +37,10 @@ export interface DocumentTag {
     'name'?: string | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof DocumentTag
      */
-    'createdAt'?: string;
+    'createdAt'?: Date;
     /**
      * 
      * @type {Array<DocumentTagRelation>}

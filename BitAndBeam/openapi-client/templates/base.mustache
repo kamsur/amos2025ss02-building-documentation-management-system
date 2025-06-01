@@ -15,7 +15,7 @@
 import type { Configuration } from './configuration';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
+import type { AxiosPromise, AxiosInstance, AxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 
 export const BASE_PATH = process.env.BACKEND_URL || 'http://backend:5000';
@@ -38,7 +38,7 @@ export const COLLECTION_FORMATS = {
  */
 export interface RequestArgs {
     url: string;
-    options: RawAxiosRequestConfig;
+    options: AxiosRequestConfig;
 }
 
 /**
@@ -54,6 +54,33 @@ export class BaseAPI {
             this.configuration = configuration;
             this.basePath = configuration.basePath ?? basePath;
         }
+    }
+
+    /**
+     * 
+     * @export
+     * @param {string} path
+     * @returns {string}
+     */
+    private getBasePath(path: string): string {
+        return `${this.basePath}${path}`;
+    }
+
+    /**
+     * 
+     * @export
+     * @template T
+     * @param {string} path
+     * @param {*} [params]
+     * @returns {Promise<T>}
+     */
+    protected async request<T>(path: string, params?: any): Promise<T> {
+        const url = this.getBasePath(path);
+        const response = await this.axios.request<T>({
+            url,
+            ...params,
+        });
+        return response.data;
     }
 }
 

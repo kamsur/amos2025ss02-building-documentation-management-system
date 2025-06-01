@@ -99,12 +99,12 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
         /**
          * 
          * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaApiApiOllamaAskPostRequest} requestParameters Request parameters.
+         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiOllamaAskPost(requestParameters: OllamaApiApiOllamaAskPostRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiOllamaAskPost(requestParameters.ollamaRequest, options).then((request) => request(axios, basePath));
+        apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiOllamaAskPost(ollamaRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -128,20 +128,6 @@ export interface OllamaApiInterface {
 }
 
 /**
- * Request parameters for apiOllamaAskPost operation in OllamaApi.
- * @export
- * @interface OllamaApiApiOllamaAskPostRequest
- */
-export interface OllamaApiApiOllamaAskPostRequest {
-    /**
-     * Prompt and optional context
-     * @type {OllamaRequest}
-     * @memberof OllamaApiApiOllamaAskPost
-     */
-    readonly ollamaRequest?: OllamaRequest
-}
-
-/**
  * OllamaApi - object-oriented interface
  * @export
  * @class OllamaApi
@@ -151,13 +137,13 @@ export class OllamaApi extends BaseAPI implements OllamaApiInterface {
     /**
      * 
      * @summary Sends prompt to Ollama backend and returns response with metadata.
-     * @param {OllamaApiApiOllamaAskPostRequest} requestParameters Request parameters.
+     * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OllamaApi
      */
-    public apiOllamaAskPost(requestParameters: OllamaApiApiOllamaAskPostRequest = {}, options?: RawAxiosRequestConfig) {
-        return OllamaApiFp(this.configuration).apiOllamaAskPost(requestParameters.ollamaRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: RawAxiosRequestConfig) {
+        return OllamaApiFp(this.configuration).apiOllamaAskPost(ollamaRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

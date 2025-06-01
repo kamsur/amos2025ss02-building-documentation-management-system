@@ -82,16 +82,16 @@ export interface Building {
     'coordinates'?: NpgsqlPoint;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof Building
      */
-    'createdAt'?: string;
+    'createdAt'?: Date;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof Building
      */
-    'updatedAt'?: string;
+    'updatedAt'?: Date;
     /**
      * 
      * @type {number}

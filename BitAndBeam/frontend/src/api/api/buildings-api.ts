@@ -359,7 +359,7 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsDebugDbGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiBuildingsDebugDbGet(options?: any): AxiosPromise<void> {
             return localVarFp.apiBuildingsDebugDbGet(options).then((request) => request(axios, basePath));
         },
         /**
@@ -367,7 +367,7 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsDebugFullGet(options?: RawAxiosRequestConfig): AxiosPromise<void> {
+        apiBuildingsDebugFullGet(options?: any): AxiosPromise<void> {
             return localVarFp.apiBuildingsDebugFullGet(options).then((request) => request(axios, basePath));
         },
         /**
@@ -375,44 +375,45 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsGet(options?: RawAxiosRequestConfig): AxiosPromise<Array<Building>> {
+        apiBuildingsGet(options?: any): AxiosPromise<Array<Building>> {
             return localVarFp.apiBuildingsGet(options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {BuildingsApiApiBuildingsIdDeleteRequest} requestParameters Request parameters.
+         * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsIdDelete(requestParameters: BuildingsApiApiBuildingsIdDeleteRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiBuildingsIdDelete(requestParameters.id, options).then((request) => request(axios, basePath));
+        apiBuildingsIdDelete(id: number, options?: any): AxiosPromise<void> {
+            return localVarFp.apiBuildingsIdDelete(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {BuildingsApiApiBuildingsIdGetRequest} requestParameters Request parameters.
+         * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsIdGet(requestParameters: BuildingsApiApiBuildingsIdGetRequest, options?: RawAxiosRequestConfig): AxiosPromise<Building> {
-            return localVarFp.apiBuildingsIdGet(requestParameters.id, options).then((request) => request(axios, basePath));
+        apiBuildingsIdGet(id: number, options?: any): AxiosPromise<Building> {
+            return localVarFp.apiBuildingsIdGet(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {BuildingsApiApiBuildingsIdPutRequest} requestParameters Request parameters.
+         * @param {number} id 
+         * @param {Building} [building] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsIdPut(requestParameters: BuildingsApiApiBuildingsIdPutRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiBuildingsIdPut(requestParameters.id, requestParameters.building, options).then((request) => request(axios, basePath));
+        apiBuildingsIdPut(id: number, building?: Building, options?: any): AxiosPromise<void> {
+            return localVarFp.apiBuildingsIdPut(id, building, options).then((request) => request(axios, basePath));
         },
         /**
          * 
-         * @param {BuildingsApiApiBuildingsPostRequest} requestParameters Request parameters.
+         * @param {Building} [building] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost(requestParameters: BuildingsApiApiBuildingsPostRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.apiBuildingsPost(requestParameters.building, options).then((request) => request(axios, basePath));
+        apiBuildingsPost(building?: Building, options?: any): AxiosPromise<void> {
+            return localVarFp.apiBuildingsPost(building, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -487,69 +488,6 @@ export interface BuildingsApiInterface {
 }
 
 /**
- * Request parameters for apiBuildingsIdDelete operation in BuildingsApi.
- * @export
- * @interface BuildingsApiApiBuildingsIdDeleteRequest
- */
-export interface BuildingsApiApiBuildingsIdDeleteRequest {
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingsApiApiBuildingsIdDelete
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for apiBuildingsIdGet operation in BuildingsApi.
- * @export
- * @interface BuildingsApiApiBuildingsIdGetRequest
- */
-export interface BuildingsApiApiBuildingsIdGetRequest {
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingsApiApiBuildingsIdGet
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for apiBuildingsIdPut operation in BuildingsApi.
- * @export
- * @interface BuildingsApiApiBuildingsIdPutRequest
- */
-export interface BuildingsApiApiBuildingsIdPutRequest {
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingsApiApiBuildingsIdPut
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {Building}
-     * @memberof BuildingsApiApiBuildingsIdPut
-     */
-    readonly building?: Building
-}
-
-/**
- * Request parameters for apiBuildingsPost operation in BuildingsApi.
- * @export
- * @interface BuildingsApiApiBuildingsPostRequest
- */
-export interface BuildingsApiApiBuildingsPostRequest {
-    /**
-     * 
-     * @type {Building}
-     * @memberof BuildingsApiApiBuildingsPost
-     */
-    readonly building?: Building
-}
-
-/**
  * BuildingsApi - object-oriented interface
  * @export
  * @class BuildingsApi
@@ -588,46 +526,47 @@ export class BuildingsApi extends BaseAPI implements BuildingsApiInterface {
 
     /**
      * 
-     * @param {BuildingsApiApiBuildingsIdDeleteRequest} requestParameters Request parameters.
+     * @param {number} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsIdDelete(requestParameters: BuildingsApiApiBuildingsIdDeleteRequest, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsIdDelete(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsIdDelete(id: number, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsIdDelete(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {BuildingsApiApiBuildingsIdGetRequest} requestParameters Request parameters.
+     * @param {number} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsIdGet(requestParameters: BuildingsApiApiBuildingsIdGetRequest, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsIdGet(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsIdGet(id: number, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsIdGet(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {BuildingsApiApiBuildingsIdPutRequest} requestParameters Request parameters.
+     * @param {number} id 
+     * @param {Building} [building] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsIdPut(requestParameters: BuildingsApiApiBuildingsIdPutRequest, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsIdPut(requestParameters.id, requestParameters.building, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsIdPut(id: number, building?: Building, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsIdPut(id, building, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
-     * @param {BuildingsApiApiBuildingsPostRequest} requestParameters Request parameters.
+     * @param {Building} [building] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsPost(requestParameters: BuildingsApiApiBuildingsPostRequest = {}, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsPost(requestParameters.building, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsPost(building, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

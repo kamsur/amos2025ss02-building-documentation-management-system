@@ -13,4 +13,5 @@ openapi-generator-cli generate \
   -o /local/generated-sdk \
   -c /config.json \
   -t /templates \
-  --additional-properties=basePath=process.env.BACKEND_URL
+  --type-mappings=DateTime=Date \
+  --additional-properties=supportsES6=true,withSeparateModelsAndApi=true,modelPropertyNaming=camelCase

@@ -46,10 +46,10 @@ export interface Organization {
     'description'?: string | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof Organization
      */
-    'createdAt'?: string;
+    'createdAt'?: Date;
     /**
      * 
      * @type {boolean}

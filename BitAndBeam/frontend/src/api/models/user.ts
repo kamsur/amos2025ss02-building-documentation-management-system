@@ -73,16 +73,16 @@ export interface User {
     'role'?: string | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof User
      */
-    'createdAt'?: string;
+    'createdAt'?: Date;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof User
      */
-    'lastLogin'?: string | null;
+    'lastLogin'?: Date | null;
     /**
      * 
      * @type {boolean}

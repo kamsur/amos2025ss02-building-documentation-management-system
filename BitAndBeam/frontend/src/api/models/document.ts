@@ -88,16 +88,16 @@ export interface Document {
     'uploadedBy'?: number | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof Document
      */
-    'uploadDate'?: string;
+    'uploadDate'?: Date;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof Document
      */
-    'lastModified'?: string;
+    'lastModified'?: Date;
     /**
      * 
      * @type {string}
@@ -136,10 +136,10 @@ export interface Document {
     'fileName'?: string | null;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof Document
      */
-    'uploadedAt'?: string;
+    'uploadedAt'?: Date;
     /**
      * 
      * @type {string}

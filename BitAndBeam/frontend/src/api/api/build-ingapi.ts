@@ -134,7 +134,7 @@ export const BuildINGApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWeatherForecast(options?: RawAxiosRequestConfig): AxiosPromise<Array<WeatherForecast>> {
+        getWeatherForecast(options?: any): AxiosPromise<Array<WeatherForecast>> {
             return localVarFp.getWeatherForecast(options).then((request) => request(axios, basePath));
         },
         /**
@@ -142,7 +142,7 @@ export const BuildINGApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        rootGet(options?: RawAxiosRequestConfig): AxiosPromise<string> {
+        rootGet(options?: any): AxiosPromise<string> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
         },
     };
