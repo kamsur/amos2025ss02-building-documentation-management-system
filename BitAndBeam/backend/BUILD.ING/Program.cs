@@ -1,10 +1,10 @@
 using BUILD.ING.Data;
+using BUILD.ING.Data.Seed;
 using BUILD.ING.Models;
 using BUILD.ING.Swagger;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
-using BUILD.ING.Data.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -58,7 +58,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate(); //führt Migration beim Start automatisch aus
 
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await DatabaseSeeder.SeedAsync(context);
+    await DatabaseSeeder.SeedAsync(context).ConfigureAwait(false);
 }
 
 // Configure the HTTP request pipeline.
