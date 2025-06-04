@@ -1,20 +1,18 @@
 // ----------------- SETUP -----------------
 // Using directives and configuration setup
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Diagnostics;          // Added: for Activity (trace IDs)
 using BUILD.ING.Data;
 using BUILD.ING.Data.Seed;
 using BUILD.ING.Models;
 using BUILD.ING.Swagger;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
-
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Authorization;
-
 using Serilog;                      // Added: Serilog namespace
 using Serilog.Context;              // Added: for log context enrichment
-using System.Diagnostics;          // Added: for Activity (trace IDs)
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,9 +44,9 @@ builder.Services.AddCors(options =>
                       policy =>
                       {
                           //policy.WithOrigins("http://localhost:8080") // <-- Angular dev server
-                                policy.AllowAnyOrigin() // Allow requests from any origin - only for development
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
+                          policy.AllowAnyOrigin() // Allow requests from any origin - only for development
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
                       });
 });
 
@@ -186,7 +184,7 @@ app.Use(async (context, next) =>
     // Push TraceId into Serilog’s LogContext so all logs within this request include it
     using (Serilog.Context.LogContext.PushProperty("TraceId", traceId))
     {
-        await next.Invoke(); // Call the next middleware in the pipeline
+        await next.Invoke().ConfigureAwait(false); // Call the next middleware in the pipeline
     }
 });
 
