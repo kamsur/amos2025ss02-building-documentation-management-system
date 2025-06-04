@@ -57,7 +57,7 @@ namespace BUILD.ING.Controllers
 
             // Build the token
             var token = new JwtSecurityToken(
-                expires: DateTime.UtcNow.AddMinutes(1), // 1 minute validity
+                expires: DateTime.UtcNow.AddHours(1), // 1 minute validity
                 signingCredentials: creds,
                 claims: claims
             );
