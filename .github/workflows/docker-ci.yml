@@ -10,8 +10,13 @@ permissions:
   packages: write
 
 jobs:
+  check-openapi:
+    uses: ./.github/workflows/openapi-client.yml
+
   build-and-deploy:
+    needs: check-openapi
     runs-on: ubuntu-latest
+    if: always() && (needs.check-openapi.result == 'success' || needs.check-openapi.result == 'skipped')
 
     steps:
       - name: Checkout code
@@ -65,25 +70,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # - name: Build and push ollama image
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: ./BitAndBeam/ollama
-      #     push: true
-      #     tags: |
-      #       ghcr.io/amosproj/bitandbeam-ollama:latest
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
-
-      # - name: Build and push web image
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: ./BitAndBeam/web
-      #     push: true
-      #     tags: |
-      #       ghcr.io/amosproj/bitandbeam-web:latest
-      #     cache-from: type=gha
-      #     cache-to: type=gha,mode=max
+      - name: Build and push ollama image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./BitAndBeam/ollama
+          push: true
+          tags: |
+            ghcr.io/amosproj/bitandbeam-ollama:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Upload project to server
         uses: appleboy/scp-action@v0.1.4
@@ -110,7 +105,7 @@ jobs:
 
             # --- uncomment to reset DB volume ---
             # echo "Dropping Postgres volume to force schema reinitialization..."
-            # docker volume rm bitandbeam_pgdata || true
+            # docker volume rm bitandbeam_pgdata bitandbeam_documentdata || true
 
             # --- remove old images ONLY when BitAndBeam folder changed ---
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
@@ -118,7 +113,6 @@ jobs:
               docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
               docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
               docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
-              docker rmi ghcr.io/amosproj/bitandbeam-web:latest || true
             else
               echo "BitAndBeam unchanged – keeping existing images."
             fi
@@ -128,8 +122,8 @@ jobs:
 
             # Relaunch stack
             docker compose -f docker-compose-prod.yml up -d
-            docker compose -f docker-compose-prod.yml logs backend --tail=50
-            docker compose -f docker-compose-prod.yml exec backend printenv
+            # docker compose -f docker-compose-prod.yml logs backend --tail=50
+            # docker compose -f docker-compose-prod.yml exec backend printenv
 
             # Optional cleanup
             # docker image prune -af --filter "until=24h"

@@ -2,6 +2,7 @@
 // Using directives and configuration setup
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using BUILD.ING.Data;
+using BUILD.ING.Data.Seed;
 using BUILD.ING.Models;
 using BUILD.ING.Swagger;
 using Microsoft.EntityFrameworkCore;
@@ -161,42 +162,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate(); // applies any pending migrations
+    db.Database.Migrate(); //führt Migration beim Start automatisch aus
 
-    // 🌱 Seed a default organization if none exists
-    if (!db.Organizations.Any())
-    {
-        var defaultOrg = new Organization
-        {
-            Name = "Default Organization",
-            CreatedAt = DateTime.UtcNow
-        };
-        db.Organizations.Add(defaultOrg);
-        db.SaveChanges();
-        Console.WriteLine("✅ Default organization created.");
-    }
-
-    // ✅ Get the first available organization ID
-    var orgId = db.Organizations.First().OrganizationId;
-
-    // 🌱 Seed a test user if none exists
-    if (!db.Users.Any())
-    {
-        var testUser = new User
-        {
-            Username = "testuser",
-            Email = "test@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"), // plain-text: password123
-            FirstName = "Test",
-            LastName = "User",
-            Role = "admin",
-            CreatedAt = DateTime.UtcNow,
-            OrganizationId = orgId
-        };
-        db.Users.Add(testUser);
-        db.SaveChanges();
-        Console.WriteLine("✅ Test user created.");
-    }
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DatabaseSeeder.SeedAsync(context).ConfigureAwait(false);
 }
 
 // ---------- MIDDLEWARE TO ADD TRACE ID TO LOG CONTEXT ----------

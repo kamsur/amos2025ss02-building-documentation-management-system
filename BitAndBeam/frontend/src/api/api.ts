@@ -1340,7 +1340,6 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
     return {
         /**
          * 
-         * @summary Update a document (for example: title)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1539,8 +1538,7 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @summary Uploads a document (PDF, DOCX, etc.)
-         * @param {File} [file] The file to upload
+         * @param {File} [file] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1588,7 +1586,6 @@ export const DocumentsApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Update a document (for example: title)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1661,8 +1658,7 @@ export const DocumentsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Uploads a document (PDF, DOCX, etc.)
-         * @param {File} [file] The file to upload
+         * @param {File} [file] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1684,7 +1680,6 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
     return {
         /**
          * 
-         * @summary Update a document (for example: title)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1739,8 +1734,7 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
-         * @summary Uploads a document (PDF, DOCX, etc.)
-         * @param {File} [file] The file to upload
+         * @param {File} [file] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1759,7 +1753,6 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
 export class DocumentsApi extends BaseAPI {
     /**
      * 
-     * @summary Update a document (for example: title)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DocumentsApi
@@ -1826,8 +1819,7 @@ export class DocumentsApi extends BaseAPI {
 
     /**
      * 
-     * @summary Uploads a document (PDF, DOCX, etc.)
-     * @param {File} [file] The file to upload
+     * @param {File} [file] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DocumentsApi
