@@ -162,6 +162,12 @@ export interface BuildingCreateDto {
      * @memberof BuildingCreateDto
      */
     'organizationId'?: number;
+    /**
+     * 
+     * @type {NpgsqlPoint}
+     * @memberof BuildingCreateDto
+     */
+    'coordinates'?: NpgsqlPoint;
 }
 /**
  * 
