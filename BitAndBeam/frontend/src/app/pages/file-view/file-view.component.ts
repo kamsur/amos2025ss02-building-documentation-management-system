@@ -18,6 +18,8 @@ export class FileViewComponent {
 
   selectedFile: DocumentItem | null = null;
   notFound = false;
+  isPdf = false;
+  isImage = false;
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
   ngOnInit(): void {
@@ -45,6 +47,10 @@ export class FileViewComponent {
             { label: 'Type', value: doc.fileType ?? 'unknown' }
           ]
         };
+        // Determine file type for viewer
+        const fileType = (doc.fileType ?? '').toLowerCase();
+        this.isPdf = fileType === 'pdf';
+        this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
       },
       error: (err) => {
         console.error('❌ Failed to load document:', err);
