@@ -6,6 +6,7 @@ using BUILD.ING.Dto;
 using BUILD.ING.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NpgsqlTypes;
 
 namespace BUILD.ING.Controllers
 {
@@ -22,39 +23,38 @@ namespace BUILD.ING.Controllers
 
         // POST: api/Buildings
         // Creates a new building and returns its ID
-        [HttpPost]
-        public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
-        {
-        NpgsqlPoint? coordinates = null;
-            if (buildingDto.coordinates != null)
-            {
-                double x = (double)buildingDto.coordinates.x;
-                double y = (double)buildingDto.coordinates.y;
-                coordinates = new NpgsqlPoint(x, y);
-            }
-            var building = new Building
-            {
-                Name = dto.Name,
-                Address = dto.Address,
-                ConstructionYear = dto.ConstructionYear,
-                TotalArea = dto.TotalArea,
-                Floors = dto.Floors,
-                Description = dto.Description,
-                OrganizationId = dto.OrganizationId,
-                Coordinates = coordinates,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+       [HttpPost]
+       public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
+       {
+           // ✅ Convert coordinate data if present
+           NpgsqlPoint? coordinates = null;
+           if (dto.Coordinates.HasValue)
+           {
+               coordinates = new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y);
+           }
 
-                BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
-                Documents = new List<Document>()
-            };
 
-            _context.Buildings.Add(building);
-            await _context.SaveChangesAsync();
+           var building = new Building
+           {
+               Name = dto.Name,
+               Address = dto.Address,
+               ConstructionYear = dto.ConstructionYear,
+               TotalArea = dto.TotalArea,
+               Floors = dto.Floors,
+               Description = dto.Description,
+               OrganizationId = dto.OrganizationId,
+               Coordinates = coordinates,
+               CreatedAt = DateTime.UtcNow,
+               UpdatedAt = DateTime.UtcNow,
+               BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
+               Documents = new List<Document>()
+           };
 
-            return Ok(new { id = building.BuildingId });
-        }
+           _context.Buildings.Add(building);
+           await _context.SaveChangesAsync();
 
+           return Ok(new { id = building.BuildingId });
+       }
 
         // GET: api/Buildings
         // Returns a list of all buildings
