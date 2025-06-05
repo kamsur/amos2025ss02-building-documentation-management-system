@@ -34,6 +34,12 @@
       Description:
       <textarea [(ngModel)]="building.description" name="description"></textarea>
     </label>
+    <label for="latitude">Latitude:</label>
+    <input type="number" id="latitude" [(ngModel)]="building.latitude" name="latitude">
+
+    <label for="longitude">Longitude:</label>
+    <input type="number" id="longitude" [(ngModel)]="building.longitude" name="longitude">
+
     <label>
       Organization*:
       <select [(ngModel)]="building.organizationId" name="organizationId" required>
