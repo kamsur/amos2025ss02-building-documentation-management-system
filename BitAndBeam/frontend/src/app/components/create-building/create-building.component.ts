@@ -13,10 +13,13 @@ import { Building as ApiBuilding } from '../../../api';
   styleUrls: ['./create-building.component.css']
 })
 export class CreateBuildingComponent {
+  // Hardcoded organizations for now
   organizations = [
     { id: 1, name: 'Organization Alpha' },
     { id: 2, name: 'Organization Beta' }
   ];
+
+  // Initialize fields
   building: Partial<ApiBuilding> = {
     name: '',
     address: '',
@@ -24,8 +27,7 @@ export class CreateBuildingComponent {
     totalArea: null,
     floors: null,
     description: '',
-    organizationId: undefined
-
+    organizationId: undefined // Must be undefined, not null
   };
 
   successMessage = '';
@@ -34,16 +36,23 @@ export class CreateBuildingComponent {
   constructor(private buildingService: BuildingService, private router: Router) {}
 
   submitForm() {
-    if (!this.building.name?.trim() || !this.building.address?.trim()) {
-      this.errorMessage = 'Name and Address are required.';
+    if (!this.building.name?.trim() || !this.building.address?.trim() || !this.building.organizationId) {
+      this.errorMessage = 'Name, Address, and Organization are required.';
       return;
     }
 
-    this.buildingService.addBuilding(this.building).subscribe({
+    // 🟩 Backend requires empty arrays for these fields
+    const building: Partial<ApiBuilding> = {
+      ...this.building,
+      buildingDocumentRelations: [],
+      documents: []
+    };
+
+    this.buildingService.addBuilding(building).subscribe({
       next: () => {
         this.successMessage = 'Building created successfully!';
         this.errorMessage = '';
-        setTimeout(() => this.router.navigate(['/upload']), 1500); // Adjust as needed
+        setTimeout(() => this.router.navigate(['/upload']), 1500);
       },
       error: (err) => {
         console.error(err);
