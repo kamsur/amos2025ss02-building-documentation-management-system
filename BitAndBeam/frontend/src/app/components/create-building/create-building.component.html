@@ -34,6 +34,13 @@
       Description:
       <textarea [(ngModel)]="building.description" name="description"></textarea>
     </label>
+    <label>
+      Organization*:
+      <select [(ngModel)]="building.organizationId" name="organizationId" required>
+        <option [ngValue]="null" disabled selected>Select an organization</option>
+        <option *ngFor="let org of organizations" [ngValue]="org.id">{{ org.name }}</option>
+      </select>
+    </label>
 
     <button type="submit">Create</button>
   </form>

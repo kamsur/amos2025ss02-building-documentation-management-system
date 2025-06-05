@@ -13,13 +13,19 @@ import { Building as ApiBuilding } from '../../../api';
   styleUrls: ['./create-building.component.css']
 })
 export class CreateBuildingComponent {
+  organizations = [
+    { id: 1, name: 'Organization Alpha' },
+    { id: 2, name: 'Organization Beta' }
+  ];
   building: Partial<ApiBuilding> = {
     name: '',
     address: '',
     constructionYear: null,
     totalArea: null,
     floors: null,
-    description: ''
+    description: '',
+    organizationId: undefined
+
   };
 
   successMessage = '';
@@ -46,4 +52,3 @@ export class CreateBuildingComponent {
     });
   }
 }
- 

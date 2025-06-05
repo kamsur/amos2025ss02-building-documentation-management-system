@@ -15,6 +15,7 @@
   font-weight: 500;
 }
 .create-building-form input,
+.create-building-form select,
 .create-building-form textarea {
   width: 100%;
   padding: 0.5rem;
