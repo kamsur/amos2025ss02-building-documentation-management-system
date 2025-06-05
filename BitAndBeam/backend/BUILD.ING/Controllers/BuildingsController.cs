@@ -23,38 +23,38 @@ namespace BUILD.ING.Controllers
 
         // POST: api/Buildings
         // Creates a new building and returns its ID
-       [HttpPost]
-       public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
-       {
-           // ✅ Convert coordinate data if present
-           NpgsqlPoint? coordinates = null;
-           if (dto.Coordinates.HasValue)
-           {
-               coordinates = new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y);
-           }
+        [HttpPost]
+        public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
+        {
+            // ✅ Convert coordinate data if present
+            NpgsqlPoint? coordinates = null;
+            if (dto.Coordinates.HasValue)
+            {
+                coordinates = new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y);
+            }
 
 
-           var building = new Building
-           {
-               Name = dto.Name,
-               Address = dto.Address,
-               ConstructionYear = dto.ConstructionYear,
-               TotalArea = dto.TotalArea,
-               Floors = dto.Floors,
-               Description = dto.Description,
-               OrganizationId = dto.OrganizationId,
-               Coordinates = coordinates,
-               CreatedAt = DateTime.UtcNow,
-               UpdatedAt = DateTime.UtcNow,
-               BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
-               Documents = new List<Document>()
-           };
+            var building = new Building
+            {
+                Name = dto.Name,
+                Address = dto.Address,
+                ConstructionYear = dto.ConstructionYear,
+                TotalArea = dto.TotalArea,
+                Floors = dto.Floors,
+                Description = dto.Description,
+                OrganizationId = dto.OrganizationId,
+                Coordinates = coordinates,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
+                Documents = new List<Document>()
+            };
 
-           _context.Buildings.Add(building);
-           await _context.SaveChangesAsync();
+            _context.Buildings.Add(building);
+            await _context.SaveChangesAsync().ConfigureAwait(false);
 
-           return Ok(new { id = building.BuildingId });
-       }
+            return Ok(new { id = building.BuildingId });
+        }
 
         // GET: api/Buildings
         // Returns a list of all buildings
