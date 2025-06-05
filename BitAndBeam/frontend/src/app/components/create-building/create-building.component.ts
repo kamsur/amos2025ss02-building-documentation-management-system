@@ -15,8 +15,8 @@ import { Building as ApiBuilding } from '../../../api';
 export class CreateBuildingComponent {
   // Hardcoded organizations for now
   organizations = [
-    { id: 1, name: 'Organization Alpha' },
-    { id: 2, name: 'Organization Beta' }
+    { id: 5, name: 'Organization Alpha' },
+    { id: 6, name: 'Organization Beta' }
   ];
 
   // Initialize the building object
