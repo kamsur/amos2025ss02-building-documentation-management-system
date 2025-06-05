@@ -1,3 +1,4 @@
+using NpgsqlTypes;
 namespace BUILD.ING.Dto
 {
     public class BuildingCreateDto
