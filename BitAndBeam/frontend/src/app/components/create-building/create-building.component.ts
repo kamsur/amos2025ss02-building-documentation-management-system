@@ -19,7 +19,7 @@ export class CreateBuildingComponent {
     { id: 2, name: 'Organization Beta' }
   ];
 
-  // Initialize fields
+  // Initialize the building object
   building: Partial<ApiBuilding> = {
     name: '',
     address: '',
@@ -27,7 +27,7 @@ export class CreateBuildingComponent {
     totalArea: null,
     floors: null,
     description: '',
-    organizationId: undefined // Must be undefined, not null
+    organizationId: undefined // Must be undefined for type compatibility
   };
 
   successMessage = '';
@@ -41,12 +41,21 @@ export class CreateBuildingComponent {
       return;
     }
 
-    // 🟩 Backend requires empty arrays for these fields
+    // ✅ Construct the final payload with empty arrays
     const building: Partial<ApiBuilding> = {
-      ...this.building,
+      name: this.building.name,
+      address: this.building.address,
+      constructionYear: this.building.constructionYear,
+      totalArea: this.building.totalArea,
+      floors: this.building.floors,
+      description: this.building.description,
+      organizationId: this.building.organizationId,
       buildingDocumentRelations: [],
       documents: []
     };
+
+    // 🔍 Optional: log to confirm payload
+    console.log('Creating building with data:', building);
 
     this.buildingService.addBuilding(building).subscribe({
       next: () => {
@@ -61,3 +70,4 @@ export class CreateBuildingComponent {
     });
   }
 }
+ 
