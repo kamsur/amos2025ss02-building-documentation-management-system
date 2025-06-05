@@ -25,6 +25,13 @@ namespace BUILD.ING.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
         {
+        NpgsqlPoint? coordinates = null;
+            if (buildingDto.coordinates != null)
+            {
+                double x = (double)buildingDto.coordinates.x;
+                double y = (double)buildingDto.coordinates.y;
+                coordinates = new NpgsqlPoint(x, y);
+            }
             var building = new Building
             {
                 Name = dto.Name,
@@ -34,9 +41,7 @@ namespace BUILD.ING.Controllers
                 Floors = dto.Floors,
                 Description = dto.Description,
                 OrganizationId = dto.OrganizationId,
-                Coordinates = dto.Coordinates != null
-                            ? new NpgsqlPoint(dto.Coordinates.X, dto.Coordinates.Y)
-                            : (NpgsqlPoint?)null,
+                Coordinates = coordinates,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
 
