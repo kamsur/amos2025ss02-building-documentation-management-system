@@ -138,31 +138,31 @@ namespace BUILD.ING.Controllers
         }
 
         [HttpGet("{id}/preview")]
-                public IActionResult PreviewDocument(int id)
-                {
-                    var groupId = GetCurrentUserGroupId();
-                    var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
-                    if (document == null)
-                        return NotFound();
+        public IActionResult PreviewDocument(int id)
+        {
+            var groupId = GetCurrentUserGroupId();
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            if (document == null)
+                return NotFound();
 
-                    var filePath = Path.Combine("/app/documents", document.FileName);
-                    if (!System.IO.File.Exists(filePath))
-                        return NotFound();
+            var filePath = Path.Combine("/app/documents", document.FileName);
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
 
-                    var fileBytes = System.IO.File.ReadAllBytes(filePath);
+            var fileBytes = System.IO.File.ReadAllBytes(filePath);
 
-                    // Determine content type based on file extension
-                    string contentType = document.FileType switch
-                    {
-                        "pdf" => "application/pdf",
-                        "png" => "image/png",
-                        "jpg" => "image/jpeg",
-                        "jpeg" => "image/jpeg",
-                        _ => "application/octet-stream" // fallback
-                    };
+            // Determine content type based on file extension
+            string contentType = document.FileType switch
+            {
+                "pdf" => "application/pdf",
+                "png" => "image/png",
+                "jpg" => "image/jpeg",
+                "jpeg" => "image/jpeg",
+                _ => "application/octet-stream" // fallback
+            };
 
-                   return File(fileBytes, contentType);
+            return File(fileBytes, contentType);
 
-                }
-            }
         }
+    }
+}
