@@ -34,8 +34,12 @@ namespace BUILD.ING.Controllers
                 Floors = dto.Floors,
                 Description = dto.Description,
                 OrganizationId = dto.OrganizationId,
+                Coordinates = dto.Coordinates != null
+                            ? new NpgsqlPoint(dto.Coordinates.X, dto.Coordinates.Y)
+                            : (NpgsqlPoint?)null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
+
                 BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
                 Documents = new List<Document>()
             };
