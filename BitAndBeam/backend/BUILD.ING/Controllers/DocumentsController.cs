@@ -1,6 +1,8 @@
 using BUILD.ING.Data;
 using BUILD.ING.Models;
+using BUILD.ING.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace BUILD.ING.Controllers
 {
@@ -10,12 +12,16 @@ namespace BUILD.ING.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly TikaService _tikaService;
+        private readonly ILogger<DocumentsController> _logger;
 
-        public DocumentsController(AppDbContext context, IWebHostEnvironment env)
+        public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, ILogger<DocumentsController> logger)
         {
             Console.WriteLine("🚀 DocumentsController loaded");
             _context = context;
             _env = env;
+            _tikaService = tikaService;
+            _logger = logger;
         }
 
         private string GetCurrentUserGroupId()
@@ -34,8 +40,32 @@ namespace BUILD.ING.Controllers
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
 
+            // Save the file to disk
             using var stream = new FileStream(fullPath, FileMode.Create);
             await file.CopyToAsync(stream).ConfigureAwait(false);
+
+            // Extract metadata with Tika
+            string metadata = "{}";
+            try
+            {
+                // Convert file to byte array for Tika processing
+                byte[] fileBytes;
+                using (var ms = new MemoryStream())
+                {
+                    await file.CopyToAsync(ms).ConfigureAwait(false);
+                    fileBytes = ms.ToArray();
+                }
+
+                // Call Tika service to extract metadata
+                metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
+                _logger.LogInformation("Successfully extracted metadata for file {FileName}", file.FileName);
+            }
+            catch (Exception ex)
+            {
+                // Log error but continue with upload process
+                _logger.LogError(ex, "Failed to extract metadata for file {FileName}", file.FileName);
+                // Empty metadata will be stored
+            }
 
             var document = new Document
             {
@@ -50,7 +80,7 @@ namespace BUILD.ING.Controllers
                 Status = "draft",
                 IsPublic = false,
                 Description = "No description provided",
-                Metadata = "{}",
+                Metadata = metadata, // Store the extracted metadata
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
                 GroupId = GetCurrentUserGroupId()
@@ -62,7 +92,7 @@ namespace BUILD.ING.Controllers
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
-            return Ok(new { document.DocumentId, FileUrl = fileUrl });
+            return Ok(new { document.DocumentId, FileUrl = fileUrl, HasMetadata = metadata != "{}" });
         }
 
         [HttpGet]
