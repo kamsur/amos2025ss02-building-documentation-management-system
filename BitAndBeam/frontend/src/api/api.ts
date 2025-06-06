@@ -117,6 +117,61 @@ export interface Building {
 /**
  * 
  * @export
+ * @interface BuildingCreateDto
+ */
+export interface BuildingCreateDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'name'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'address'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'constructionYear'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'totalArea'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'floors'?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'description'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'organizationId'?: number;
+    /**
+     * 
+     * @type {NpgsqlPoint}
+     * @memberof BuildingCreateDto
+     */
+    'coordinates'?: NpgsqlPoint;
+}
+/**
+ * 
+ * @export
  * @interface BuildingDocumentRelation
  */
 export interface BuildingDocumentRelation {
@@ -1050,11 +1105,11 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @param {Building} [building] 
+         * @param {BuildingCreateDto} [buildingCreateDto] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost: async (building?: Building, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiBuildingsPost: async (buildingCreateDto?: BuildingCreateDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/Buildings`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1074,7 +1129,7 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(building, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(buildingCreateDto, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1163,12 +1218,12 @@ export const BuildingsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {Building} [building] 
+         * @param {BuildingCreateDto} [buildingCreateDto] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsPost(building, options);
+        async apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsPost(buildingCreateDto, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BuildingsApi.apiBuildingsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1237,12 +1292,12 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
-         * @param {Building} [building] 
+         * @param {BuildingCreateDto} [buildingCreateDto] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost(building?: Building, options?: any): AxiosPromise<void> {
-            return localVarFp.apiBuildingsPost(building, options).then((request) => request(axios, basePath));
+        apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: any): AxiosPromise<void> {
+            return localVarFp.apiBuildingsPost(buildingCreateDto, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1320,13 +1375,13 @@ export class BuildingsApi extends BaseAPI {
 
     /**
      * 
-     * @param {Building} [building] 
+     * @param {BuildingCreateDto} [buildingCreateDto] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsPost(building, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsPost(buildingCreateDto, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
