@@ -161,7 +161,7 @@ namespace BUILD.ING.Controllers
                 _ => "application/octet-stream" // fallback
             };
 
-            return File(fileBytes, contentType); 
+            return File(fileBytes, contentType);
         }
     }
 }
