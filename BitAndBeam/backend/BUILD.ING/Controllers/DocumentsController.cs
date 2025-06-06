@@ -1,7 +1,10 @@
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using Microsoft.AspNetCore.Mvc;
-
+using BitAndBeam.Tika;
+using System.IO;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 namespace BUILD.ING.Controllers
 {
     [ApiController]
@@ -10,12 +13,15 @@ namespace BUILD.ING.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
-
-        public DocumentsController(AppDbContext context, IWebHostEnvironment env)
+        private readonly TikaService _tikaService;
+        private readonly ILogger<DocumentsController> _logger;
+        public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, ILogger<DocumentsController> logger)
         {
             Console.WriteLine("🚀 DocumentsController loaded");
             _context = context;
             _env = env;
+            _tikaService = tikaService;
+            _logger = logger;
         }
 
         private string GetCurrentUserGroupId()
@@ -37,6 +43,38 @@ namespace BUILD.ING.Controllers
             using var stream = new FileStream(fullPath, FileMode.Create);
             await file.CopyToAsync(stream).ConfigureAwait(false);
 
+            // Create a memory stream to read the file content for metadata extraction
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream).ConfigureAwait(false);
+            memoryStream.Position = 0;
+
+            // Extract metadata using TikaService
+            var fileBytes = memoryStream.ToArray();
+            string metadata = "{}";
+            try
+            {
+                var extractedMetadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName);
+
+                // Validate that the metadata is valid JSON
+                if (IsValidJson(extractedMetadata))
+                {
+                    metadata = extractedMetadata;
+                    _logger.LogInformation($"Successfully extracted metadata from {file.FileName}");
+                }
+                else
+                {
+                    _logger.LogWarning($"Invalid metadata JSON returned by Tika for file {file.FileName}. Using empty metadata.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error extracting metadata from {file.FileName}. Using empty metadata.");
+            }
+
+            // Save file to disk
+            using var fileStream = new FileStream(fullPath, FileMode.Create);
+            memoryStream.Position = 0;
+            await memoryStream.CopyToAsync(fileStream).ConfigureAwait(false);
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
@@ -50,7 +88,7 @@ namespace BUILD.ING.Controllers
                 Status = "draft",
                 IsPublic = false,
                 Description = "No description provided",
-                Metadata = "{}",
+                Metadata = metadata,
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
                 GroupId = GetCurrentUserGroupId()
@@ -62,7 +100,20 @@ namespace BUILD.ING.Controllers
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
+            // Process document using Tika
+            try
+            {
+                var metadataResult = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName);
+                document.Metadata = metadataResult;
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing document metadata");
+            }
+
             return Ok(new { document.DocumentId, FileUrl = fileUrl });
+            return Ok(new { document.DocumentId, FileUrl = fileUrl, Metadata = metadata });
         }
 
         [HttpGet]
@@ -84,6 +135,21 @@ namespace BUILD.ING.Controllers
             return Ok(document);
         }
 
+        private bool IsValidJson(string strInput)
+        {
+            if (string.IsNullOrWhiteSpace(strInput))
+                return false;
+
+            try
+            {
+                var obj = JsonDocument.Parse(strInput);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         [HttpPut("{id}")]
         public IActionResult UpdateDocumentTitle(int id, [FromBody] DocumentUpdateRequest request)
         {
