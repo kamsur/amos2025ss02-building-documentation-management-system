@@ -1,9 +1,9 @@
+using System.IO;
+using System.Text.Json;
+using BitAndBeam.Tika;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using Microsoft.AspNetCore.Mvc;
-using BitAndBeam.Tika;
-using System.IO;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 namespace BUILD.ING.Controllers
 {
