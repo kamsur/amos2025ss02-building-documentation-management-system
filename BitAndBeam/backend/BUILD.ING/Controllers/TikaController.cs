@@ -2,11 +2,12 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BUILD.ING.Models;
+using BUILD.ING.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-namespace BitAndBeam.Tika
+namespace BUILD.ING.Controllers
 {
     /// <summary>
     /// Controller for Apache Tika document extraction functionality

@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text.Json;
-using BitAndBeam.Tika;
+using BUILD.ING.Services;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using Microsoft.AspNetCore.Mvc;

@@ -26,6 +26,32 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
+ * @interface ApiDocumentsPostRequest
+ */
+export interface ApiDocumentsPostRequest {
+    /**
+     * 
+     * @type {File}
+     * @memberof ApiDocumentsPostRequest
+     */
+    'file'?: File;
+}
+/**
+ * 
+ * @export
+ * @interface ApiTikaProcessPostRequest
+ */
+export interface ApiTikaProcessPostRequest {
+    /**
+     * 
+     * @type {File}
+     * @memberof ApiTikaProcessPostRequest
+     */
+    'File': File;
+}
+/**
+ * 
+ * @export
  * @interface Building
  */
 export interface Building {
@@ -113,61 +139,6 @@ export interface Building {
      * @memberof Building
      */
     'buildingDocumentRelations'?: Array<BuildingDocumentRelation> | null;
-}
-/**
- * 
- * @export
- * @interface BuildingCreateDto
- */
-export interface BuildingCreateDto {
-    /**
-     * 
-     * @type {string}
-     * @memberof BuildingCreateDto
-     */
-    'name'?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof BuildingCreateDto
-     */
-    'address'?: string | null;
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingCreateDto
-     */
-    'constructionYear'?: number | null;
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingCreateDto
-     */
-    'totalArea'?: number | null;
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingCreateDto
-     */
-    'floors'?: number | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof BuildingCreateDto
-     */
-    'description'?: string | null;
-    /**
-     * 
-     * @type {number}
-     * @memberof BuildingCreateDto
-     */
-    'organizationId'?: number;
-    /**
-     * 
-     * @type {NpgsqlPoint}
-     * @memberof BuildingCreateDto
-     */
-    'coordinates'?: NpgsqlPoint;
 }
 /**
  * 
@@ -530,17 +501,36 @@ export interface DocumentTagRelation {
     'tag'?: DocumentTag;
 }
 /**
- * Request model for updating document metadata
+ * 
  * @export
  * @interface DocumentUpdateRequest
  */
 export interface DocumentUpdateRequest {
     /**
-     * New title of the document
+     * 
      * @type {string}
      * @memberof DocumentUpdateRequest
      */
     'title'?: string | null;
+}
+/**
+ * 
+ * @export
+ * @interface LoginRequest
+ */
+export interface LoginRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof LoginRequest
+     */
+    'email'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof LoginRequest
+     */
+    'password'?: string | null;
 }
 /**
  * 
@@ -628,6 +618,45 @@ export interface Organization {
      * @memberof Organization
      */
     'buildings'?: Array<Building> | null;
+}
+/**
+ * 
+ * @export
+ * @interface ProblemDetails
+ */
+export interface ProblemDetails {
+    [key: string]: any;
+
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'type'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'title'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof ProblemDetails
+     */
+    'status'?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'detail'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'instance'?: string | null;
 }
 /**
  * 
@@ -720,51 +749,21 @@ export interface User {
      */
     'documentPermissions'?: Array<DocumentPermission> | null;
 }
-/**
- * 
- * @export
- * @interface WeatherForecast
- */
-export interface WeatherForecast {
-    /**
-     * 
-     * @type {string}
-     * @memberof WeatherForecast
-     */
-    'date'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof WeatherForecast
-     */
-    'temperatureC'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof WeatherForecast
-     */
-    'summary'?: string | null;
-    /**
-     * 
-     * @type {number}
-     * @memberof WeatherForecast
-     */
-    'temperatureF'?: number;
-}
 
 /**
- * BuildINGApi - axios parameter creator
+ * AuthApi - axios parameter creator
  * @export
  */
-export const BuildINGApiAxiosParamCreator = function (configuration?: Configuration) {
+export const AuthApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
          * 
+         * @param {LoginRequest} [loginRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWeatherForecast: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/weatherforecast`;
+        authLoginPost: async (loginRequest?: LoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/Auth/login`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -772,9 +771,47 @@ export const BuildINGApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(loginRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLogoutPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/Auth/logout`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -787,6 +824,106 @@ export const BuildINGApiAxiosParamCreator = function (configuration?: Configurat
                 options: localVarRequestOptions,
             };
         },
+    }
+};
+
+/**
+ * AuthApi - functional programming interface
+ * @export
+ */
+export const AuthApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = AuthApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @param {LoginRequest} [loginRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authLoginPost(loginRequest?: LoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authLoginPost(loginRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authLoginPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authLogoutPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authLogoutPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authLogoutPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * AuthApi - factory interface
+ * @export
+ */
+export const AuthApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = AuthApiFp(configuration)
+    return {
+        /**
+         * 
+         * @param {LoginRequest} [loginRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLoginPost(loginRequest?: LoginRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.authLoginPost(loginRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLogoutPost(options?: any): AxiosPromise<void> {
+            return localVarFp.authLogoutPost(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * AuthApi - object-oriented interface
+ * @export
+ * @class AuthApi
+ * @extends {BaseAPI}
+ */
+export class AuthApi extends BaseAPI {
+    /**
+     * 
+     * @param {LoginRequest} [loginRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authLoginPost(loginRequest?: LoginRequest, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authLoginPost(loginRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authLogoutPost(options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authLogoutPost(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * BuildINGApi - axios parameter creator
+ * @export
+ */
+export const BuildINGApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
         /**
          * 
          * @param {*} [options] Override http request option.
@@ -804,6 +941,9 @@ export const BuildINGApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -831,17 +971,6 @@ export const BuildINGApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getWeatherForecast(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<WeatherForecast>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWeatherForecast(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['BuildINGApi.getWeatherForecast']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
         async rootGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.rootGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
@@ -863,14 +992,6 @@ export const BuildINGApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWeatherForecast(options?: any): AxiosPromise<Array<WeatherForecast>> {
-            return localVarFp.getWeatherForecast(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
         rootGet(options?: any): AxiosPromise<string> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
         },
@@ -884,16 +1005,6 @@ export const BuildINGApiFactory = function (configuration?: Configuration, baseP
  * @extends {BaseAPI}
  */
 export class BuildINGApi extends BaseAPI {
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof BuildINGApi
-     */
-    public getWeatherForecast(options?: RawAxiosRequestConfig) {
-        return BuildINGApiFp(this.configuration).getWeatherForecast(options).then((request) => request(this.axios, this.basePath));
-    }
-
     /**
      * 
      * @param {*} [options] Override http request option.
@@ -931,6 +1042,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -960,6 +1074,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -988,6 +1105,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1022,6 +1142,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1054,6 +1177,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1089,6 +1215,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -1105,11 +1234,11 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @param {BuildingCreateDto} [buildingCreateDto] 
+         * @param {Building} [building] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost: async (buildingCreateDto?: BuildingCreateDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiBuildingsPost: async (building?: Building, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/Buildings`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1122,6 +1251,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -1129,7 +1261,7 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(buildingCreateDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(building, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1218,12 +1350,12 @@ export const BuildingsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {BuildingCreateDto} [buildingCreateDto] 
+         * @param {Building} [building] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsPost(buildingCreateDto, options);
+        async apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsPost(building, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BuildingsApi.apiBuildingsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1292,12 +1424,12 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
-         * @param {BuildingCreateDto} [buildingCreateDto] 
+         * @param {Building} [building] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: any): AxiosPromise<void> {
-            return localVarFp.apiBuildingsPost(buildingCreateDto, options).then((request) => request(axios, basePath));
+        apiBuildingsPost(building?: Building, options?: any): AxiosPromise<void> {
+            return localVarFp.apiBuildingsPost(building, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1375,13 +1507,13 @@ export class BuildingsApi extends BaseAPI {
 
     /**
      * 
-     * @param {BuildingCreateDto} [buildingCreateDto] 
+     * @param {Building} [building] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsPost(buildingCreateDto, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsPost(building, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1410,6 +1542,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1444,6 +1579,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1476,6 +1614,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1510,6 +1651,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1542,6 +1686,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1577,6 +1724,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -1610,6 +1760,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
             const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
             if (file !== undefined) { 
@@ -1894,8 +2047,7 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1911,6 +2063,9 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1938,8 +2093,7 @@ export const OllamaApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1961,8 +2115,7 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1981,14 +2134,188 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
 export class OllamaApi extends BaseAPI {
     /**
      * 
-     * @summary Sends prompt to Ollama backend and returns response with metadata.
-     * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+     * @param {OllamaRequest} [ollamaRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OllamaApi
      */
     public apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: RawAxiosRequestConfig) {
         return OllamaApiFp(this.configuration).apiOllamaAskPost(ollamaRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * TikaApi - axios parameter creator
+ * @export
+ */
+export const TikaApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaHealthGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/tika/health`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaProcessPost: async (file: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'file' is not null or undefined
+            assertParamExists('apiTikaProcessPost', 'file', file)
+            const localVarPath = `/api/tika/process`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+            if (file !== undefined) { 
+                localVarFormParams.append('File', file as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = localVarFormParams;
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * TikaApi - functional programming interface
+ * @export
+ */
+export const TikaApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = TikaApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTikaHealthGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTikaHealthGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TikaApi.apiTikaHealthGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTikaProcessPost(file: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTikaProcessPost(file, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TikaApi.apiTikaProcessPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * TikaApi - factory interface
+ * @export
+ */
+export const TikaApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = TikaApiFp(configuration)
+    return {
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaHealthGet(options?: any): AxiosPromise<void> {
+            return localVarFp.apiTikaHealthGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {File} file 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaProcessPost(file: File, options?: any): AxiosPromise<void> {
+            return localVarFp.apiTikaProcessPost(file, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * TikaApi - object-oriented interface
+ * @export
+ * @class TikaApi
+ * @extends {BaseAPI}
+ */
+export class TikaApi extends BaseAPI {
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TikaApi
+     */
+    public apiTikaHealthGet(options?: RawAxiosRequestConfig) {
+        return TikaApiFp(this.configuration).apiTikaHealthGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {File} file 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TikaApi
+     */
+    public apiTikaProcessPost(file: File, options?: RawAxiosRequestConfig) {
+        return TikaApiFp(this.configuration).apiTikaProcessPost(file, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

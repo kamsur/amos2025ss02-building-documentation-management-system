@@ -47,8 +47,12 @@ builder.Services.AddSwaggerGen(options =>
 
 
 // Add health check service
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<HealthChecks.TikaHealthCheck>("tika_health_check", tags: new[] { "tika", "ready" });
+
+// Register HttpClient and TikaService
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<BUILD.ING.Services.TikaService>();
 
 var app = builder.Build();
 
