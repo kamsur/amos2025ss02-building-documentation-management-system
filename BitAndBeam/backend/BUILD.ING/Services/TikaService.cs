@@ -114,7 +114,7 @@ namespace BUILD.ING.Services
             try
             {
                 var response = await _client.GetAsync("http://tika:9998/version");
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var version = await response.Content.ReadAsStringAsync();
