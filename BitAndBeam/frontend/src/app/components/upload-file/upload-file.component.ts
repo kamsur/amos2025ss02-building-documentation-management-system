@@ -10,7 +10,7 @@ import { DocumentsApi, Building as ApiBuilding,  OllamaApi, Configuration, Ollam
 import { BuildingService } from '../../services/building.service';
 import { CategoryService } from '../../services/category.service';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
-import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component.js';
+import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
 
 @Component({
   selector: 'app-upload-file',
