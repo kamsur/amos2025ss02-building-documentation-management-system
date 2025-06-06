@@ -23,7 +23,7 @@ namespace BUILD.ING.HealthChecks
             try
             {
                 _logger.LogInformation("Running Tika health check");
-                return await _tikaService.CheckHealthAsync();
+                return await _tikaService.CheckHealthAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

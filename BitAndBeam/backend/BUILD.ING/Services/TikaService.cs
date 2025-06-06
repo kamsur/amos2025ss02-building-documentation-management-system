@@ -32,11 +32,11 @@ namespace BUILD.ING.Services
                 using var content = new ByteArrayContent(fileBytes);
                 content.Headers.Add("Content-Disposition", $"attachment; filename={fileName}");
 
-                var response = await _client.PutAsync("http://tika:9998/tika", content);
+                var response = await _client.PutAsync("http://tika:9998/tika", content).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
+                    return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 }
                 else
                 {
@@ -75,11 +75,11 @@ namespace BUILD.ING.Services
                 using var content = new ByteArrayContent(fileBytes);
                 content.Headers.Add("Content-Disposition", $"attachment; filename={fileName}");
 
-                var response = await _client.PutAsync("http://tika:9998/meta", content);
+                var response = await _client.PutAsync("http://tika:9998/meta", content).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync();
+                    return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 }
                 else
                 {
@@ -113,10 +113,10 @@ namespace BUILD.ING.Services
         {
             try
             {
-                var response = await _client.GetAsync("http://tika:9998/version");
+                var response = await _client.GetAsync("http://tika:9998/version").ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
-                    var version = await response.Content.ReadAsStringAsync();
+                    var version = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     return HealthCheckResult.Healthy($"Tika service is healthy. Version: {version}");
                 }
                 else

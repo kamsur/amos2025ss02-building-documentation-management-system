@@ -56,15 +56,15 @@ namespace BUILD.ING.Controllers
                 byte[] fileBytes;
                 using (var ms = new System.IO.MemoryStream())
                 {
-                    await model.File.CopyToAsync(ms);
+                    await model.File.CopyToAsync(ms).ConfigureAwait(false);
                     fileBytes = ms.ToArray();
                 }
 
                 // Extract text
-                var textResult = await _tikaService.ExtractTextAsync(fileBytes, model.File.FileName);
+                var textResult = await _tikaService.ExtractTextAsync(fileBytes, model.File.FileName).ConfigureAwait(false);
 
                 // Extract metadata
-                var metadataResult = await _tikaService.ExtractMetadataAsync(fileBytes, model.File.FileName);
+                var metadataResult = await _tikaService.ExtractMetadataAsync(fileBytes, model.File.FileName).ConfigureAwait(false);
 
                 // Check for error conditions
                 bool textSuccess = !textResult.Contains("Could not extract text") &&
@@ -143,7 +143,7 @@ namespace BUILD.ING.Controllers
         {
             try
             {
-                var result = await _tikaService.CheckHealthAsync();
+                var result = await _tikaService.CheckHealthAsync().ConfigureAwait(false);
 
                 var response = new
                 {

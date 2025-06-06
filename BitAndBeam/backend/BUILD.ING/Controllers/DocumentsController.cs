@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Text.Json;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using BUILD.ING.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 namespace BUILD.ING.Controllers
 {
     [ApiController]
@@ -59,7 +59,7 @@ namespace BUILD.ING.Controllers
             try
             {
                 _logger.LogInformation($"Extracting metadata from {file.FileName}");
-                var extractedMetadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName);
+                var extractedMetadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
 
                 // Validate that the metadata is valid JSON
                 if (IsValidJson(extractedMetadata))
@@ -85,8 +85,8 @@ namespace BUILD.ING.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName, // Just store file name
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.').ToLower() ?? "unknown",
-                FileSize = (int)file.Length,
-                UploadDate = DateTime.UtcNow, 
+                FileSize = (int) file.Length,
+                UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
                 Status = "draft",
