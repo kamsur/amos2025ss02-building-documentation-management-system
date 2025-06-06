@@ -40,19 +40,23 @@ namespace BUILD.ING.Controllers
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
 
-            using var stream = new FileStream(fullPath, FileMode.Create);
-            await file.CopyToAsync(stream).ConfigureAwait(false);
-
+            // Save file to disk
+            using var fileStream = new FileStream(fullPath, FileMode.Create);
+            await file.CopyToAsync(fileStream).ConfigureAwait(false);
+            
             // Create a memory stream to read the file content for metadata extraction
-            using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream).ConfigureAwait(false);
-            memoryStream.Position = 0;
+            byte[] fileBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.OpenReadStream().CopyToAsync(memoryStream).ConfigureAwait(false);
+                fileBytes = memoryStream.ToArray();
+            }
 
             // Extract metadata using TikaService
-            var fileBytes = memoryStream.ToArray();
             string metadata = "{}";
             try
             {
+                _logger.LogInformation($"Extracting metadata from {file.FileName}");
                 var extractedMetadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName);
 
                 // Validate that the metadata is valid JSON
@@ -68,20 +72,18 @@ namespace BUILD.ING.Controllers
             }
             catch (Exception ex)
             {
+                // Log the error, but continue with the upload process
                 _logger.LogError(ex, $"Error extracting metadata from {file.FileName}. Using empty metadata.");
             }
 
-            // Save file to disk
-            using var fileStream = new FileStream(fullPath, FileMode.Create);
-            memoryStream.Position = 0;
-            await memoryStream.CopyToAsync(fileStream).ConfigureAwait(false);
+            // Create and save the document with the metadata
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
                 FileName = file.FileName,
                 FilePath = file.FileName, // Just store file name
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.').ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
+                FileSize = (int)file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -100,19 +102,7 @@ namespace BUILD.ING.Controllers
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
-            // Process document using Tika
-            try
-            {
-                var metadataResult = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName);
-                document.Metadata = metadataResult;
-                await _context.SaveChangesAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing document metadata");
-            }
-
-            return Ok(new { document.DocumentId, FileUrl = fileUrl });
+            // Return the document ID, URL and metadata
             return Ok(new { document.DocumentId, FileUrl = fileUrl, Metadata = metadata });
         }
 
