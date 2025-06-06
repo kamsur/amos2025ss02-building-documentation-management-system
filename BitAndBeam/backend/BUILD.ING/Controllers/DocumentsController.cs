@@ -1,10 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Text.Json;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using BUILD.ING.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 namespace BUILD.ING.Controllers
 {
     [ApiController]
@@ -44,7 +44,9 @@ namespace BUILD.ING.Controllers
             using var fileStream = new FileStream(fullPath, FileMode.Create);
             await file.CopyToAsync(fileStream).ConfigureAwait(false);
 
+
             // Create a memory stream to read the file content for metadata extraction
+
             byte[] fileBytes;
             using (var memoryStream = new MemoryStream())
             {
