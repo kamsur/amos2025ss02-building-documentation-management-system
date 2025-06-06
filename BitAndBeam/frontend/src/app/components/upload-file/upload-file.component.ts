@@ -8,12 +8,14 @@ import { HttpClientModule } from '@angular/common/http';
 import type { AxiosResponse } from 'axios';
 import { DocumentsApi, Building as ApiBuilding,  OllamaApi, Configuration, OllamaRequest } from '../../../api'; 
 import { BuildingService } from '../../services/building.service';
+import { CategoryService } from '../../services/category.service';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
+import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component.js';
 
 @Component({
   selector: 'app-upload-file',
   standalone: true,
-  imports: [CommonModule, RouterModule, SidebarComponent, FormsModule, HttpClientModule, MarkdownBoldPipe],
+  imports: [CommonModule, RouterModule, SidebarComponent, FormsModule, HttpClientModule, MarkdownBoldPipe, DocumentMetadataPopupComponent],
   templateUrl: './upload-file.component.html',
   styleUrls: ['./upload-file.component.css'],
 })
@@ -24,6 +26,10 @@ export class UploadFileComponent implements OnInit {
   uploadedFile: File | null = null;
   selectedBuildingId: number | null = null;
   buildings: any[] = [];
+  
+  // Metadata popup properties
+  showMetadataPopup = false;
+  uploadedDocumentId: number | null = null;
 
   // AI Chat Properties
   showHistory: boolean = true; 
@@ -38,7 +44,8 @@ export class UploadFileComponent implements OnInit {
   constructor(
     private config: ConfigService,
     private router: Router,
-    public buildingService: BuildingService
+    public buildingService: BuildingService,
+    private categoryService: CategoryService
   ) {
     this.documentsApi = new DocumentsApi(new Configuration({ basePath: this.config.apiUrl }));
     this.ollamaApi = new OllamaApi(new Configuration({ basePath: this.config.apiUrl }));
@@ -83,7 +90,10 @@ export class UploadFileComponent implements OnInit {
         }
 
         this.uploadSuccess = true;
-        this.router.navigate(['/documents', documentId]);
+        this.uploadedDocumentId = documentId;
+        
+        // Show the metadata popup instead of navigating directly
+        this.showMetadataPopup = true;
       })
       .catch(error => {
         this.uploading = false;
@@ -146,6 +156,38 @@ export class UploadFileComponent implements OnInit {
 
   toggleHistory() {
       this.showHistory = !this.showHistory;
+  }
+  
+  // Metadata popup handlers
+  closeMetadataPopup(): void {
+    this.showMetadataPopup = false;
+    
+    // If user closes the popup without saving, navigate to the document view
+    if (this.uploadedDocumentId) {
+      this.router.navigate(['/documents', this.uploadedDocumentId]);
+    }
+  }
+  
+  saveDocumentMetadata(metadata: {categoryId: number, buildingId: number}): void {
+    if (this.uploadedDocumentId) {
+      this.categoryService.assignDocumentCategory(
+        this.uploadedDocumentId, 
+        metadata.categoryId, 
+        metadata.buildingId
+      ).subscribe({
+        next: () => {
+          // Navigate to the document view after metadata is saved
+          this.router.navigate(['/documents', this.uploadedDocumentId]);
+          this.showMetadataPopup = false;
+        },
+        error: (err) => {
+          console.error('Failed to assign document metadata', err);
+          // Still navigate to document view even if metadata assignment fails
+          this.router.navigate(['/documents', this.uploadedDocumentId]);
+          this.showMetadataPopup = false;
+        }
+      });
+    }
   }
 
 }
