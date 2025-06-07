@@ -32,30 +32,8 @@
               </option>
             </optgroup>
           </select>
-          <!-- Create new building button -->
-          <button type="button" class="add-building-button" (click)="toggleCreateBuilding()">{{ showCreateBuilding ? 'Cancel' : 'Create New Building' }}</button>
-        </div>
-      </div>
-      
-      <div class="create-building-section" *ngIf="showCreateBuilding">
-        <div class="form-group">
-          <label for="newBuildingName">New Building Name:</label>
-          <input type="text" id="newBuildingName" [(ngModel)]="newBuildingName" placeholder="Enter building name">
-        </div>
-        
-        <div class="form-group">
-          <label for="sourceBuildingSelect">Create from existing (optional):</label>
-          <select id="sourceBuildingSelect" [(ngModel)]="sourceBuilding">
-            <option [ngValue]="null">Create from scratch</option>
-            <option *ngFor="let building of buildings" [value]="building.id">
-              {{ building.name }}
-            </option>
-          </select>
-        </div>
-        
-        <div class="form-controls">
-          <button type="button" (click)="createNewBuilding()" class="create-button">Create Building</button>
-          <span class="buildings-link" (click)="goToBuildings()">Manage all buildings</span>
+          <!-- Create new building button that navigates to building form -->
+          <button type="button" class="add-building-button" (click)="goToCreateBuilding()">Create New Building</button>
         </div>
       </div>
     </div>
