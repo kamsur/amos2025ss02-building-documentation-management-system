@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BuildingService, Building } from '../../services/building.service';
+import { BuildingService, Building, DocumentResponse } from '../../services/building.service';
 import { CategoryService, Category } from '../../services/category.service';
 import { Router } from '@angular/router';
 
@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
 export class DocumentMetadataPopupComponent implements OnInit {
   @Input() documentId: number | null = null;
   @Input() documentName: string = '';
+  @Input() documentData: DocumentResponse | null = null;
   @Output() closePopup = new EventEmitter<void>();
   @Output() saveMetadata = new EventEmitter<{categoryId: number, buildingId: number}>();
   
@@ -35,6 +36,22 @@ export class DocumentMetadataPopupComponent implements OnInit {
   ngOnInit(): void {
     this.loadBuildings();
     this.loadCategories();
+    this.setInitialValues();
+  }
+  
+  setInitialValues(): void {
+    // If documentData is provided and has a buildingId, preselect that building
+    if (this.documentData && this.documentData.buildingId !== undefined) {
+      this.selectedBuildingId = this.documentData.buildingId;
+    } else {
+      // Otherwise preselect "No Building"
+      this.selectedBuildingId = null;
+    }
+    
+    // If documentData has a categoryId, preselect that category
+    if (this.documentData && this.documentData.categoryId !== undefined) {
+      this.selectedCategoryId = this.documentData.categoryId;
+    }
   }
   
   loadBuildings(): void {

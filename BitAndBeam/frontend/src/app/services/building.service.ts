@@ -14,13 +14,15 @@ export interface DocumentItem {
 }
 
 export interface DocumentResponse {
-  documentId: number; // 👈 add this
+  documentId: number;
   title: string;
   fileName: string;
   filePath?: string;
   fileSize: number;
   fileType: string;
   uploadDate: string;
+  buildingId?: number | null;
+  categoryId?: number | null;
 }
 
 export interface Building {
