@@ -1,4 +1,10 @@
 <div class="popup-overlay">
+  <!-- Notification message -->
+  <div class="notification" *ngIf="showNotification" [ngClass]="{'success': notificationType === 'success', 'error': notificationType === 'error'}">
+    <span class="notification-icon">{{ notificationType === 'success' ? '✅' : '❌' }}</span>
+    <span class="notification-message">{{ notificationMessage }}</span>
+  </div>
+  
   <div class="popup-content">
     <div class="popup-header">
       <h2>Document Details</h2>
@@ -70,7 +76,7 @@
     
     <div class="popup-footer">
       <button class="cancel-button" (click)="onClose()">Cancel</button>
-      <button class="save-button" (click)="onSave()" [disabled]="!selectedBuildingId || !selectedCategoryId">
+      <button class="save-button" (click)="onSave()" [disabled]="(isOtherCategory && !otherCategoryName.trim()) || (!isOtherCategory && !selectedCategoryId)">
         Save
       </button>
     </div>
