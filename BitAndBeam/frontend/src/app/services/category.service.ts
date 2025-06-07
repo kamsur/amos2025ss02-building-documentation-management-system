@@ -44,4 +44,20 @@ export class CategoryService {
     // Here you would make an API call to update the document's category and building
     return from(Promise.resolve());
   }
+  
+  // Create a new category
+  createCategory(category: { name: string }): Observable<Category> {
+    // In a real application, this would send the new category to the backend
+    // For now, we'll just add it to our local array with a new ID
+    const newCategoryId = Math.max(...this.defaultCategories.map(c => c.id)) + 1;
+    const newCategory: Category = {
+      id: newCategoryId,
+      name: category.name
+    };
+    
+    this.defaultCategories.push(newCategory);
+    this.categoriesSubject.next([...this.defaultCategories]);
+    
+    return from(Promise.resolve(newCategory));
+  }
 }
