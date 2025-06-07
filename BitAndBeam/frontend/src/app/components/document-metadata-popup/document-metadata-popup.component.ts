@@ -26,6 +26,12 @@ export class DocumentMetadataPopupComponent implements OnInit {
   isOtherCategory: boolean = false;
   otherCategoryName: string = '';
   readonly OTHER_CATEGORY_OPTION = 'other';
+
+  // Notification properties
+  showNotification: boolean = false;
+  notificationMessage: string = '';
+  notificationType: 'success' | 'error' = 'success';
+  notificationTimeout: any = null;
   
   constructor(
     private buildingService: BuildingService,
@@ -89,8 +95,12 @@ export class DocumentMetadataPopupComponent implements OnInit {
         this.selectedCategoryId = newCategory.id;
         this.isOtherCategory = false;
         this.otherCategoryName = '';
+        this.showSuccessNotification('New category created successfully');
       },
-      error: (err: Error) => console.error('Failed to create category', err)
+      error: (err: Error) => {
+        console.error('Failed to create category', err);
+        this.showErrorNotification('Failed to create category');
+      }
     });
   }
   
@@ -112,7 +122,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
         },
         error: (err: Error) => {
           console.error('Failed to create category', err);
-          alert('Failed to create category');
+          this.showErrorNotification('Failed to create category');
         }
       });
     } else if (this.selectedCategoryId) {
@@ -139,14 +149,53 @@ export class DocumentMetadataPopupComponent implements OnInit {
           buildingId: buildingId || 0
         });
         
-        // Close the popup
-        this.onClose();
+        // Show success notification
+        this.showSuccessNotification('Metadata updated successfully');
+        
+        // Close the popup after a short delay to allow user to see the message
+        setTimeout(() => this.onClose(), 1500);
       },
       error: (err: Error) => {
         console.error('Failed to update document metadata', err);
-        alert('Failed to update document metadata');
+        this.showErrorNotification('Failed to update document metadata');
       }
     });
+  }
+  
+  /**
+   * Show a success notification
+   */
+  private showSuccessNotification(message: string): void {
+    this.notificationType = 'success';
+    this.notificationMessage = message;
+    this.showNotification = true;
+    this.clearNotificationTimeout();
+    this.notificationTimeout = setTimeout(() => {
+      this.showNotification = false;
+    }, 5000);
+  }
+
+  /**
+   * Show an error notification
+   */
+  private showErrorNotification(message: string): void {
+    this.notificationType = 'error';
+    this.notificationMessage = message;
+    this.showNotification = true;
+    this.clearNotificationTimeout();
+    this.notificationTimeout = setTimeout(() => {
+      this.showNotification = false;
+    }, 5000);
+  }
+
+  /**
+   * Clear any existing notification timeout
+   */
+  private clearNotificationTimeout(): void {
+    if (this.notificationTimeout) {
+      clearTimeout(this.notificationTimeout);
+      this.notificationTimeout = null;
+    }
   }
   
   goToCreateBuilding(): void {
