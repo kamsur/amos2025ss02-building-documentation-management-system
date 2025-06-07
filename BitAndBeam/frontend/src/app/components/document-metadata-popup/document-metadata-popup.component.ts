@@ -73,7 +73,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
         this.isOtherCategory = false;
         this.otherCategoryName = '';
       },
-      error: (err) => console.error('Failed to create category', err)
+      error: (err: Error) => console.error('Failed to create category', err)
     });
   }
   
@@ -91,7 +91,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
             buildingId: this.selectedBuildingId || 0
           });
         },
-        error: (err) => console.error('Failed to create category', err)
+        error: (err: Error) => console.error('Failed to create category', err)
       });
     } else if (this.selectedCategoryId) {
       // Using an existing category
