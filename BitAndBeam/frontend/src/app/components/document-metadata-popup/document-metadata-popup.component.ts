@@ -22,9 +22,6 @@ export class DocumentMetadataPopupComponent implements OnInit {
   categories: Category[] = [];
   selectedBuildingId: number | null = null;
   selectedCategoryId: number | null = null;
-  showCreateBuilding: boolean = false;
-  newBuildingName: string = '';
-  sourceBuilding: number | null = null;
   
   constructor(
     private buildingService: BuildingService,
@@ -66,54 +63,12 @@ export class DocumentMetadataPopupComponent implements OnInit {
     }
   }
   
-  toggleCreateBuilding(): void {
-    this.showCreateBuilding = !this.showCreateBuilding;
-    if (!this.showCreateBuilding) {
-      this.newBuildingName = '';
-      this.sourceBuilding = null;
-    }
-  }
-  
-  createNewBuilding(): void {
-    if (!this.newBuildingName.trim()) {
-      alert('Please enter a building name');
-      return;
-    }
+  goToCreateBuilding(): void {
+    // Store current state if needed
+    localStorage.setItem('returnToDocumentMetadata', 'true');
     
-    // Get template from source building if selected
-    if (this.sourceBuilding) {
-      const sourceBuildingObj = this.buildings.find(b => b.id === Number(this.sourceBuilding));
-      if (sourceBuildingObj) {
-        // Clone building with new name
-        this.buildingService.createBuilding({
-          name: this.newBuildingName,
-          // Add any additional properties needed for cloning
-        }, Number(this.sourceBuilding)).subscribe({
-          next: (newBuilding: Building) => {
-            this.buildings.push(newBuilding);
-            this.selectedBuildingId = newBuilding.id;
-            this.toggleCreateBuilding();
-          },
-          error: (err: Error) => console.error('Failed to create building', err)
-        });
-      }
-    } else {
-      // Create new building without template
-      this.buildingService.createBuilding({
-        name: this.newBuildingName
-      }).subscribe({
-        next: (newBuilding: Building) => {
-          this.buildings.push(newBuilding);
-          this.selectedBuildingId = newBuilding.id;
-          this.toggleCreateBuilding();
-        },
-        error: (err: Error) => console.error('Failed to create building', err)
-      });
-    }
-  }
-  
-  goToBuildings(): void {
+    // Close the popup and navigate to building creation page
     this.onClose();
-    this.router.navigate(['/buildings']);
+    this.router.navigate(['/buildings/create']);
   }
 }
