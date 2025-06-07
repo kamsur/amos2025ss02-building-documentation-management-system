@@ -68,7 +68,8 @@
   color: #555;
 }
 
-.building-selection-container {
+.building-selection-container,
+.category-selection-container {
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -88,13 +89,15 @@
 .form-group select optgroup {
   font-weight: bold;
   color: #555;
+  padding: 5px 0;
 }
 
 .form-group select option {
   padding: 5px;
 }
 
-.add-building-button {
+.add-building-button,
+.add-category-button {
   padding: 10px 12px;
   border-radius: 4px;
   background-color: #4caf50;
@@ -106,8 +109,19 @@
   transition: background-color 0.2s;
 }
 
-.add-building-button:hover {
+.add-category-button {
+  padding: 8px 12px;
+  margin-left: 5px;
+}
+
+.add-building-button:hover,
+.add-category-button:hover:not([disabled]) {
   background-color: #45a049;
+}
+
+.add-category-button[disabled] {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .create-building-section {
@@ -172,6 +186,24 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.other-category-input {
+  margin-top: 10px;
+  animation: fade-in 0.3s ease-out;
+}
+
+.inline-input-group {
+  display: flex;
+  align-items: center;
+}
+
+.other-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
 .popup-footer {
