@@ -99,28 +99,54 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
   
   onSave(): void {
+    if (!this.documentId) {
+      alert('No document ID available');
+      return;
+    }
+
     if (this.isOtherCategory && this.otherCategoryName.trim()) {
       // If using a custom category, create it first then save
       this.categoryService.createCategory({ name: this.otherCategoryName }).subscribe({
         next: (newCategory: Category) => {
-          this.saveMetadata.emit({
-            categoryId: newCategory.id,
-            buildingId: this.selectedBuildingId || 0
-          });
+          this.updateDocumentMetadata(this.documentId!, newCategory.id, this.selectedBuildingId);
         },
-        error: (err: Error) => console.error('Failed to create category', err)
+        error: (err: Error) => {
+          console.error('Failed to create category', err);
+          alert('Failed to create category');
+        }
       });
     } else if (this.selectedCategoryId) {
       // Using an existing category
-      this.saveMetadata.emit({
-        categoryId: this.selectedCategoryId,
-        buildingId: this.selectedBuildingId || 0
-      });
+      this.updateDocumentMetadata(this.documentId, this.selectedCategoryId, this.selectedBuildingId);
     } else if (!this.isOtherCategory) {
       alert('Please select a category');
     } else {
       alert('Please enter a name for the new category');
     }
+  }
+  
+  private updateDocumentMetadata(documentId: number, categoryId: number, buildingId: number | null): void {
+    // Use OpenAPI client to update document metadata
+    this.categoryService.assignDocumentCategory(
+      documentId,
+      categoryId,
+      buildingId || 0
+    ).subscribe({
+      next: () => {
+        // Emit event for parent components that may need to know about the update
+        this.saveMetadata.emit({
+          categoryId: categoryId,
+          buildingId: buildingId || 0
+        });
+        
+        // Close the popup
+        this.onClose();
+      },
+      error: (err: Error) => {
+        console.error('Failed to update document metadata', err);
+        alert('Failed to update document metadata');
+      }
+    });
   }
   
   goToCreateBuilding(): void {
