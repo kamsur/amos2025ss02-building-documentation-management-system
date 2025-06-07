@@ -68,6 +68,12 @@
   color: #555;
 }
 
+.building-selection-container {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
 .form-group select {
   width: 100%;
   padding: 10px;
@@ -76,6 +82,96 @@
   font-size: 1rem;
   color: #333;
   background-color: #fff;
+  flex: 1;
+}
+
+.form-group select optgroup {
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group select option {
+  padding: 5px;
+}
+
+.add-building-button {
+  padding: 10px 12px;
+  border-radius: 4px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.add-building-button:hover {
+  background-color: #45a049;
+}
+
+.create-building-section {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  animation: fade-in 0.3s ease-out;
+}
+
+.create-building-section .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.create-building-section input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-controls {
+  display: flex;
+  margin-top: 15px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.create-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.create-button:hover {
+  background-color: #0069d9;
+}
+
+.buildings-link {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.buildings-link:hover {
+  color: #0056b3;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .popup-footer {
