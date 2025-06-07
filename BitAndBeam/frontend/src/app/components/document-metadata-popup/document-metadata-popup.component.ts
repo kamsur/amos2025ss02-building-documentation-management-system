@@ -22,6 +22,9 @@ export class DocumentMetadataPopupComponent implements OnInit {
   categories: Category[] = [];
   selectedBuildingId: number | null = null;
   selectedCategoryId: number | null = null;
+  isOtherCategory: boolean = false;
+  otherCategoryName: string = '';
+  readonly OTHER_CATEGORY_OPTION = 'other';
   
   constructor(
     private buildingService: BuildingService,
@@ -48,18 +51,58 @@ export class DocumentMetadataPopupComponent implements OnInit {
     });
   }
   
+  onCategoryChange(value: string | null): void {
+    if (value === this.OTHER_CATEGORY_OPTION) {
+      this.isOtherCategory = true;
+      this.selectedCategoryId = null;
+    } else {
+      this.isOtherCategory = false;
+    }
+  }
+  
+  createNewCategory(): void {
+    if (!this.otherCategoryName.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+    
+    this.categoryService.createCategory({ name: this.otherCategoryName }).subscribe({
+      next: (newCategory: Category) => {
+        this.categories.push(newCategory);
+        this.selectedCategoryId = newCategory.id;
+        this.isOtherCategory = false;
+        this.otherCategoryName = '';
+      },
+      error: (err) => console.error('Failed to create category', err)
+    });
+  }
+  
   onClose(): void {
     this.closePopup.emit();
   }
   
   onSave(): void {
-    if (this.selectedCategoryId) {
+    if (this.isOtherCategory && this.otherCategoryName.trim()) {
+      // If using a custom category, create it first then save
+      this.categoryService.createCategory({ name: this.otherCategoryName }).subscribe({
+        next: (newCategory: Category) => {
+          this.saveMetadata.emit({
+            categoryId: newCategory.id,
+            buildingId: this.selectedBuildingId || 0
+          });
+        },
+        error: (err) => console.error('Failed to create category', err)
+      });
+    } else if (this.selectedCategoryId) {
+      // Using an existing category
       this.saveMetadata.emit({
         categoryId: this.selectedCategoryId,
         buildingId: this.selectedBuildingId || 0
       });
-    } else {
+    } else if (!this.isOtherCategory) {
       alert('Please select a category');
+    } else {
+      alert('Please enter a name for the new category');
     }
   }
   
