@@ -1,3 +1,7 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using BUILD.ING.Services;
@@ -193,5 +197,117 @@ namespace BUILD.ING.Controllers
 
             return File(fileBytes, contentType);
         }
+
+        [HttpPost("upload-and-analyze")]
+        public async Task<IActionResult> UploadAndAnalyzeDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("File is required");
+
+            // Save file temporarily
+            byte[] fileBytes;
+            using (var ms = new MemoryStream())
+            {
+                await file.CopyToAsync(ms).ConfigureAwait(false);
+                fileBytes = ms.ToArray();
+            }
+
+            // Step 1: Extract text using Tika
+            var extractedText = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
+            var shortText = extractedText.Length > 3000 ? extractedText.Substring(0, 3000) : extractedText;
+
+            // Step 2: Prompt Ollama
+            var prompt = $$"""
+            From the following document text, extract the full address if available.
+
+            ⚠️ Respond ONLY with a strict JSON object with the following keys:
+            - "street"
+            - "house_number"
+            - "zip_code"
+            - "city"
+
+            All values must be strings or null. DO NOT return markdown or explanation.
+
+            Example:
+            {
+            "street": "Riedener Str.",
+            "house_number": "1a",
+            "zip_code": "90518",
+            "city": "Altdorf"
+            }
+
+            Text:
+            {{shortText}}
+            """;
+
+            var client = httpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromMinutes(5);
+
+            var payload = new { prompt };
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync("http://ollama:8000/api/Ollama/ask", content).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+                return StatusCode(503, "Ollama service is unreachable");
+
+
+            var ollamaResultJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var ollamaResult = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
+                ollamaResultJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+
+            Dictionary<string, string>? parsedJson;
+            try
+            {
+                parsedJson = JsonSerializer.Deserialize<Dictionary<string, string>>(ollamaResult?.Response ?? "{}", new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch
+            {
+                parsedJson = null;
+            }
+
+            string? street = parsedJson?.GetValueOrDefault("street");
+            string? houseNumber = parsedJson?.GetValueOrDefault("house_number");
+            string? zipCode = parsedJson?.GetValueOrDefault("zip_code");
+            string? city = parsedJson?.GetValueOrDefault("city");
+
+            // Step 3: Try to match building
+            Building? matchedBuilding = null;
+
+            if (!string.IsNullOrWhiteSpace(street) && !string.IsNullOrWhiteSpace(zipCode))
+            {
+                var buildings = _context.Buildings.ToList();
+                foreach (var building in buildings)
+                {
+                    var buildingAddress = building.Address?.ToLowerInvariant() ?? "";
+
+                    bool matchesStreet = buildingAddress.Contains(street.ToLowerInvariant());
+                    bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) || buildingAddress.Contains(houseNumber.ToLowerInvariant());
+                    bool matchesZip = buildingAddress.Contains(zipCode);
+
+                    if (matchesStreet && matchesHouse && matchesZip)
+                    {
+                        matchedBuilding = building;
+                        break;
+                    }
+                }
+            }
+
+            return Ok(new
+            {
+                textExtracted = extractedText.Length > 0,
+                ollamaResponse = parsedJson,
+                building = matchedBuilding != null
+                    ? new { matchedBuilding.BuildingId, matchedBuilding.Address }
+                    : null
+            });
+        }
+
     }
 }
