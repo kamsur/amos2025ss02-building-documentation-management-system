@@ -117,6 +117,61 @@ export interface Building {
 /**
  * 
  * @export
+ * @interface BuildingCreateDto
+ */
+export interface BuildingCreateDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'name'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'address'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'constructionYear'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'totalArea'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'floors'?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'description'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingCreateDto
+     */
+    'organizationId'?: number;
+    /**
+     * 
+     * @type {NpgsqlPoint}
+     * @memberof BuildingCreateDto
+     */
+    'coordinates'?: NpgsqlPoint;
+}
+/**
+ * 
+ * @export
  * @interface BuildingDocumentRelation
  */
 export interface BuildingDocumentRelation {
@@ -573,6 +628,45 @@ export interface Organization {
      * @memberof Organization
      */
     'buildings'?: Array<Building> | null;
+}
+/**
+ * 
+ * @export
+ * @interface ProblemDetails
+ */
+export interface ProblemDetails {
+    [key: string]: any;
+
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'type'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'title'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof ProblemDetails
+     */
+    'status'?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'detail'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProblemDetails
+     */
+    'instance'?: string | null;
 }
 /**
  * 
@@ -1050,11 +1144,11 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @param {Building} [building] 
+         * @param {BuildingCreateDto} [buildingCreateDto] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost: async (building?: Building, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiBuildingsPost: async (buildingCreateDto?: BuildingCreateDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/Buildings`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1074,7 +1168,7 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(building, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(buildingCreateDto, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1163,12 +1257,12 @@ export const BuildingsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {Building} [building] 
+         * @param {BuildingCreateDto} [buildingCreateDto] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsPost(building, options);
+        async apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsPost(buildingCreateDto, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BuildingsApi.apiBuildingsPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1237,12 +1331,12 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
-         * @param {Building} [building] 
+         * @param {BuildingCreateDto} [buildingCreateDto] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsPost(building?: Building, options?: any): AxiosPromise<void> {
-            return localVarFp.apiBuildingsPost(building, options).then((request) => request(axios, basePath));
+        apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: any): AxiosPromise<void> {
+            return localVarFp.apiBuildingsPost(buildingCreateDto, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1320,13 +1414,13 @@ export class BuildingsApi extends BaseAPI {
 
     /**
      * 
-     * @param {Building} [building] 
+     * @param {BuildingCreateDto} [buildingCreateDto] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BuildingsApi
      */
-    public apiBuildingsPost(building?: Building, options?: RawAxiosRequestConfig) {
-        return BuildingsApiFp(this.configuration).apiBuildingsPost(building, options).then((request) => request(this.axios, this.basePath));
+    public apiBuildingsPost(buildingCreateDto?: BuildingCreateDto, options?: RawAxiosRequestConfig) {
+        return BuildingsApiFp(this.configuration).apiBuildingsPost(buildingCreateDto, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1934,6 +2028,181 @@ export class OllamaApi extends BaseAPI {
      */
     public apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: RawAxiosRequestConfig) {
         return OllamaApiFp(this.configuration).apiOllamaAskPost(ollamaRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * TikaApi - axios parameter creator
+ * @export
+ */
+export const TikaApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Checks if the Tika server is available and responding
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaHealthGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/tika/health`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Receives a document file and returns both extracted text content and structured metadata in a single response.
+         * @param {File} [file] The file being uploaded
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaProcessPost: async (file?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/tika/process`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+
+            if (file !== undefined) { 
+                localVarFormParams.append('File', file as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = localVarFormParams;
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * TikaApi - functional programming interface
+ * @export
+ */
+export const TikaApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = TikaApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Checks if the Tika server is available and responding
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTikaHealthGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTikaHealthGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TikaApi.apiTikaHealthGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Receives a document file and returns both extracted text content and structured metadata in a single response.
+         * @param {File} [file] The file being uploaded
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiTikaProcessPost(file?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTikaProcessPost(file, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['TikaApi.apiTikaProcessPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * TikaApi - factory interface
+ * @export
+ */
+export const TikaApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = TikaApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Checks if the Tika server is available and responding
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaHealthGet(options?: any): AxiosPromise<void> {
+            return localVarFp.apiTikaHealthGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Receives a document file and returns both extracted text content and structured metadata in a single response.
+         * @param {File} [file] The file being uploaded
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiTikaProcessPost(file?: File, options?: any): AxiosPromise<void> {
+            return localVarFp.apiTikaProcessPost(file, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * TikaApi - object-oriented interface
+ * @export
+ * @class TikaApi
+ * @extends {BaseAPI}
+ */
+export class TikaApi extends BaseAPI {
+    /**
+     * 
+     * @summary Checks if the Tika server is available and responding
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TikaApi
+     */
+    public apiTikaHealthGet(options?: RawAxiosRequestConfig) {
+        return TikaApiFp(this.configuration).apiTikaHealthGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Receives a document file and returns both extracted text content and structured metadata in a single response.
+     * @param {File} [file] The file being uploaded
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof TikaApi
+     */
+    public apiTikaProcessPost(file?: File, options?: RawAxiosRequestConfig) {
+        return TikaApiFp(this.configuration).apiTikaProcessPost(file, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
