@@ -37,11 +37,11 @@ namespace BUILD.ING.Controllers
             var building = new Building
             {
                 Name = dto.Name,
-                building.StreetName = buildingCreateDto.StreetName,
-                building.HouseNumber = buildingCreateDto.HouseNumber,
-                building.PostalCode = buildingCreateDto.PostalCode,
-                building.City = buildingCreateDto.City,
-                building.Country = buildingCreateDto.Country,
+                StreetName = buildingCreateDto.StreetName,
+                HouseNumber = buildingCreateDto.HouseNumber,
+                PostalCode = buildingCreateDto.PostalCode,
+                City = buildingCreateDto.City,
+                Country = buildingCreateDto.Country,
 
                 ConstructionYear = dto.ConstructionYear,
                 TotalArea = dto.TotalArea,
