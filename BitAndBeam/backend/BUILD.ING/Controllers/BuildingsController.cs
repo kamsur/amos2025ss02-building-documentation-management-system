@@ -37,12 +37,11 @@ namespace BUILD.ING.Controllers
             var building = new Building
             {
                 Name = dto.Name,
-                StreetName = buildingCreateDto.StreetName,
-                HouseNumber = buildingCreateDto.HouseNumber,
-                PostalCode = buildingCreateDto.PostalCode,
-                City = buildingCreateDto.City,
-                Country = buildingCreateDto.Country,
-
+                StreetName = dto.StreetName,
+                HouseNumber = dto.HouseNumber,
+                PostalCode = dto.PostalCode,
+                City = dto.City,
+                Country = dto.Country,
                 ConstructionYear = dto.ConstructionYear,
                 TotalArea = dto.TotalArea,
                 Floors = dto.Floors,
@@ -109,7 +108,11 @@ namespace BUILD.ING.Controllers
 
             // Update only editable fields
             existingBuilding.Name = updatedBuilding.Name;
-            existingBuilding.Address = updatedBuilding.Address;
+            existingBuilding.StreetName = updatedBuilding.StreetName;
+            existingBuilding.StreetNumber = updatedBuilding.StreetNumber;
+            existingBuilding.PostalCode = updatedBuilding.PostalCode;
+            existingBuilding.City = updatedBuilding.City;
+            existingBuilding.Country = updatedBuilding.Country;
             existingBuilding.ConstructionYear = updatedBuilding.ConstructionYear;
             existingBuilding.TotalArea = updatedBuilding.TotalArea;
             existingBuilding.Floors = updatedBuilding.Floors;
