@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, from } from 'rxjs';
 import { ConfigService } from '../config.service';
 import { Configuration, DocumentsApi } from '../../api';
+import { HttpClient } from '@angular/common/http';
 
 export interface Category {
   id: number;
@@ -26,7 +27,7 @@ export class CategoryService {
     { id: 8, name: 'Other' }
   ];
 
-  constructor(private config: ConfigService) {
+  constructor(private config: ConfigService, private http: HttpClient) {
     const configuration = new Configuration({ basePath: this.config.apiUrl });
     this.documentsApi = new DocumentsApi(configuration);
     
@@ -40,11 +41,12 @@ export class CategoryService {
 
   // In a real application, this would send the document category to the backend
   assignDocumentCategory(documentId: number, categoryId: number, buildingId: number): Observable<any> {
-    // Use the OpenAPI client to update document metadata (category and building)
-    return this.documentsApi.apiDocumentsIdPut(documentId, {
-      categoryId: categoryId,
-      buildingId: buildingId
-    });
+    // Fallback: Use HttpClient to send a PATCH request to update categoryId and buildingId
+    // Adjust the URL and payload as per your backend API
+    return this.http.patch<any>(
+      `${this.config.apiUrl}/api/Documents/${documentId}`,
+      { categoryId, buildingId }
+    );
   }
   
   // Create a new category
