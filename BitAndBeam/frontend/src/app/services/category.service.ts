@@ -39,10 +39,12 @@ export class CategoryService {
   }
 
   // In a real application, this would send the document category to the backend
-  assignDocumentCategory(documentId: number, categoryId: number, buildingId: number): Observable<void> {
-    console.log(`Assigning document ${documentId} to category ${categoryId} and building ${buildingId}`);
-    // Here you would make an API call to update the document's category and building
-    return from(Promise.resolve());
+  assignDocumentCategory(documentId: number, categoryId: number, buildingId: number): Observable<any> {
+    // Use the OpenAPI client to update document metadata (category and building)
+    return this.documentsApi.apiDocumentsIdPut(documentId, {
+      categoryId: categoryId,
+      buildingId: buildingId
+    });
   }
   
   // Create a new category
