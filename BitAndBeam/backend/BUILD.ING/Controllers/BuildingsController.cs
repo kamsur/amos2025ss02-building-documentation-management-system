@@ -109,7 +109,7 @@ namespace BUILD.ING.Controllers
             // Update only editable fields
             existingBuilding.Name = updatedBuilding.Name;
             existingBuilding.StreetName = updatedBuilding.StreetName;
-            existingBuilding.StreetNumber = updatedBuilding.StreetNumber;
+            existingBuilding.HouseNumber = updatedBuilding.HouseNumber;
             existingBuilding.PostalCode = updatedBuilding.PostalCode;
             existingBuilding.City = updatedBuilding.City;
             existingBuilding.Country = updatedBuilding.Country;
