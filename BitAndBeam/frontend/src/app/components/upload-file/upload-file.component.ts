@@ -176,18 +176,30 @@ export class UploadFileComponent implements OnInit {
         metadata.buildingId
       ).subscribe({
         next: () => {
-          // Navigate to the document view after metadata is saved
-          this.router.navigate(['/documents', this.uploadedDocumentId]);
           this.showMetadataPopup = false;
+          this.refreshDocuments(); // Refresh the document/building list after update
         },
         error: (err) => {
           console.error('Failed to assign document metadata', err);
-          // Still navigate to document view even if metadata assignment fails
-          this.router.navigate(['/documents', this.uploadedDocumentId]);
           this.showMetadataPopup = false;
+          this.refreshDocuments();
         }
       });
     }
+  }
+
+  // Refresh the building and document list after update
+  refreshDocuments(): void {
+    // Reload buildings (which include documents)
+    this.buildingService.getBuildings().subscribe({
+      next: (data) => this.buildings = data,
+      error: (err) => console.error('Failed to refresh buildings', err)
+    });
+    // Optionally, reset upload state
+    this.uploadedFile = null;
+    this.uploadSuccess = false;
+    this.uploadError = '';
+    this.uploadedDocumentId = null;
   }
 
 }
