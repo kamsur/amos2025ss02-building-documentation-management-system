@@ -22,7 +22,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 #To allow configurable ports via environment variable
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS= "http://+:5000;https://+:5001"
 
 # Kopiere die Datei ins Image
 COPY wait-for-it.sh wait-for-it.sh
