@@ -44,7 +44,8 @@ export class CreateBuildingComponent {
   }
 
   submitForm() {
-    if (!this.building.name?.trim() || !this.building.address?.trim() || !this.building.organizationId) {
+    if (!this.building.name?.trim() || !this.building.streetName?.trim() || !this.building.houseNumber?.trim() || !this.building.postalCode?.trim() 
+      || !this.building.city?.trim() || !this.building.country?.trim() || !this.building.organizationId) {
       this.errorMessage = 'Name, Address, and Organization are required.';
       return;
     }
@@ -56,7 +57,11 @@ export class CreateBuildingComponent {
 
     const building: Partial<ApiBuilding> = {
       name: this.building.name,
-      address: this.building.address,
+      streetName: this.building.streetName,
+      houseNumber: this.building.houseNumber,
+      postalCode: this.building.postalCode,
+      city: this.building.city,
+      country: this.building.country,
       constructionYear: this.building.constructionYear,
       totalArea: this.building.totalArea,
       floors: this.building.floors,
