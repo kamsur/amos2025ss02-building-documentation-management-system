@@ -22,7 +22,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 #To allow configurable ports via environment variable
-ENV ASPNETCORE_URLS= "http://+:5000;https://+:5001"
+ENV ASPNETCORE_URLS="http://+:5000;https://+:5001"
 
 # Copy HTTPS certificate into container
 COPY https-dev-cert.pfx /https/aspnetapp.pfx
