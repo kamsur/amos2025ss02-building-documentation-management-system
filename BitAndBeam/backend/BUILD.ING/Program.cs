@@ -107,6 +107,19 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
+// Configure Kestrel to use HTTPS with certificate
+var certificatePath = builder.Configuration["ASPNETCORE_Kestrel__Certificates__Default__Path"];
+var certificatePassword = builder.Configuration["ASPNETCORE_Kestrel__Certificates__Default__Password"];
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5001, listenOptions =>
+    {
+        listenOptions.UseHttps(certificatePath, certificatePassword);  // Use the provided certificate and password
+    });
+});
+
+
 // Add health check service
 builder.Services.AddHealthChecks()
     .AddCheck<BUILD.ING.HealthChecks.TikaHealthCheck>("tika_health_check", tags: new[] { "tika", "ready" });
@@ -154,6 +167,11 @@ builder.Services.AddAuthentication(options =>
 
 
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // ---------- ADD AUTHENTICATION MIDDLEWARE ----------
 // This middleware will authenticate the JWT token in incoming requests
