@@ -22,7 +22,11 @@ export class CreateBuildingComponent {
   // Initialize the building object
   building: Partial<ApiBuilding> & { latitude?: number; longitude?: number } = {
     name: '',
-    address: '',
+    streetName: '',
+    houseNumber:'',
+    postalCode: '',
+    city: '',
+    country: '',
     constructionYear: null,
     totalArea: null,
     floors: null,
