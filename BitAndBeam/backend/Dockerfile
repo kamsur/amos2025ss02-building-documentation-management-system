@@ -27,6 +27,10 @@ ENV ASPNETCORE_URLS= "http://+:5000;https://+:5001"
 # Copy HTTPS certificate into container
 COPY https-dev-cert.pfx /https/aspnetapp.pfx
 
+# Set environment variables for the HTTPS certificate
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password=MySecurePass123
+
 # Kopiere die Datei ins Image
 COPY wait-for-it.sh wait-for-it.sh
 
@@ -38,6 +42,7 @@ COPY --from=build /app/BUILD.ING/out ./
 
 # Expose port
 EXPOSE 5000
+EXPOSE 5001
 
 # Starte das Backend erst, wenn PostgreSQL bereit ist
 ENTRYPOINT ["./wait-for-it.sh", "postgres:5432", "--", "dotnet", "Build.ING.dll"]
