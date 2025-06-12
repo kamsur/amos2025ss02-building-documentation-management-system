@@ -24,6 +24,9 @@ WORKDIR /app
 #To allow configurable ports via environment variable
 ENV ASPNETCORE_URLS= "http://+:5000;https://+:5001"
 
+# Copy HTTPS certificate into container
+COPY https-dev-cert.pfx /https/aspnetapp.pfx
+
 # Kopiere die Datei ins Image
 COPY wait-for-it.sh wait-for-it.sh
 
