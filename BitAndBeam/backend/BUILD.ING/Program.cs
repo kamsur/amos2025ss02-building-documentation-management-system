@@ -120,7 +120,7 @@ builder.WebHost.ConfigureKestrel(options =>
         listenOptions.UseHttps(certificatePath, certificatePassword);  // Use the provided certificate and password
     });
 });
-
+*/
 
 // Add health check service
 builder.Services.AddHealthChecks()
