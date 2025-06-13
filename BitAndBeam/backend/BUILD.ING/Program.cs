@@ -167,13 +167,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
 var app = builder.Build();
 
+/*
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+*/
 
 // ---------- ADD AUTHENTICATION MIDDLEWARE ----------
 // This middleware will authenticate the JWT token in incoming requests
@@ -221,7 +223,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(MyAllowSpecificOrigins);
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();  // must be before Authorization
 
