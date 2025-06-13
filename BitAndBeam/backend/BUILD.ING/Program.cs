@@ -106,11 +106,13 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
+/*
 // Configure Kestrel to use HTTPS with certificate
 var certificatePath = builder.Configuration["ASPNETCORE_Kestrel__Certificates__Default__Path"];
 var certificatePassword = builder.Configuration["ASPNETCORE_Kestrel__Certificates__Default__Password"];
+*/
 
+/*
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(5001, listenOptions =>
