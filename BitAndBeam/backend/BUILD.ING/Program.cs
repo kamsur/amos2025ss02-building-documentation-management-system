@@ -147,7 +147,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = true; // Set to false if testing without HTTPS
+    options.RequireHttpsMetadata = false; // Set to false if testing without HTTPS
     options.SaveToken = true;
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {
