@@ -103,6 +103,11 @@ namespace BUILD.ING.Controllers
             if (existingBuilding == null)
                 return NotFound();
 
+            // If the incoming organizationId is null or 0, preserve existing one
+            if (updatedBuilding.OrganizationId == 0)
+                updatedBuilding.OrganizationId = existingBuilding.OrganizationId;
+    
+
             _context.Entry(existingBuilding).CurrentValues.SetValues(updatedBuilding);
 
 
