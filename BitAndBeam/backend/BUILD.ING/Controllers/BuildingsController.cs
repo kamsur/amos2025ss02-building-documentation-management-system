@@ -106,7 +106,6 @@ namespace BUILD.ING.Controllers
             // If the incoming organizationId is null or 0, preserve existing one
             if (updatedBuilding.OrganizationId == 0)
                 updatedBuilding.OrganizationId = existingBuilding.OrganizationId;
-    
 
             _context.Entry(existingBuilding).CurrentValues.SetValues(updatedBuilding);
 
