@@ -18,7 +18,11 @@ CREATE TABLE "users" (
 CREATE TABLE "buildings" (
     "building_id" SERIAL PRIMARY KEY,
     "name" VARCHAR(100) NOT NULL,
-    "address" TEXT,
+    "StreetName" TEXT NOT NULL,
+    "HouseNumber" TEXT NOT NULL,
+    "PostalCode" TEXT NOT NULL,
+    "City" TEXT NOT NULL,
+    "Country" TEXT,
     "construction_year" INTEGER,
     "total_area" DECIMAL(10, 2),
     "floors" INTEGER,
