@@ -1,5 +1,19 @@
-// ----------------- SETUP -----------------
-// Using directives and configuration setup
+/*
+ * PROGRAM STRUCTURE:
+ * -----------------------------------------------------
+ * 1. Setup & Logging (Serilog)
+ * 2. CORS Policy
+ * 3. Controllers & Global Authorization
+ * 4. Database Connection & Services
+ * 5. Swagger & API Docs
+ * 6. JWT Authentication Configuration
+ * 7. Middleware (Trace ID, Swagger, Auth)
+ * 8. Routing & Health Checks
+ */
+
+// ================================================== //
+// 🔧 SETUP & LOGGING
+// ================================================== //
 using System.Diagnostics;          // Added: for Activity (trace IDs)
 using BUILD.ING.Data;
 using BUILD.ING.Data.Seed;
@@ -35,7 +49,9 @@ builder.Host.UseSerilog();
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"⛳ Connection String: {conn ?? "null"}");
 
-// ----------------- CORS POLICY -----------------
+// ================================================== //
+// 🌐 CORS POLICY
+// ================================================== //
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 builder.Services.AddCors(options =>
@@ -52,7 +68,9 @@ builder.Services.AddCors(options =>
 
 
 
-// ----------------- GLOBAL AUTHORIZATION POLICY -----------------
+// ================================================== //
+// 🔒 GLOBAL AUTHORIZATION FOR CONTROLLERS
+// ================================================== //
 builder.Services.AddControllers(options =>
 {
     var policy = new AuthorizationPolicyBuilder()
@@ -61,7 +79,10 @@ builder.Services.AddControllers(options =>
 
     options.Filters.Add(new AuthorizeFilter(policy));
 });
-// ----------------- DATABASE & SERVICES -----------------
+
+// ================================================== //
+// 🗃️ DATABASE & CORE SERVICES
+// ================================================== //
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
            .EnableSensitiveDataLogging()
@@ -231,7 +252,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// ----------------- PUBLIC ROUTES -----------------
+// ================================================== //
+// 🌤️ SAMPLE ROUTES & HEALTH ENDPOINTS
+// ================================================== //
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
