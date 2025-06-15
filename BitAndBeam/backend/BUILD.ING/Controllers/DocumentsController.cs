@@ -218,22 +218,23 @@ namespace BUILD.ING.Controllers
 
             // Step 2: Prompt Ollama
             var prompt = $$"""
-            From the following document text, extract the full address if available.
+            The following is the extracted text from a German document. Your task is to identify if it contains an address under the field "Adresse" or in free text.
 
-            ⚠️ Respond ONLY with a strict JSON object with the following keys:
-            - "street"
-            - "house_number"
-            - "zip_code"
-            - "city"
+            Extract the address **only if it looks like a valid building address**, and return the result in JSON format with the following 4 fields:
+
+            - street
+            - houseNumber
+            - zipCode
+            - city
 
             All values must be strings or null. DO NOT return markdown or explanation.
 
             Example:
             {
-            "street": "Riedener Str.",
-            "house_number": "1a",
-            "zip_code": "90518",
-            "city": "Altdorf"
+                "street": "Riedener Str.",
+                "house_number": "1a",
+                "zip_code": "90518",
+                "city": "Altdorf"
             }
 
             Text:
@@ -285,13 +286,14 @@ namespace BUILD.ING.Controllers
                 var buildings = _context.Buildings.ToList();
                 foreach (var building in buildings)
                 {
-                    var buildingAddress = building.Address?.ToLowerInvariant() ?? "";
+                    bool matchesStreet = string.Equals(building.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) ||
+                                        string.Equals(building.HouseNumber?.Trim(), houseNumber?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool matchesZip = string.Equals(building.PostalCode?.Trim(), zipCode?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool matchesCity = string.IsNullOrWhiteSpace(city) ||
+                                    string.Equals(building.City?.Trim(), city?.Trim(), StringComparison.OrdinalIgnoreCase);
 
-                    bool matchesStreet = buildingAddress.Contains(street.ToLowerInvariant());
-                    bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) || buildingAddress.Contains(houseNumber.ToLowerInvariant());
-                    bool matchesZip = buildingAddress.Contains(zipCode);
-
-                    if (matchesStreet && matchesHouse && matchesZip)
+                    if (matchesStreet && matchesHouse && matchesZip && matchesCity)
                     {
                         matchedBuilding = building;
                         break;
@@ -304,7 +306,14 @@ namespace BUILD.ING.Controllers
                 textExtracted = extractedText.Length > 0,
                 ollamaResponse = parsedJson,
                 building = matchedBuilding != null
-                    ? new { matchedBuilding.BuildingId, matchedBuilding.Address }
+                    ? new
+                    {
+                        matchedBuilding.BuildingId,
+                        matchedBuilding.StreetName,
+                        matchedBuilding.HouseNumber,
+                        matchedBuilding.PostalCode,
+                        matchedBuilding.City
+                    }
                     : null
             });
         }
