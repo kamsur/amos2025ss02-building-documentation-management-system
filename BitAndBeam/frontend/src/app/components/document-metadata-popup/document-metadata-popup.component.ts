@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BuildingService, Building, DocumentResponse } from '../../services/building.service';
 import { CategoryService, Category } from '../../services/category.service';
-import { Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-document-metadata-popup',
@@ -35,8 +35,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
   
   constructor(
     private buildingService: BuildingService,
-    private categoryService: CategoryService,
-    private router: Router
+    private categoryService: CategoryService
   ) {}
   
   ngOnInit(): void {
@@ -196,14 +195,5 @@ export class DocumentMetadataPopupComponent implements OnInit {
       clearTimeout(this.notificationTimeout);
       this.notificationTimeout = null;
     }
-  }
-  
-  goToCreateBuilding(): void {
-    // Store current state if needed
-    localStorage.setItem('returnToDocumentMetadata', 'true');
-    
-    // Close the popup and navigate to building creation page
-    this.onClose();
-    this.router.navigate(['/buildings/create']);
   }
 }
