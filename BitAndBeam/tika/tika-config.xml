@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tika-config xmlns="http://tika.apache.org/tika-config">
+    <!-- Enable OCR with Tesseract -->
+    <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
+        <params>
+            <!-- Auto means Tika will pick best strategy depending on doc type -->
+            <param name="ocrStrategy" value="auto"/>
+            <param name="language" value="eng+deu+fra"/>
+            <!-- Performance limits -->
+            <param name="ocrTimeoutMillis" value="20000"/>
+        </params>
+    </parser>
+
+    <!-- Limit overall text extraction size for safety -->
+    <overrideMimeTypes>
+        <mimeType type="*/*">
+            <set name="maxExtract">
+                <int>1000000</int>
+            </set>
+        </mimeType>
+    </overrideMimeTypes>
+</tika-config>
