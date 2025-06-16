@@ -8,6 +8,13 @@ declare const window: any;
 })
 export class ConfigService {
   get apiUrl(): string {
-    return window.__env?.API_URL || 'http://localhost:5001';
+    if (!window.__env?.API_URL) {
+      throw new Error('API_URL is not defined in window.__env!');
+    }
+    else {
+      // Log the API URL for debugging purposes
+      console.log('Using API URL:', window.__env.API_URL);
+    }
+    return window.__env.API_URL;
   }
 }

@@ -18,11 +18,11 @@ COPY --from=builder /app/dist/building-ui/browser/ /usr/share/nginx/html/
 # Copy nginx configuration (optional if customized)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy env template and rename to env.js temporarily
-COPY src/assets/env.template.js /usr/share/nginx/html/assets/env.js
+# Copy env template (do not rename to env.js)
+COPY src/assets/env.template.js /usr/share/nginx/html/assets/env.template.js
 
-# Replace variables at runtime
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/assets/env.js > /usr/share/nginx/html/assets/env.temp.js && mv /usr/share/nginx/html/assets/env.temp.js /usr/share/nginx/html/assets/env.js && nginx -g 'daemon off;'"]
+# Replace variables at runtime to generate env.js from env.template.js
+CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/assets/env.template.js > /usr/share/nginx/html/assets/env.js && nginx -g 'daemon off;'"]
 
 EXPOSE 80
 
