@@ -60,8 +60,16 @@ namespace BUILD.ING.Controllers
                     fileBytes = ms.ToArray();
                 }
 
-                // Extract text
-                var textResult = await _tikaService.ExtractTextAsync(fileBytes, model.File.FileName).ConfigureAwait(false);
+                // First attempt text extraction without OCR for performance
+                var textResult = await _tikaService.ExtractTextAsync(fileBytes, model.File.FileName, false).ConfigureAwait(false);
+
+                bool ocrApplied = false;
+                // If very little text extracted, retry with OCR (for images/scans)
+                if (string.IsNullOrWhiteSpace(textResult) || textResult.Trim().Length < 50)
+                {
+                    textResult = await _tikaService.ExtractTextAsync(fileBytes, model.File.FileName, true).ConfigureAwait(false);
+                    ocrApplied = true;
+                }
 
                 // Extract metadata
                 var metadataResult = await _tikaService.ExtractMetadataAsync(fileBytes, model.File.FileName).ConfigureAwait(false);
@@ -99,6 +107,7 @@ namespace BUILD.ING.Controllers
                         text = new
                         {
                             success = textSuccess,
+                            ocrApplied,
                             content = textSuccess ? textResult : null,
                             error = !textSuccess ? textResult : null
                         },
