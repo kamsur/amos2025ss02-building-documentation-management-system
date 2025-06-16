@@ -168,11 +168,11 @@ export class UploadFileComponent implements OnInit {
     }
   }
   
-  saveDocumentMetadata(metadata: {categoryId: number, buildingId: number}): void {
+  saveDocumentMetadata(metadata: {categoryId: number | null, buildingId: number | null}): void {
     if (this.uploadedDocumentId) {
       this.categoryService.assignDocumentCategory(
         this.uploadedDocumentId, 
-        metadata.categoryId, 
+        metadata.categoryId,
         metadata.buildingId
       ).subscribe({
         next: () => {

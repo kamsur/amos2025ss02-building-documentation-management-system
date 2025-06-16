@@ -17,7 +17,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
   @Input() documentName: string = '';
   @Input() documentData: DocumentResponse | null = null;
   @Output() closePopup = new EventEmitter<void>();
-  @Output() saveMetadata = new EventEmitter<{categoryId: number, buildingId: number}>();
+  @Output() saveMetadata = new EventEmitter<{categoryId: number | null, buildingId: number | null}>();
   
   buildings: Building[] = [];
   categories: Category[] = [];
@@ -113,39 +113,26 @@ export class DocumentMetadataPopupComponent implements OnInit {
       return;
     }
 
-    if (this.isOtherCategory && this.otherCategoryName.trim()) {
-      // If using a custom category, create it first then save
-      this.categoryService.createCategory({ name: this.otherCategoryName }).subscribe({
-        next: (newCategory: Category) => {
-          this.updateDocumentMetadata(this.documentId!, newCategory.id, this.selectedBuildingId);
-        },
-        error: (err: Error) => {
-          console.error('Failed to create category', err);
-          this.showErrorNotification('Failed to create category');
-        }
-      });
-    } else if (this.selectedCategoryId) {
-      // Using an existing category
-      this.updateDocumentMetadata(this.documentId, this.selectedCategoryId, this.selectedBuildingId);
-    } else if (!this.isOtherCategory) {
+    // Determine categoryId based on selection; null if manual input selected
+    const categoryId: number | null = this.isOtherCategory ? null : this.selectedCategoryId;
+
+    if (!this.isOtherCategory && categoryId == null) {
       alert('Please select a category');
-    } else {
-      alert('Please enter a name for the new category');
+      return;
     }
+
+    this.updateDocumentMetadata(this.documentId!, categoryId, this.selectedBuildingId);
   }
-  
-  private updateDocumentMetadata(documentId: number, categoryId: number, buildingId: number | null): void {
+
+
+  private updateDocumentMetadata(documentId: number, categoryId: number | null, buildingId: number | null): void {
     // Use OpenAPI client to update document metadata
-    this.categoryService.assignDocumentCategory(
-      documentId,
-      categoryId,
-      buildingId || 0
-    ).subscribe({
+    this.categoryService.assignDocumentCategory(documentId, categoryId, buildingId).subscribe({
       next: () => {
         // Emit event for parent components that may need to know about the update
         this.saveMetadata.emit({
           categoryId: categoryId,
-          buildingId: buildingId || 0
+          buildingId: buildingId
         });
         
         // Show success notification

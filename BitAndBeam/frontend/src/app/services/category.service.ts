@@ -40,7 +40,7 @@ export class CategoryService {
   }
 
   // In a real application, this would send the document category to the backend
-  assignDocumentCategory(documentId: number, categoryId: number, buildingId: number): Observable<any> {
+  assignDocumentCategory(documentId: number, categoryId: number | null, buildingId: number | null): Observable<any> {
     // Fallback: Use HttpClient to send a PATCH request to update categoryId and buildingId
     // Adjust the URL and payload as per your backend API
     return this.http.patch<any>(
