@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "generated_at": "2025-06-16T19:12:29+02:00",
+  "version": 2,
+  "generated_at": "2025-06-16T19:21:19+02:00",
   "categories": [
     {
       "name": "Architectural Drawings",
@@ -116,6 +116,100 @@
         {"name": "hazard_class", "description": "Hazard classification of the product."},
         {"name": "issue_date", "description": "Date of issue of the SDS."},
         {"name": "sds_version", "description": "Version number of the SDS."}
+      ]
+    },
+    {
+      "name": "Blueprints",
+      "description": "Detailed architectural or structural blueprints of the building.",
+      "fields": [
+        {"name": "blueprint_id", "description": "Identifier for the blueprint file."},
+        {"name": "drawing_number", "description": "Reference drawing number if applicable."},
+        {"name": "scale", "description": "Drawing scale."},
+        {"name": "author", "description": "Designer or drafter responsible."},
+        {"name": "issue_date", "description": "Date of issue."}
+      ]
+    },
+    {
+      "name": "Energy Consumption Reports",
+      "description": "Periodic reports detailing building energy usage and efficiency metrics.",
+      "fields": [
+        {"name": "report_period", "description": "Time period covered by the report (e.g., 2025-Q1)."},
+        {"name": "total_energy_kwh", "description": "Total energy consumed in kWh."},
+        {"name": "energy_source", "description": "Primary energy source (electricity, gas, etc.)."},
+        {"name": "benchmark", "description": "Benchmark comparison or KPI (e.g., kWh/m²)."},
+        {"name": "author", "description": "Person or system that generated the report."},
+        {"name": "issue_date", "description": "Date of issue."}
+      ]
+    },
+    {
+      "name": "Maintenance Logs",
+      "description": "Records of routine and corrective maintenance activities.",
+      "fields": [
+        {"name": "log_id", "description": "Identifier for the maintenance log entry."},
+        {"name": "maintenance_type", "description": "Type of maintenance (preventive, corrective)."},
+        {"name": "description", "description": "Brief description of maintenance performed."},
+        {"name": "performed_by", "description": "Technician or contractor who performed the task."},
+        {"name": "date", "description": "Date maintenance was performed."},
+        {"name": "next_due_date", "description": "Date of next scheduled maintenance."}
+      ]
+    },
+    {
+      "name": "Renovation Records",
+      "description": "Documents and drawings related to renovation or retrofit projects.",
+      "fields": [
+        {"name": "project_id", "description": "Identifier for the renovation project."},
+        {"name": "description", "description": "Summary of renovation scope."},
+        {"name": "start_date", "description": "Renovation start date."},
+        {"name": "completion_date", "description": "Renovation completion date."},
+        {"name": "contractor", "description": "Contractor responsible for the work."},
+        {"name": "permits_reference", "description": "Reference to related permits."}
+      ]
+    },
+    {
+      "name": "Permit Documents",
+      "description": "Official permits issued by authorities for construction, renovation, or occupancy.",
+      "fields": [
+        {"name": "permit_number", "description": "Official permit number."},
+        {"name": "authority", "description": "Issuing authority."},
+        {"name": "issue_date", "description": "Date of issue."},
+        {"name": "expiry_date", "description": "Expiry date of permit."},
+        {"name": "permit_type", "description": "Type of permit (building, occupancy, etc.)."},
+        {"name": "status", "description": "Current status of the permit (active, expired)."}
+      ]
+    },
+    {
+      "name": "Utility Bills",
+      "description": "Invoices for utilities consumed by the building (electricity, water, etc.).",
+      "fields": [
+        {"name": "service_type", "description": "Utility service type."},
+        {"name": "billing_period", "description": "Billing period covered."},
+        {"name": "amount", "description": "Invoice amount."},
+        {"name": "provider", "description": "Utility service provider."},
+        {"name": "due_date", "description": "Payment due date."},
+        {"name": "account_number", "description": "Provider account number."}
+      ]
+    },
+    {
+      "name": "Sustainability Certifications",
+      "description": "Certificates and documentation of sustainability or green building ratings (e.g., LEED, BREEAM).",
+      "fields": [
+        {"name": "certification_name", "description": "Name of the certification (LEED, DGNB, etc.)."},
+        {"name": "rating_level", "description": "Level achieved (Gold, Silver, etc.)."},
+        {"name": "certifying_body", "description": "Organization granting the certification."},
+        {"name": "certificate_id", "description": "Identifier of the certificate."},
+        {"name": "issue_date", "description": "Date of issue."},
+        {"name": "expiry_date", "description": "Expiry date if applicable."}
+      ]
+    },
+    {
+      "name": "Building Automation System Logs",
+      "description": "Logs generated by building automation and management systems.",
+      "fields": [
+        {"name": "system_id", "description": "Identifier of the BAS/BMS generating the log."},
+        {"name": "log_period", "description": "Time period covered by the log."},
+        {"name": "event_count", "description": "Total number of events recorded."},
+        {"name": "critical_events", "description": "Number of critical events in the log."},
+        {"name": "generated_at", "description": "Timestamp when the log was generated."}
       ]
     }
   ],
