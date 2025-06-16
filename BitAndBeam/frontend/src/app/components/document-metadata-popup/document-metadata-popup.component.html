@@ -76,7 +76,7 @@
     
     <div class="popup-footer">
       <button class="cancel-button" (click)="onClose()">Cancel</button>
-      <button class="save-button" (click)="onSave()" [disabled]="(isOtherCategory && !otherCategoryName.trim()) || (!isOtherCategory && !selectedCategoryId)">
+      <button class="save-button" (click)="onSave()" [disabled]="isOtherCategory && !otherCategoryName.trim()">
         Save
       </button>
     </div>

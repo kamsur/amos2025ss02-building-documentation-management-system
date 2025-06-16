@@ -116,10 +116,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
     // Determine categoryId based on selection; null if manual input selected
     const categoryId: number | null = this.isOtherCategory ? null : this.selectedCategoryId;
 
-    if (!this.isOtherCategory && categoryId == null) {
-      alert('Please select a category');
-      return;
-    }
+
 
     this.updateDocumentMetadata(this.documentId!, categoryId, this.selectedBuildingId);
   }
