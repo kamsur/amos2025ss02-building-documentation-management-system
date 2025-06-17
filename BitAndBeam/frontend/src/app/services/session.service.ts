@@ -33,7 +33,7 @@ export class SessionService {
   private authApi: AuthApi;
 
   constructor(private router: Router) {
-    const config = new Configuration({ basePath: 'http://localhost:5000' });
+    const config = new Configuration({ basePath: 'http://localhost:5001' });
     this.authApi = new AuthApi(config);
     this.restoreSession();
   }
