@@ -12,16 +12,20 @@ export class AuthInterceptor implements HttpInterceptor {
     const token = this.sessionService.getToken();
     console.log('Token stored intercept:', token);
 
-
     if (token) {
       const cloned = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
         }
       });
+
+      // ✅ Add this:
+      console.log('Cloned request with auth header:', cloned);
+
       return next.handle(cloned);
     }
 
     return next.handle(req);
   }
+
 }
