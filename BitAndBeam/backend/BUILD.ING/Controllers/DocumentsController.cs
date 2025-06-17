@@ -1,11 +1,14 @@
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using BUILD.ING.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace BUILD.ING.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class DocumentsController : ControllerBase
@@ -24,9 +27,11 @@ namespace BUILD.ING.Controllers
             _logger = logger;
         }
 
+        // ✅ Securely extract organization/group ID from JWT claims
         private string GetCurrentUserGroupId()
         {
-            return "group2"; // Hardcoded for now
+            return User.FindFirst("org")?.Value
+                ?? throw new UnauthorizedAccessException("Organization claim is missing from token.");
         }
 
         [HttpPost]
@@ -40,7 +45,7 @@ namespace BUILD.ING.Controllers
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
 
-            // Save the file to disk
+            // Save the file
             using var stream = new FileStream(fullPath, FileMode.Create);
             await file.CopyToAsync(stream).ConfigureAwait(false);
 
@@ -48,7 +53,6 @@ namespace BUILD.ING.Controllers
             string metadata = "{}";
             try
             {
-                // Convert file to byte array for Tika processing
                 byte[] fileBytes;
                 using (var ms = new MemoryStream())
                 {
@@ -56,34 +60,31 @@ namespace BUILD.ING.Controllers
                     fileBytes = ms.ToArray();
                 }
 
-                // Call Tika service to extract metadata
                 metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
                 _logger.LogInformation("Successfully extracted metadata for file {FileName}", file.FileName);
             }
             catch (Exception ex)
             {
-                // Log error but continue with upload process
                 _logger.LogError(ex, "Failed to extract metadata for file {FileName}", file.FileName);
-                // Empty metadata will be stored
             }
 
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
                 FileName = file.FileName,
-                FilePath = file.FileName, // Just store file name
+                FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.').ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
+                FileSize = (int)file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
                 Status = "draft",
                 IsPublic = false,
                 Description = "No description provided",
-                Metadata = metadata, // Store the extracted metadata
+                Metadata = metadata,
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
-                GroupId = GetCurrentUserGroupId()
+                GroupId = GetCurrentUserGroupId() // ✅ CLAIM-BASED
             };
 
             _context.Documents.Add(document);
@@ -181,14 +182,12 @@ namespace BUILD.ING.Controllers
 
             var fileBytes = System.IO.File.ReadAllBytes(filePath);
 
-            // Determine content type based on file extension
             string contentType = document.FileType switch
             {
                 "pdf" => "application/pdf",
                 "png" => "image/png",
-                "jpg" => "image/jpeg",
-                "jpeg" => "image/jpeg",
-                _ => "application/octet-stream" // fallback
+                "jpg" or "jpeg" => "image/jpeg",
+                _ => "application/octet-stream"
             };
 
             return File(fileBytes, contentType);
