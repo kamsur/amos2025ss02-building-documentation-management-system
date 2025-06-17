@@ -2,28 +2,21 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, switchMap, map, Observable, from } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import {
+  Configuration,
   DocumentsApi,
   Document as ApiDocument,
   BuildingsApi,
   Building as ApiBuilding
 } from '../../api';
-import { ApiClientFactory } from './api-client.factory'; // ✅ NEW
+
+import { ApiClientFactory } from './api-client.factory';
+import { SessionService } from './session.service'; // ✅ Needed to get the token
 
 export interface DocumentItem {
   id: number;
   name: string;
   url: string;
   metadata: { label: string; value: string }[];
-}
-
-export interface DocumentResponse {
-  documentId: number;
-  title: string;
-  fileName: string;
-  filePath?: string;
-  fileSize: number;
-  fileType: string;
-  uploadDate: string;
 }
 
 export interface Building {
@@ -39,12 +32,15 @@ export class BuildingService {
   private buildingsSubject = new BehaviorSubject<ApiBuilding[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
 
-  constructor(private apiFactory: ApiClientFactory) {
-    this.documentsApi = this.apiFactory.create(DocumentsApi);
-    this.buildingsApi = this.apiFactory.create(BuildingsApi);
+  constructor(
+    private apiFactory: ApiClientFactory,
+    private session: SessionService // ✅ Get the token here
+  ) {
+    const token = this.session.getToken() ?? undefined;
+    this.documentsApi = this.apiFactory.create(DocumentsApi, token);
+    this.buildingsApi = this.apiFactory.create(BuildingsApi, token);
   }
 
-  // 🏢 Buildings
   getBuildings(): Observable<Building[]> {
     return from(
       this.buildingsApi.apiBuildingsGet().then(res =>
@@ -59,15 +55,14 @@ export class BuildingService {
 
   addBuilding(building: Partial<ApiBuilding>): Observable<Building> {
     return from(this.buildingsApi.apiBuildingsPost(building)).pipe(
-      switchMap((res) => {
+      switchMap(res => {
         const createdId = (res.data as unknown as { id: number }).id;
-
         return from(this.buildingsApi.apiBuildingsIdGet(createdId)).pipe(
-          map((b) => {
-            const fetchedBuilding = b.data as ApiBuilding;
+          map(b => {
+            const fetched = b.data as ApiBuilding;
             return {
-              id: fetchedBuilding.buildingId!,
-              name: fetchedBuilding.name ?? '',
+              id: fetched.buildingId!,
+              name: fetched.name ?? '',
               documents: []
             } as Building;
           })
@@ -80,11 +75,11 @@ export class BuildingService {
     return from(this.buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
   }
 
-  // 📄 Documents
   getDocumentById(id: number): Observable<ApiDocument> {
     return from(
-      this.documentsApi.apiDocumentsIdGet(id)
-        .then(res => (res as unknown as AxiosResponse<ApiDocument>).data)
+      this.documentsApi.apiDocumentsIdGet(id).then(
+        res => (res as unknown as AxiosResponse<ApiDocument>).data
+      )
     );
   }
 
@@ -93,11 +88,10 @@ export class BuildingService {
   }
 
   downloadDocument(id: number): void {
-    const downloadUrl = `/api/Documents/${id}/download`; // Uses relative path
+    const downloadUrl = `${this.documentsApi.configuration.basePath}/api/Documents/${id}/download`;
     window.open(downloadUrl, '_blank');
   }
 
-  // File Selection
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();
 
