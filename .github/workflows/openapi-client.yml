@@ -14,19 +14,16 @@ on:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
   workflow_call:
-    outputs:
-      sdk_updated:
-        description: "Whether the SDK was updated"
-        value: ${{ jobs.generate-client.outputs.sdk_updated }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  issues: write
 
 jobs:
   generate-client:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      sdk_updated: ${{ steps.check_changes.outputs.sdk_updated }}
 
     steps:
       - name: Checkout repository
@@ -73,8 +70,18 @@ jobs:
             echo "sdk_updated=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup GitHub CLI
+        if: steps.check_changes.outputs.sdk_updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Configuring GitHub CLI..."
+          if ! gh auth status &>/dev/null; then
+            gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          fi
+
       - name: Create Pull Request
-        if: steps.check_changes.outputs.sdk_updated == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.check_changes.outputs.sdk_updated == 'true'
         run: |
           # Create a new branch
           git config --local user.email "action@github.com"
@@ -84,7 +91,7 @@ jobs:
           
           # Commit changes
           git add BitAndBeam/frontend/src/api
-          git commit -m "chore: update OpenAPI generated SDK"
+          git commit -m "chore: update generated SDK"
           
           # Push branch
           git push origin $BRANCH_NAME
@@ -95,8 +102,3 @@ jobs:
             --body "Auto-generated PR to update the OpenAPI SDK" \
             --base main \
             --head $BRANCH_NAME
-
-      - name: Setup GitHub CLI
-        if: steps.check_changes.outputs.sdk_updated == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
