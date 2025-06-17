@@ -22,6 +22,9 @@ on:
 jobs:
   generate-client:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       sdk_updated: ${{ steps.check_changes.outputs.sdk_updated }}
 
@@ -70,11 +73,30 @@ jobs:
             echo "sdk_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Commit SDK changes
+      - name: Create Pull Request
         if: steps.check_changes.outputs.sdk_updated == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
+          # Create a new branch
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          BRANCH_NAME="feat/update-openapi-sdk-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $BRANCH_NAME
+          
+          # Commit changes
           git add BitAndBeam/frontend/src/api
-          git commit -m "chore: update openapi-client-generated SDK"
-          git push
+          git commit -m "chore: update OpenAPI generated SDK"
+          
+          # Push branch
+          git push origin $BRANCH_NAME
+          
+          # Create PR using GitHub CLI
+          gh pr create \
+            --title "chore: update OpenAPI generated SDK" \
+            --body "Auto-generated PR to update the OpenAPI SDK" \
+            --base main \
+            --head $BRANCH_NAME
+
+      - name: Setup GitHub CLI
+        if: steps.check_changes.outputs.sdk_updated == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
