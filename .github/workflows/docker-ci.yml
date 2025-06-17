@@ -75,7 +75,7 @@ jobs:
 
             # --- uncomment to reset DB volume ---
             # echo "Dropping Postgres volume to force schema reinitialization..."
-            # docker volume rm bitandbeam_pgdata bitandbeam_documentdata || true
+            docker volume rm bitandbeam_pgdata bitandbeam_documentdata || true
 
             # --- remove old images ONLY when BitAndBeam folder changed ---
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
@@ -87,12 +87,12 @@ jobs:
               echo "BitAndBeam unchanged – keeping existing images."
             fi
 
-            # Build all services
-            docker compose -f docker-compose-prod.yml build
+            # Build all required services
+            docker compose -f docker-compose-prod.yml build frontend backend ollama postgres tika
 
             # Push all built images
-            docker compose -f docker-compose-prod.yml push
+            docker compose -f docker-compose-prod.yml push frontend backend ollama postgres tika
 
-            # Start the stack with new images
-            docker compose -f docker-compose-prod.yml up -d
+            # Start only the required services
+            docker compose -f docker-compose-prod.yml up -d frontend backend ollama postgres tika
 
