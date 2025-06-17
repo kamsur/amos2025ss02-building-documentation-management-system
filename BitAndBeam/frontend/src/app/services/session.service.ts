@@ -2,7 +2,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthApi, Configuration } from '../../api';
-import * as jwt_decode from 'jwt-decode';
+import jwt_decode from 'jwt-decode';
 
 interface User {
   id: number;
@@ -13,9 +13,9 @@ interface User {
 
 interface DecodedToken {
   exp: number;
-  uid: number;
+  uid: string;
   sub: string;
-  org: number;
+  org: string;
   r: string;
 }
 
@@ -69,16 +69,16 @@ export class SessionService {
     const token = localStorage.getItem(this.tokenKey);
     if (!token) return;
 
-    const decoded: DecodedToken = (jwt_decode as unknown as (token: string) => DecodedToken)(token);
+    const decoded = jwt_decode<DecodedToken>(token);
     const now = Date.now() / 1000;
 
     if (decoded.exp > now) {
       this.token.set(token);
       const restoredUser: User = {
-        id: decoded.uid,
+        id: Number(decoded.uid),
         email: decoded.sub,
         role: decoded.r,
-        organizationId: decoded.org
+        organizationId: Number(decoded.org)
       };
       this.user.set(restoredUser);
       this.scheduleAutoLogout(token);
@@ -88,7 +88,7 @@ export class SessionService {
   }
 
   private scheduleAutoLogout(token: string): void {
-    const decoded: DecodedToken = (jwt_decode as unknown as (token: string) => DecodedToken)(token);
+    const decoded = jwt_decode<DecodedToken>(token);
     const expiresAt = decoded.exp * 1000;
     const timeout = expiresAt - Date.now();
 
