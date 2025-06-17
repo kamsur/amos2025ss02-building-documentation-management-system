@@ -42,6 +42,7 @@ export class SessionService {
       const result: any = response.data;
 
       if (result.token && result.user) {
+        console.log('✅ Token from login:', result.token);
         this.setSession(result.token, result.user);
         return true;
       }
@@ -89,6 +90,7 @@ export class SessionService {
 
   private scheduleAutoLogout(token: string): void {
     const decoded = jwt_decode<DecodedToken>(token);
+    console.log('🧾 Decoded JWT:', decoded); //
     const expiresAt = decoded.exp * 1000;
     const timeout = expiresAt - Date.now();
 
