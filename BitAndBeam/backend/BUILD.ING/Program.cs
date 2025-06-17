@@ -59,8 +59,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
                       policy =>
                       {
-                          //policy.WithOrigins("http://localhost:8080") // <-- Angular dev server
-                          policy.AllowAnyOrigin() // Allow requests from any origin - only for development
+                          policy.WithOrigins("http://localhost:8080") // <-- Angular dev server
+                          //policy.AllowAnyOrigin() // Allow requests from any origin - only for development
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                       });
@@ -188,7 +188,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.WebHost.UseUrls("http://0.0.0.0:5000");
+builder.WebHost.UseUrls("http://0.0.0.0:5001");
 var app = builder.Build();
 
 /*
