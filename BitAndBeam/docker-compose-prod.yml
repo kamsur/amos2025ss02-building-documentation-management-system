@@ -8,6 +8,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:5000
+      - CORS__AllowedOrigins=http://amos.b-iq.net,https://amos.b-iq.net
     depends_on:
       - postgres
     ports:
@@ -27,6 +29,8 @@ services:
       - backend
     ports:
       - "80:80"
+    environment:
+      - API_URL=http://amos.b-iq.net:5000
 
   ollama:
     build:
