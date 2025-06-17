@@ -2,7 +2,8 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthApi, Configuration } from '../../api';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
+
 
 
 interface User {
