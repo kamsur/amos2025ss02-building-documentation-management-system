@@ -34,8 +34,7 @@ export class SessionService {
     private router: Router,
     private apiFactory: ApiClientFactory
   ) {
-    const token = this.getToken() ?? undefined;
-    this.authApi = this.apiFactory.create(AuthApi, token);
+    this.authApi = this.apiFactory.create(AuthApi); // ✅ No need to pass token manually
     this.restoreSession();
   }
 
@@ -67,8 +66,8 @@ export class SessionService {
     this.user.set(user);
     localStorage.setItem(this.tokenKey, token);
 
-    // Refresh client with new token
-    this.authApi = this.apiFactory.create(AuthApi, token);
+    // ✅ Refresh AuthApi with new token
+    this.authApi = this.apiFactory.create(AuthApi);
 
     this.scheduleAutoLogout(token);
   }
@@ -97,7 +96,6 @@ export class SessionService {
 
   private scheduleAutoLogout(token: string): void {
     const decoded = jwt_decode<DecodedToken>(token);
-    console.log('🧾 Decoded JWT:', decoded);
     const expiresAt = decoded.exp * 1000;
     const timeout = expiresAt - Date.now();
 
@@ -108,7 +106,7 @@ export class SessionService {
     }
   }
 
-  getToken(): string | null {
-    return this.token();
+  getToken(): string | undefined {
+    return this.token() ?? undefined;
   }
 }
