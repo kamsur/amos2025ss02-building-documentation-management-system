@@ -2,18 +2,26 @@ import { Injectable } from '@angular/core';
 import { Configuration } from '../../api';
 import { ConfigService } from '../config.service';
 import { SessionService } from './session.service';
-import { createAuthenticatedConfig } from '../utils/create-authenticated-config';
 
 @Injectable({ providedIn: 'root' })
 export class ApiClientFactory {
   constructor(
-    private session: SessionService,
-    private config: ConfigService
+    private configService: ConfigService,
+    private sessionService: SessionService
   ) {}
 
-  create<T extends new (config: Configuration) => any>(ApiClass: T): InstanceType<T> {
-    const token = this.session.getToken();
-    const config = createAuthenticatedConfig(this.config.apiUrl, token);
-    return new ApiClass(config);
+  create<T>(ApiType: new (config: Configuration) => T): T {
+    const token = this.sessionService.getToken();
+    const apiUrl = this.configService.apiUrl;
+
+    console.log('🔧 Creating API client with:', { apiUrl, token });
+
+    if (!apiUrl) throw new Error('❌ API URL is undefined!');
+    const config = new Configuration({
+      basePath: apiUrl,
+      accessToken: token || ''
+    });
+
+    return new ApiType(config);
   }
 }
