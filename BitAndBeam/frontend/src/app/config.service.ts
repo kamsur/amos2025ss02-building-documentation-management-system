@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../environments/environment'; // adjust path if needed
+
+// Tell TypeScript we're using a global window variable
+declare const window: any;
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfigService {
   get apiUrl(): string {
-    return environment.apiUrl;
+    return window.__env?.API_URL || 'http://localhost:5001';
   }
 }
