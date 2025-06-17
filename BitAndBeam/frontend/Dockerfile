@@ -12,18 +12,17 @@ FROM nginx:alpine
 # Clean the default nginx content
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy built Angular app
-COPY --from=builder /app/dist/building-ui/browser/ /usr/share/nginx/html/
+# Copy built Angular app (copy contents of browser directory)
+COPY --from=builder /app/dist/building-ui/browser/* /usr/share/nginx/html/
 
-# Copy nginx configuration (optional if customized)
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy env template and rename to env.js temporarily
+# Copy env template and replace API_URL at build time
 COPY src/assets/env.template.js /usr/share/nginx/html/assets/env.js
-
-# Replace variables at runtime
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/assets/env.js > /usr/share/nginx/html/assets/env.temp.js && mv /usr/share/nginx/html/assets/env.temp.js /usr/share/nginx/html/assets/env.js && nginx -g 'daemon off;'"]
+ARG API_URL
+RUN sed -i "s|\$API_URL|${API_URL}|g" /usr/share/nginx/html/assets/env.js
 
 EXPOSE 80
 
-#RUN rm -rf /usr/share/nginx/html/*
+CMD ["nginx", "-g", "daemon off;"]
