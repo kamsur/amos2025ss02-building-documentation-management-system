@@ -1,7 +1,7 @@
 import { Component, EventEmitter,Output  } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth.service';
+import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
 import { BuildingService , DocumentItem , Building } from '../../services/building.service';
 
@@ -17,10 +17,9 @@ export class SidebarComponent {
   buildings: Building[] = [];
 
   constructor(
-    public authService: AuthService,
+    public session: SessionService,
     private router: Router,
     public buildingService: BuildingService
-
   ) {}
   ngOnInit(): void {
     this.buildingService.getBuildings().subscribe({
