@@ -1,10 +1,11 @@
 // app.config.ts
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { ApplicationConfig } from '@angular/core';
 import {
   provideHttpClient,
   withInterceptorsFromDi
 } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
+import { provideZoneChangeDetection } from '@angular/core';
 
 import { routes } from './app.routes';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -14,7 +15,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()), // ✅ Enables interceptors from DI
+
+    // ✅ Add HttpClient with support for interceptors
+    provideHttpClient(withInterceptorsFromDi()),
+
+    // ✅ Register the interceptor for DI
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
