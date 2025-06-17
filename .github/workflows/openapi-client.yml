@@ -14,14 +14,16 @@ on:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
   workflow_call:
-
-permissions:
-  contents: write
-  pull-requests: write
+    outputs:
+      sdk_updated:
+        description: "Whether the SDK was updated"
+        value: ${{ jobs.generate-client.outputs.sdk_updated }}
 
 jobs:
   generate-client:
     runs-on: ubuntu-latest
+    outputs:
+      sdk_updated: ${{ steps.check_changes.outputs.sdk_updated }}
 
     steps:
       - name: Checkout repository
