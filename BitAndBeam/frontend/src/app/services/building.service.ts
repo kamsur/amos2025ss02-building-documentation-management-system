@@ -11,6 +11,8 @@ import {
 
 import { ApiClientFactory } from './api-client.factory';
 import { SessionService } from './session.service'; // ✅ Needed to get the token
+import { ConfigService } from '../config.service';
+
 
 export interface DocumentItem {
   id: number;
@@ -33,6 +35,7 @@ export class BuildingService {
   buildings$ = this.buildingsSubject.asObservable();
 
   constructor(
+    private config: ConfigService,
     private apiFactory: ApiClientFactory,
     private session: SessionService // ✅ Get the token here
   ) {
@@ -88,9 +91,11 @@ export class BuildingService {
   }
 
   downloadDocument(id: number): void {
-    const downloadUrl = `${this.documentsApi.configuration.basePath}/api/Documents/${id}/download`;
+    const downloadUrl = `${this.config.apiUrl}/api/Documents/${id}/download`;
     window.open(downloadUrl, '_blank');
   }
+
+
 
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();
