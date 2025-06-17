@@ -7,10 +7,17 @@ services:
     ports:
       - "5001:5000"
     depends_on:
-      - temp-postgres
+      temp-postgres:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=temp-postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/swagger/v1/swagger.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   temp-postgres:
     image: postgres:17
@@ -21,6 +28,12 @@ services:
       POSTGRES_DB: bitandbeam
     volumes:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   temp-openapi-client:
     build:
@@ -29,14 +42,9 @@ services:
     container_name: temp-openapi_generator
     depends_on:
       temp-backend:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./frontend/src/api:/local/generated-sdk
     environment:
-      - SWAGGER_URL=http://localhost:5000
+      - SWAGGER_URL=http://temp-backend:5000
       - BACKEND_URL=http://amos.b-iq.net:5000
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/swagger/v1/swagger.json"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
