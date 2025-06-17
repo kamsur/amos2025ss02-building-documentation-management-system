@@ -37,11 +37,17 @@ export class BuildingService {
   private buildingsSubject = new BehaviorSubject<ApiBuilding[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
 
-  constructor(private config: ConfigService) {
-    const configuration = new Configuration({ basePath: this.config.apiUrl });
+  constructor(
+    private config: ConfigService,
+    private session: SessionService
+  ) {
+    const token = this.session.getToken();
+    const configuration = createAuthenticatedConfig(this.config.apiUrl, token);
+
     this.documentsApi = new DocumentsApi(configuration);
     this.buildingsApi = new BuildingsApi(configuration);
   }
+
   //Buildings
   getBuildings(): Observable<Building[]> {
     return from(
