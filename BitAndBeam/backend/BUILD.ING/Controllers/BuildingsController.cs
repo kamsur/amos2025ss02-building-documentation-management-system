@@ -40,7 +40,11 @@ namespace BUILD.ING.Controllers
             var building = new Building
             {
                 Name = dto.Name,
-                Address = dto.Address,
+                StreetName = dto.StreetName,
+                HouseNumber = dto.HouseNumber,
+                PostalCode = dto.PostalCode,
+                City = dto.City,
+                Country = dto.Country,
                 ConstructionYear = dto.ConstructionYear,
                 TotalArea = dto.TotalArea,
                 Floors = dto.Floors,
@@ -124,12 +128,20 @@ namespace BUILD.ING.Controllers
             if (existingBuilding == null)
                 return NotFound();
 
+            // If the incoming organizationId is null or 0, preserve existing one
+            if (updatedBuilding.OrganizationId == 0)
+                updatedBuilding.OrganizationId = existingBuilding.OrganizationId;
+
             _context.Entry(existingBuilding).CurrentValues.SetValues(updatedBuilding);
 
 
             // Update only editable fields
             existingBuilding.Name = updatedBuilding.Name;
-            existingBuilding.Address = updatedBuilding.Address;
+            existingBuilding.StreetName = updatedBuilding.StreetName;
+            existingBuilding.HouseNumber = updatedBuilding.HouseNumber;
+            existingBuilding.PostalCode = updatedBuilding.PostalCode;
+            existingBuilding.City = updatedBuilding.City;
+            existingBuilding.Country = updatedBuilding.Country;
             existingBuilding.ConstructionYear = updatedBuilding.ConstructionYear;
             existingBuilding.TotalArea = updatedBuilding.TotalArea;
             existingBuilding.Floors = updatedBuilding.Floors;

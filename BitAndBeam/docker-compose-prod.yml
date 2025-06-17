@@ -1,10 +1,15 @@
 services:
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     image: ghcr.io/amosproj/bitandbeam-backend:latest
     restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:5000
+      - CORS__AllowedOrigins=http://amos.b-iq.net,https://amos.b-iq.net
     depends_on:
       - postgres
     ports:
@@ -13,16 +18,22 @@ services:
       - documentdata:/app/documents
 
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     image: ghcr.io/amosproj/bitandbeam-frontend:latest
     restart: always
-    environment:
-      - API_URL=http://backend:5000
     depends_on:
       - backend
     ports:
-      - "80:80"  # Optional: expose only if needed externally
+      - "80:80"
+    environment:
+      - API_URL=http://amos.b-iq.net:5000
 
   ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
     image: ghcr.io/amosproj/bitandbeam-ollama:latest
     container_name: ollama
     restart: always
