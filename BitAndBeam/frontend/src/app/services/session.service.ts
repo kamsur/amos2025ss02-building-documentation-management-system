@@ -2,9 +2,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthApi, Configuration } from '../../api';
-import { jwtDecode } from 'jwt-decode';
-
-
+import * as jwt_decode from 'jwt-decode';
 
 interface User {
   id: number;
@@ -71,7 +69,7 @@ export class SessionService {
     const token = localStorage.getItem(this.tokenKey);
     if (!token) return;
 
-    const decoded: DecodedToken = (jwtDecode as any).default(token);
+    const decoded: DecodedToken = (jwt_decode as unknown as (token: string) => DecodedToken)(token);
     const now = Date.now() / 1000;
 
     if (decoded.exp > now) {
@@ -90,7 +88,7 @@ export class SessionService {
   }
 
   private scheduleAutoLogout(token: string): void {
-    const decoded: DecodedToken = (jwtDecode as any).default(token);
+    const decoded: DecodedToken = (jwt_decode as unknown as (token: string) => DecodedToken)(token);
     const expiresAt = decoded.exp * 1000;
     const timeout = expiresAt - Date.now();
 
