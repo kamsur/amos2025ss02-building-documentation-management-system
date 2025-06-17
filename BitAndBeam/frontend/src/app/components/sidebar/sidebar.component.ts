@@ -56,9 +56,10 @@ export class SidebarComponent {
   }
 
   logout() {
-    this.authService.logout();
-    this.router.navigate(['/']); // redirect to home/landing
+    this.session.logout();
+    this.router.navigate(['/']);
   }
+
 
 
 
