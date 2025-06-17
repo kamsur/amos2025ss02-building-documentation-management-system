@@ -20,6 +20,7 @@
     "@angular/platform-browser-dynamic": "^19.2.9",
     "@angular/router": "^19.2.9",
     "axios": "^1.9.0",
+    "jwt-decode": "^4.0.0",
     "ng2-pdf-viewer": "^10.4.0",
     "rxjs": "~7.8.0",
     "tar-fs": "^2.1.3",
