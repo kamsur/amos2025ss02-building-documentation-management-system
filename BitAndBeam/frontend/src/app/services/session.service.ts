@@ -1,7 +1,15 @@
+// session.service.ts
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService, User } from '../../api'; // adjust path if needed
+import { AuthApi, Configuration } from '../../api';
 import jwtDecode from 'jwt-decode';
+
+interface User {
+  id: number;
+  email: string;
+  role: string;
+  organizationId: number;
+}
 
 interface DecodedToken {
   exp: number;
@@ -20,13 +28,17 @@ export class SessionService {
   isAuthenticated = computed(() => !!this.token());
   currentUser = this.user.asReadonly();
 
-  constructor(private authApi: AuthService, private router: Router) {
+  private authApi: AuthApi;
+
+  constructor(private router: Router) {
+    const config = new Configuration({ basePath: 'http://localhost:5000' });
+    this.authApi = new AuthApi(config);
     this.restoreSession();
   }
 
   async login(email: string, password: string): Promise<boolean> {
     try {
-      const result = await this.authApi.authLogin({ email, password });
+      const result = await this.authApi.authLogin({ email, password }).toPromise();
       if (result.token && result.user) {
         this.setSession(result.token, result.user);
         return true;
@@ -60,14 +72,13 @@ export class SessionService {
 
     if (decoded.exp > now) {
       this.token.set(token);
-      // Optional: Fetch actual user data via API instead of decoding
-      const mockUser: User = {
+      const restoredUser: User = {
         id: decoded.uid,
         email: decoded.sub,
         role: decoded.r,
-        organizationId: decoded.org,
+        organizationId: decoded.org
       };
-      this.user.set(mockUser);
+      this.user.set(restoredUser);
       this.scheduleAutoLogout(token);
     } else {
       this.logout();
