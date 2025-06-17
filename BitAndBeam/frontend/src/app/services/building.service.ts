@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, switchMap, map, Observable , from} from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { SessionService } from './session.service'; //
+import { createAuthenticatedConfig } from '../utils/create-authenticated-config'; //
 import { ConfigService } from '../config.service';
 import { AxiosResponse } from 'axios';
 import { Configuration, DocumentsApi, Document as ApiDocument, BuildingsApi,
