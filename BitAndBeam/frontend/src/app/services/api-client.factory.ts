@@ -1,22 +1,18 @@
 import { Injectable } from '@angular/core';
 import { Configuration } from '../../api';
 import { ConfigService } from '../config.service';
-import { SessionService } from './session.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiClientFactory {
-  constructor(
-    private configService: ConfigService,
-    private sessionService: SessionService
-  ) {}
+  constructor(private configService: ConfigService) {}
 
-  create<T>(ApiType: new (config: Configuration) => T): T {
-    const token = this.sessionService.getToken();
+  create<T>(ApiType: new (config: Configuration) => T, token?: string): T {
     const apiUrl = this.configService.apiUrl;
 
-    console.log('🔧 Creating API client with:', { apiUrl, token });
+    if (!apiUrl) {
+      throw new Error('❌ API URL is missing in ConfigService.');
+    }
 
-    if (!apiUrl) throw new Error('❌ API URL is undefined!');
     const config = new Configuration({
       basePath: apiUrl,
       accessToken: token || ''
