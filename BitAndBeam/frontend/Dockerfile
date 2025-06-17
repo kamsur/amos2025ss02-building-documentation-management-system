@@ -9,11 +9,12 @@ RUN npm run build --configuration=production
 # Step 2: Serve it with NGINX
 FROM nginx:alpine
 
-# Clean the default nginx content
-RUN rm -rf /usr/share/nginx/html/*
+# Install envsubst
+RUN apk add --no-cache gettext
 
-# Create assets directory
-RUN mkdir -p /usr/share/nginx/html/assets
+# Clean the default nginx content and create assets directory
+RUN rm -rf /usr/share/nginx/html/* && \
+    mkdir -p /usr/share/nginx/html/assets
 
 # Copy built Angular app (copy contents of browser directory)
 COPY --from=builder /app/dist/building-ui/browser/* /usr/share/nginx/html/
@@ -21,13 +22,13 @@ COPY --from=builder /app/dist/building-ui/browser/* /usr/share/nginx/html/
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy env template and replace API_URL at build time
-COPY src/assets/env.template.js /tmp/env.template.js
-ARG API_URL
-RUN cat /tmp/env.template.js | sed "s|\$API_URL|${API_URL}|g" > /usr/share/nginx/html/assets/env.js && \
-    chmod 644 /usr/share/nginx/html/assets/env.js && \
-    rm /tmp/env.template.js
+# Copy env template
+COPY src/assets/env.template.js /usr/share/nginx/html/assets/env.template.js
+
+# Copy and set permissions for entrypoint script
+COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
