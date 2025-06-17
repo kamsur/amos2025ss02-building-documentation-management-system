@@ -3,6 +3,8 @@ import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthApi, Configuration } from '../../api';
 import jwt_decode from 'jwt-decode';
+import { createAuthenticatedConfig } from '../utils/create-authenticated-config'; // adjust path if needed
+
 
 interface User {
   id: number;
