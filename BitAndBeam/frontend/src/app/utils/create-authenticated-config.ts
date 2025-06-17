@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Configuration } from '../../api'; // Adjust path if needed
+import { Configuration } from '../../api';
 
 export function createAuthenticatedConfig(basePath: string, token: string | null): Configuration {
   const axiosInstance = axios.create();
