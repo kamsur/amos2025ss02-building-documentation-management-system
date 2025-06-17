@@ -34,7 +34,8 @@ export class SessionService {
     private router: Router,
     private apiFactory: ApiClientFactory
   ) {
-    this.authApi = this.apiFactory.create(AuthApi); // ✅ No need to pass token manually
+    const token = this.getToken();
+    this.authApi = this.apiFactory.create(AuthApi, token);
     this.restoreSession();
   }
 
@@ -66,8 +67,8 @@ export class SessionService {
     this.user.set(user);
     localStorage.setItem(this.tokenKey, token);
 
-    // ✅ Refresh AuthApi with new token
-    this.authApi = this.apiFactory.create(AuthApi);
+    // Refresh AuthApi with new token
+    this.authApi = this.apiFactory.create(AuthApi, token);
 
     this.scheduleAutoLogout(token);
   }

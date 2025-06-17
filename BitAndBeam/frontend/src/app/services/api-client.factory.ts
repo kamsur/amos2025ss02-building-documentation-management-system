@@ -1,16 +1,17 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Configuration } from '../../api';
 import { ConfigService } from '../config.service';
-import { SessionService } from './session.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiClientFactory {
-  private configService = inject(ConfigService);
-  private sessionService = inject(SessionService); // ✅ safely injected here
+  constructor(private configService: ConfigService) {}
 
-  create<T>(ApiType: new (config: Configuration) => T): T {
+  create<T>(ApiType: new (config: Configuration) => T, token?: string): T {
     const apiUrl = this.configService.apiUrl;
-    const token = this.sessionService.getToken();
+
+    if (!apiUrl) {
+      throw new Error('❌ API URL is missing in ConfigService.');
+    }
 
     const config = new Configuration({
       basePath: apiUrl,
