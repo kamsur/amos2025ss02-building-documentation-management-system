@@ -4,7 +4,6 @@ import { ConfigService } from '../../config.service';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
 import type { AxiosResponse } from 'axios';
 
 import {
@@ -26,7 +25,6 @@ import { ApiClientFactory } from '../../services/api-client.factory'; // ✅ NEW
     RouterModule,
     SidebarComponent,
     FormsModule,
-    HttpClientModule,
     MarkdownBoldPipe
   ],
   templateUrl: './upload-file.component.html',
