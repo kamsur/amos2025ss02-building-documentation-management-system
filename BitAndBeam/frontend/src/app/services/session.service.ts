@@ -1,10 +1,8 @@
-// session.service.ts
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthApi, Configuration } from '../../api';
+import { AuthApi } from '../../api';
 import jwt_decode from 'jwt-decode';
-import { createAuthenticatedConfig } from '../utils/create-authenticated-config'; // adjust path if needed
-
+import { ApiClientFactory } from './api-client.factory'; // ✅ NEW
 
 interface User {
   id: number;
@@ -32,10 +30,11 @@ export class SessionService {
 
   private authApi: AuthApi;
 
-  constructor(private router: Router) {
-    const token = localStorage.getItem(this.tokenKey);
-    const config = createAuthenticatedConfig('http://localhost:5001', token);
-    this.authApi = new AuthApi(config);
+  constructor(
+    private router: Router,
+    private apiFactory: ApiClientFactory // ✅ Inject the factory
+  ) {
+    this.authApi = this.apiFactory.create(AuthApi); // ✅ Centralized config
     this.restoreSession();
   }
 
@@ -66,6 +65,10 @@ export class SessionService {
     this.token.set(token);
     this.user.set(user);
     localStorage.setItem(this.tokenKey, token);
+
+    // ✅ Refresh authApi with the new token
+    this.authApi = this.apiFactory.create(AuthApi);
+
     this.scheduleAutoLogout(token);
   }
 
@@ -93,7 +96,7 @@ export class SessionService {
 
   private scheduleAutoLogout(token: string): void {
     const decoded = jwt_decode<DecodedToken>(token);
-    console.log('🧾 Decoded JWT:', decoded); //
+    console.log('🧾 Decoded JWT:', decoded);
     const expiresAt = decoded.exp * 1000;
     const timeout = expiresAt - Date.now();
 
