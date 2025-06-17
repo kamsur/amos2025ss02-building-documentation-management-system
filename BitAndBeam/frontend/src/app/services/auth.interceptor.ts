@@ -1,5 +1,4 @@
-// auth.interceptor.ts
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   HttpInterceptor,
   HttpRequest,
@@ -11,10 +10,11 @@ import { SessionService } from './session.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  constructor(private sessionService: SessionService) {}
+
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const sessionService = inject(SessionService); // ✅ inject manually
-    const token = sessionService.getToken();
-    console.log('🔒 Interceptor token:', token);
+    const token = this.sessionService.getToken();
+    console.log('🔒 Interceptor token:', token); // ✅ Should appear in console
 
     if (token) {
       const cloned = req.clone({
