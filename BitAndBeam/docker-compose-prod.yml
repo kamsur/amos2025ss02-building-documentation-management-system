@@ -68,26 +68,6 @@ services:
       timeout: 5s
       retries: 5
 
-  openapi-client:
-    build:
-      context: ./openapi-client
-      dockerfile: Dockerfile
-    image: ghcr.io/amosproj/bitandbeam-openapi-client:latest
-    container_name: openapi_generator
-    depends_on:
-      backend:
-        condition: service_started
-    volumes:
-      - ./frontend/src/api:/local/generated-sdk
-    environment:
-      - SWAGGER_URL=http://localhost:5000
-      - BACKEND_URL=http://amos.b-iq.net:5000
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://amos.b-iq.net:5000/swagger/v1/swagger.json"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 volumes:
   documentdata:
   pgdata:

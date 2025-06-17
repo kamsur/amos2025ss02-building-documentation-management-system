@@ -43,11 +43,11 @@ jobs:
           # Ensure the api directory has correct permissions
           sudo chown -R $USER:$USER frontend/src/api
           
-          # Start backend first
-          docker compose -f docker-compose-prod.yml up -d backend
+          # Start services using the minimal OpenAPI compose file
+          docker compose -f docker-compose-prod-openapi.yml up -d backend
           
           # Run openapi-client to generate SDK
-          docker compose -f docker-compose-prod.yml up openapi-client
+          docker compose -f docker-compose-prod-openapi.yml up openapi-client
           
           # Fix permissions of generated files
           sudo chown -R $USER:$USER frontend/src/api
@@ -56,7 +56,7 @@ jobs:
         working-directory: BitAndBeam
         if: always()
         run: |
-          docker compose -f docker-compose-prod.yml down
+          docker compose -f docker-compose-prod-openapi.yml down
           docker image prune -f
 
       - name: Check for changes in generated SDK
