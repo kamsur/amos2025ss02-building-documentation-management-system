@@ -33,10 +33,10 @@ services:
     volumes:
       - ./frontend/src/api:/local/generated-sdk
     environment:
-      - SWAGGER_URL=http://temp-backend:5000
+      - SWAGGER_URL=http://localhost:5000
       - BACKEND_URL=http://amos.b-iq.net:5000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://temp-backend:5000/swagger/v1/swagger.json"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/swagger/v1/swagger.json"]
       interval: 10s
       timeout: 5s
       retries: 5
