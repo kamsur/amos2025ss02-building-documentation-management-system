@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthApi } from '../../api';
 import jwt_decode from 'jwt-decode';
-import { ApiClientFactory } from './api-client.factory'; // ✅ NEW
+import { ApiClientFactory } from './api-client.factory';
 
 interface User {
   id: number;
@@ -32,9 +32,10 @@ export class SessionService {
 
   constructor(
     private router: Router,
-    private apiFactory: ApiClientFactory // ✅ Inject the factory
+    private apiFactory: ApiClientFactory
   ) {
-    this.authApi = this.apiFactory.create(AuthApi); // ✅ Centralized config
+    const token = this.getToken() ?? undefined;
+    this.authApi = this.apiFactory.create(AuthApi, token);
     this.restoreSession();
   }
 
@@ -66,8 +67,8 @@ export class SessionService {
     this.user.set(user);
     localStorage.setItem(this.tokenKey, token);
 
-    // ✅ Refresh authApi with the new token
-    this.authApi = this.apiFactory.create(AuthApi);
+    // Refresh client with new token
+    this.authApi = this.apiFactory.create(AuthApi, token);
 
     this.scheduleAutoLogout(token);
   }
