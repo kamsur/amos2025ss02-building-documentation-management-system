@@ -28,3 +28,4 @@ namespace BUILD.ING.Models
         public ICollection<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
     }
 }
+

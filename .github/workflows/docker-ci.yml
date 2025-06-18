@@ -59,6 +59,19 @@ jobs:
           source: "BitAndBeam"
           target: "~/"
 
+      - name: Stop and remove all containers
+        run: |
+          docker ps -aq | xargs -r docker stop
+          docker ps -aq | xargs -r docker rm
+
+      - name: Remove all Docker images
+        run: |
+          docker images -aq | xargs -r docker rmi -f
+
+      - name: Remove all Docker volumes
+        run: |
+          docker volume ls -q | xargs -r docker volume rm
+
       - name: Deploy to Remote Server
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -75,7 +88,8 @@ jobs:
             dotnet clean
 
             # Stop running stack
-            docker compose -f docker-compose-prod.yml down
+            docker compose down --remove-orphans
+            docker compose -f docker-compose-prod.yml down --remove-orphans
 
             # --- uncomment to reset DB volume ---
             # echo "Dropping Postgres volume to force schema reinitialization..."
