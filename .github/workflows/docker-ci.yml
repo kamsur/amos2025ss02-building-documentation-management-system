@@ -72,6 +72,18 @@ jobs:
         run: |
           docker volume ls -q | xargs -r docker volume rm
 
+      - name: Delete all images from GHCR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE_NAMES="bitandbeam-frontend bitandbeam-backend bitandbeam-ollama"
+          for IMAGE in $IMAGE_NAMES; do
+            echo "Deleting all versions of $IMAGE from GHCR..."
+            gh api -H "Accept: application/vnd.github+json" /orgs/${{ github.repository_owner }}/packages/container/$IMAGE/versions | \
+              jq '.[].id' | \
+              xargs -I {} gh api --method DELETE -H "Accept: application/vnd.github+json" /orgs/${{ github.repository_owner }}/packages/container/$IMAGE/versions/{}
+          done
+
       - name: Deploy to Remote Server
         uses: appleboy/ssh-action@v1.0.0
         with:
