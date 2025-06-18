@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace BUILD.ING.Controllers
 {
-    [Authorize]                                 // 🔐 Require valid Bearer token
+    [Authorize] // 🔐 Require valid Bearer token
     [ApiController]
     [Route("api/[controller]")]
     public class BuildingsController : ControllerBase
@@ -22,11 +22,10 @@ namespace BUILD.ING.Controllers
 
         public BuildingsController(AppDbContext context, ILogger<BuildingsController> logger)
         {
-            _context  = context;
-            _logger   = logger;
+            _context = context;
+            _logger = logger;
         }
 
-        // ⮕  Extract “org” claim once, reuse everywhere
         private int GetOrgId() =>
             int.TryParse(User.FindFirst("org")?.Value, out var id)
                 ? id
@@ -36,23 +35,25 @@ namespace BUILD.ING.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
         {
-            var orgId = GetOrgId();                       // ☑️  Use claim, ignore dto.OrganizationId
+            var orgId = GetOrgId();
             _logger.LogInformation("CreateBuilding (org {Org})", orgId);
 
-            NpgsqlPoint? coordinates = dto.Coordinates?.Value;
+            NpgsqlPoint? coordinates = dto.Coordinates.HasValue
+                ? new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y)
+                : null;
 
             var building = new Building
             {
-                Name        = dto.Name,
-                Address     = dto.Address,
+                Name = dto.Name,
+                Address = dto.Address,
                 ConstructionYear = dto.ConstructionYear,
-                TotalArea   = dto.TotalArea,
-                Floors      = dto.Floors,
+                TotalArea = dto.TotalArea,
+                Floors = dto.Floors,
                 Description = dto.Description,
-                OrganizationId = orgId,                  // ✅  always set from claim
+                OrganizationId = orgId,
                 Coordinates = coordinates,
-                CreatedAt   = DateTime.UtcNow,
-                UpdatedAt   = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             _context.Buildings.Add(building);
@@ -70,7 +71,7 @@ namespace BUILD.ING.Controllers
             _logger.LogInformation("GetBuildings (org {Org})", orgId);
 
             var buildings = await _context.Buildings
-                                          .Where(b => b.OrganizationId == orgId) // 🔐 filter
+                                          .Where(b => b.OrganizationId == orgId)
                                           .ToListAsync()
                                           .ConfigureAwait(false);
 
@@ -107,9 +108,8 @@ namespace BUILD.ING.Controllers
             if (existing == null) return NotFound();
 
             _context.Entry(existing).CurrentValues.SetValues(updated);
-
-            existing.UpdatedAt   = DateTime.UtcNow;
-            existing.OrganizationId = orgId;              // ensure it never changes org
+            existing.UpdatedAt = DateTime.UtcNow;
+            existing.OrganizationId = orgId;
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return NoContent();
@@ -133,9 +133,7 @@ namespace BUILD.ING.Controllers
             return NoContent();
         }
 
-        // ------------------------------------------------------------------
-        //  Debug helpers (unchanged, but still protected by [Authorize])
-        // ------------------------------------------------------------------
+        // Debug helpers
 
         [HttpGet("debug-db")]
         public IActionResult GetDbInfo()
