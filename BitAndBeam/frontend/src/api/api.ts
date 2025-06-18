@@ -750,6 +750,25 @@ export interface Int32StringKeyValuePair {
     'value'?: string | null;
 }
 /**
+ * Represents the data sent when a user logs in.
+ * @export
+ * @interface LoginRequest
+ */
+export interface LoginRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof LoginRequest
+     */
+    'email'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof LoginRequest
+     */
+    'password'?: string | null;
+}
+/**
  * 
  * @export
  * @interface NpgsqlPoint
@@ -999,6 +1018,182 @@ export interface WeatherForecast {
 }
 
 /**
+ * AuthApi - axios parameter creator
+ * @export
+ */
+export const AuthApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Authenticates a user with email and password.
+         * @param {LoginRequest} [loginRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLoginPost: async (loginRequest?: LoginRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/Auth/login`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(loginRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Logs out a user (JWT tokens are stateless, so this is handled on the client).
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLogoutPost: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/Auth/logout`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * AuthApi - functional programming interface
+ * @export
+ */
+export const AuthApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = AuthApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Authenticates a user with email and password.
+         * @param {LoginRequest} [loginRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authLoginPost(loginRequest?: LoginRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authLoginPost(loginRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authLoginPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Logs out a user (JWT tokens are stateless, so this is handled on the client).
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authLogoutPost(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authLogoutPost(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authLogoutPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * AuthApi - factory interface
+ * @export
+ */
+export const AuthApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = AuthApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Authenticates a user with email and password.
+         * @param {LoginRequest} [loginRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLoginPost(loginRequest?: LoginRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.authLoginPost(loginRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Logs out a user (JWT tokens are stateless, so this is handled on the client).
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authLogoutPost(options?: any): AxiosPromise<void> {
+            return localVarFp.authLogoutPost(options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * AuthApi - object-oriented interface
+ * @export
+ * @class AuthApi
+ * @extends {BaseAPI}
+ */
+export class AuthApi extends BaseAPI {
+    /**
+     * 
+     * @summary Authenticates a user with email and password.
+     * @param {LoginRequest} [loginRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authLoginPost(loginRequest?: LoginRequest, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authLoginPost(loginRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Logs out a user (JWT tokens are stateless, so this is handled on the client).
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authLogoutPost(options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authLogoutPost(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
  * BuildINGApi - axios parameter creator
  * @export
  */
@@ -1021,6 +1216,9 @@ export const BuildINGApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1050,6 +1248,9 @@ export const BuildINGApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1177,6 +1378,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1206,6 +1410,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1234,6 +1441,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1268,6 +1478,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1300,6 +1513,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1335,6 +1551,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -1367,6 +1586,9 @@ export const BuildingsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1657,6 +1879,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1689,6 +1914,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1723,6 +1951,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1755,6 +1986,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1789,6 +2023,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
     
@@ -1826,6 +2063,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1860,6 +2100,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -1893,6 +2136,9 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
             const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
             if (file !== undefined) { 
@@ -2230,6 +2476,9 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
@@ -2337,6 +2586,9 @@ export const TikaApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
 
     
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2368,6 +2620,9 @@ export const TikaApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
             const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
 
 
             if (file !== undefined) { 
