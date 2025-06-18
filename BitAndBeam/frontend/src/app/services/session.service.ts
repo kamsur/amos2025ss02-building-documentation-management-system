@@ -41,14 +41,11 @@ export class SessionService {
 
   async login(email: string, password: string): Promise<boolean> {
     try {
-      // ❗ Create a clean client without token
-      const tempAuthApi = this.apiFactory.create(AuthApi);
-
+      const tempAuthApi = this.apiFactory.create(AuthApi); // no token
       const response = await tempAuthApi.authLoginPost({ email, password });
-      const result: any = response.data;
+      const result = response.data as unknown as { token: string; user: any };
 
       if (result.token && result.user) {
-        console.log('✅ Token from login:', result.token);
         this.setSession(result.token, result.user);
         return true;
       }
