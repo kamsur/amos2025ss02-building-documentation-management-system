@@ -6,6 +6,7 @@ using BUILD.ING.Dto;
 using BUILD.ING.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging; //
 using NpgsqlTypes;
 
 namespace BUILD.ING.Controllers
@@ -15,10 +16,11 @@ namespace BUILD.ING.Controllers
     public class BuildingsController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public BuildingsController(AppDbContext context)
+        private readonly ILogger<BuildingsController> _logger;  // ADDED: Inject ILogger for logging
+        public BuildingsController(AppDbContext context, ILogger<BuildingsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // POST: api/Buildings
@@ -26,6 +28,7 @@ namespace BUILD.ING.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
         {
+            _logger.LogInformation("CreateBuilding called at {Time}", DateTime.UtcNow); // ADDED: Log method entry
             // ✅ Convert coordinate data if present
             NpgsqlPoint? coordinates = null;
             if (dto.Coordinates.HasValue)
@@ -55,7 +58,17 @@ namespace BUILD.ING.Controllers
             };
 
             _context.Buildings.Add(building);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _logger.LogInformation("Building created successfully with ID {BuildingId}", building.BuildingId); // ADDED: Log success
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating building"); // ADDED: Log exception
+                return StatusCode(500, ex.Message);
+            }
 
             return Ok(new { id = building.BuildingId });
         }
@@ -65,6 +78,8 @@ namespace BUILD.ING.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BuildingDto>>> GetBuildings()
         {
+            _logger.LogInformation("GetBuildings called at {Time}", DateTime.UtcNow);
+
             var buildings = await _context.Buildings.ToListAsync().ConfigureAwait(false);
             var buildingIds = buildings.Select(b => b.BuildingId).ToList();
             var documents = _context.Documents
@@ -93,6 +108,7 @@ namespace BUILD.ING.Controllers
                 Documents = documents.Where(d => d.BuildingId == b.BuildingId)
                     .Select(d => new KeyValuePair<int, string>(d.DocumentId, d.Title)).ToList()
             }).ToList();
+            _logger.LogInformation("GetBuildings returned {Count} records", dtos.Count);
             return Ok(dtos);
         }
 
@@ -101,9 +117,15 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BuildingDto>> GetBuilding(int id)
         {
+            _logger.LogInformation("GetBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
+
             var building = await _context.Buildings.FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
             if (building == null)
+            {
+                _logger.LogWarning("GetBuilding did not find building with ID {BuildingId}", id);
                 return NotFound();
+            }
+
             var orgName = _context.Organizations.Where(o => o.OrganizationId == building.OrganizationId).Select(o => o.Name).FirstOrDefault();
             var documents = _context.Documents
                 .Where(d => d.BuildingId == id)
@@ -129,6 +151,7 @@ namespace BUILD.ING.Controllers
                 OrganizationName = orgName,
                 Documents = documents
             };
+            _logger.LogInformation("GetBuilding found building with ID {BuildingId}", id);
             return Ok(dto);
         }
 
@@ -221,21 +244,31 @@ namespace BUILD.ING.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBuilding(int id)
         {
+            _logger.LogInformation("DeleteBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
+
             var building = await _context.Buildings
                 .Include(b => b.BuildingDocumentRelations)
                 .FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
 
             if (building == null)
+            {
+                _logger.LogWarning("DeleteBuilding could not find building with ID {BuildingId}", id);
                 return NotFound();
+            }
 
-            // Remove related building-document relations
-            _context.BuildingDocumentRelations.RemoveRange(building.BuildingDocumentRelations);
+            try
+            {
+                _context.BuildingDocumentRelations.RemoveRange(building.BuildingDocumentRelations);
+                _context.Buildings.Remove(building);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            // Optionally remove documents if they are not shared
-            // _context.Documents.RemoveRange(building.Documents);
-
-            _context.Buildings.Remove(building);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+                _logger.LogInformation("DeleteBuilding successfully deleted building with ID {BuildingId}", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting building with ID {BuildingId}", id);
+                return StatusCode(500, ex.Message);
+            }
 
             return NoContent();
         }

@@ -33,6 +33,7 @@ COPY --from=build /app/BUILD.ING/out ./
 
 # Expose port
 EXPOSE 5000
+#EXPOSE 5001
 
 # Wait for PostgreSQL then start app
 ENTRYPOINT ["./wait-for-it.sh", "postgres:5432", "--", "dotnet", "Build.ING.dll"]
