@@ -26,6 +26,32 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerM
 /**
  * 
  * @export
+ * @interface ApiDocumentsPostRequest
+ */
+export interface ApiDocumentsPostRequest {
+    /**
+     * 
+     * @type {File}
+     * @memberof ApiDocumentsPostRequest
+     */
+    'file'?: File;
+}
+/**
+ * 
+ * @export
+ * @interface ApiTikaProcessPostRequest
+ */
+export interface ApiTikaProcessPostRequest {
+    /**
+     * The file being uploaded
+     * @type {File}
+     * @memberof ApiTikaProcessPostRequest
+     */
+    'File'?: File;
+}
+/**
+ * 
+ * @export
  * @interface Building
  */
 export interface Building {
