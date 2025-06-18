@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BuildingService, Building, DocumentResponse } from '../../services/building.service';
 import { CategoryService, Category } from '../../services/category.service';
+import { DocumentsApi, DocumentMetadataPatchRequest } from '../../../api/api';
 
 
 @Component({
@@ -26,6 +27,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
   isOtherCategory: boolean = false;
   otherCategoryName: string = '';
   readonly OTHER_CATEGORY_OPTION = 'other';
+  documentsApi = new DocumentsApi();
 
   // Notification properties
   showNotification: boolean = false;
@@ -131,15 +133,25 @@ export class DocumentMetadataPopupComponent implements OnInit {
           categoryId: categoryId,
           buildingId: buildingId
         });
-        
-        // Show success notification
-        this.showSuccessNotification('Metadata updated successfully');
-        
-        // Close the popup after a short delay to allow user to see the message
-        setTimeout(() => this.onClose(), 1500);
+        const patchRequest: DocumentMetadataPatchRequest = {
+          categoryId: categoryId, // number or undefined
+          buildingId: buildingId  // number or undefined
+        };
+        this.documentsApi.apiDocumentsIdPatch(documentId, patchRequest).then(response => {
+            // handle success, e.g. response.data
+            console.log('Document metadata updated:', response.data);
+            // Show success notification
+            this.showSuccessNotification('Metadata updated successfully');
+            
+            // Close the popup after a short delay to allow user to see the message
+            setTimeout(() => this.onClose(), 1500);
+          })
+          .catch(error => {
+              console.error('Failed to update document metadata', error);
+          });
       },
-      error: (err: Error) => {
-        console.error('Failed to update document metadata', err);
+      error: (err) => {
+        console.error(err);
         this.showErrorNotification('Failed to update document metadata');
       }
     });

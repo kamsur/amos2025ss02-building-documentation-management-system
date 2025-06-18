@@ -89,7 +89,7 @@ namespace BUILD.ING.Controllers
                 CreatedAt = b.CreatedAt,
                 UpdatedAt = b.UpdatedAt,
                 OrganizationId = b.OrganizationId,
-                OrganizationName = orgMap.ContainsKey(b.OrganizationId) ? orgMap[b.OrganizationId] : null,
+                OrganizationName = orgMap.TryGetValue(b.OrganizationId, out string? value) ? value : null,
                 Documents = documents.Where(d => d.BuildingId == b.BuildingId)
                     .Select(d => new KeyValuePair<int, string>(d.DocumentId, d.Title)).ToList()
             }).ToList();

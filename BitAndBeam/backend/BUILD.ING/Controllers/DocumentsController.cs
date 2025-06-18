@@ -443,13 +443,56 @@ namespace BUILD.ING.Controllers
                 return NotFound();
 
             if (request.CategoryId.HasValue)
+            {
+                var category = _context.DocumentCategories.FirstOrDefault(c => c.CategoryId == request.CategoryId.Value);
+                if (category == null)
+                    return BadRequest($"Category with ID {request.CategoryId} not found.");
+                document.Category = category;
                 document.CategoryId = request.CategoryId.Value;
+                if (category.Documents == null)
+                    category.Documents = new List<Document>();
+                if (!category.Documents.Contains(document))
+                    category.Documents.Add(document); // Ensure the document is linked to the category
+            }
             if (request.BuildingId.HasValue)
+            {
+                var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
+                if (building == null)
+                    return BadRequest($"Building with ID {request.BuildingId} not found.");
+                document.Building = building;
                 document.BuildingId = request.BuildingId.Value;
+                if (building.Documents == null)
+                    building.Documents = new List<Document>();
+                if (!building.Documents.Contains(document))
+                    building.Documents.Add(document); // Ensure the document is linked to the building
+            }
 
             _context.SaveChanges();
 
-            return Ok(document);
+            var dto = new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryId = document.CategoryId,
+                CategoryName = document.Category?.Name,
+                BuildingId = document.BuildingId,
+                BuildingName = document.Building?.Name,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            };
+            return Ok(dto);
         }
 
         public class DocumentMetadataPatchRequest

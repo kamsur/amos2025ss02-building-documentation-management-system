@@ -24,8 +24,6 @@ namespace BUILD.ING.Models
 
         public int OrganizationId { get; set; }
         public Organization Organization { get; set; }
-
-        [JsonIgnore]
         public ICollection<Document> Documents { get; set; }
         public ICollection<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
     }
