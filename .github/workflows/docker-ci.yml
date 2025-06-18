@@ -93,14 +93,14 @@ jobs:
 
             # --- uncomment to reset DB volume ---
             # echo "Dropping Postgres volume to force schema reinitialization..."
-            docker volume rm bitandbeam_pgdata bitandbeam_documentdata || true
+            # docker volume rm bitandbeam_pgdata bitandbeam_documentdata || true
 
             # --- remove old images ONLY when BitAndBeam folder changed ---
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
               echo "BitAndBeam changed – removing old images."
-              docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
-              docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
-              docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
+              # docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
+              # docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
+              # docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
             else
               echo "BitAndBeam unchanged – keeping existing images."
             fi
