@@ -118,7 +118,7 @@ namespace BUILD.ING.Controllers
         public async Task<ActionResult<BuildingDto>> GetBuilding(int id)
         {
             _logger.LogInformation("GetBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
-            
+
             var building = await _context.Buildings.FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
             if (building == null)
             {
