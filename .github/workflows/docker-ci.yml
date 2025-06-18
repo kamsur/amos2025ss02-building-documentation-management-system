@@ -6,12 +6,16 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
   packages: write
+  pull-requests: write
 
 jobs:
   check-openapi:
     uses: ./.github/workflows/openapi-client.yml
+    permissions:
+      contents: write
+      pull-requests: write
 
   build-and-deploy:
     needs: check-openapi
@@ -22,7 +26,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0      # ← fetch all history so “before” commit exists locally
+          fetch-depth: 0      # ← fetch all history so "before" commit exists locally
 
       # ---------------- detect BitAndBeam changes ----------------
       - name: Check if BitAndBeam folder changed
@@ -50,6 +54,36 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./BitAndBeam/frontend
+          push: true
+          tags: |
+            ghcr.io/amosproj/bitandbeam-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./BitAndBeam/backend
+          push: true
+          tags: |
+            ghcr.io/amosproj/bitandbeam-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push ollama image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./BitAndBeam/ollama
+          push: true
+          tags: |
+            ghcr.io/amosproj/bitandbeam-ollama:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Upload project to server
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -58,31 +92,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "BitAndBeam"
           target: "~/"
-
-      - name: Stop and remove all containers
-        run: |
-          docker ps -aq | xargs -r docker stop
-          docker ps -aq | xargs -r docker rm
-
-      - name: Remove all Docker images
-        run: |
-          docker images -aq | xargs -r docker rmi -f
-
-      - name: Remove all Docker volumes
-        run: |
-          docker volume ls -q | xargs -r docker volume rm
-
-      # - name: Delete all images from GHCR
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     IMAGE_NAMES="bitandbeam-frontend bitandbeam-backend bitandbeam-ollama"
-      #     for IMAGE in $IMAGE_NAMES; do
-      #       echo "Deleting all versions of $IMAGE from GHCR..."
-      #       gh api -H "Accept: application/vnd.github+json" /orgs/${{ github.repository_owner }}/packages/container/$IMAGE/versions | \
-      #         jq '.[].id' | \
-      #         xargs -I {} gh api --method DELETE -H "Accept: application/vnd.github+json" /orgs/${{ github.repository_owner }}/packages/container/$IMAGE/versions/{}
-      #     done
 
       - name: Deploy to Remote Server
         uses: appleboy/ssh-action@v1.0.0
@@ -95,13 +104,8 @@ jobs:
 
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            echo "Cleaning .NET build artifacts..."
-            # Clean .NET build artifacts
-            # dotnet clean
-
             # Stop running stack
-            # docker compose down --remove-orphans
-            # docker compose -f docker-compose-prod.yml down --remove-orphans
+            docker compose -f docker-compose-prod.yml down
 
             # --- uncomment to reset DB volume ---
             # echo "Dropping Postgres volume to force schema reinitialization..."
@@ -110,19 +114,21 @@ jobs:
             # --- remove old images ONLY when BitAndBeam folder changed ---
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
               echo "BitAndBeam changed – removing old images."
-              # docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
-              # docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
-              # docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
+              docker rmi ghcr.io/amosproj/bitandbeam-frontend:latest || true
+              docker rmi ghcr.io/amosproj/bitandbeam-backend:latest || true
+              docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
             else
               echo "BitAndBeam unchanged – keeping existing images."
             fi
 
-            # Build all required services
-            docker compose -f docker-compose-prod.yml build --no-cache -t frontend backend ollama postgres tika
+            # Always pull (gets newer tags even if source didn’t change)
+            docker compose -f docker-compose-prod.yml pull
 
-            # Push all built images
-            docker compose -f docker-compose-prod.yml push frontend backend ollama postgres tika
+            # Relaunch stack
+            docker compose -f docker-compose-prod.yml up -d
+            # docker compose -f docker-compose-prod.yml logs backend --tail=50
+            # docker compose -f docker-compose-prod.yml exec backend printenv
 
-            # Start only the required services
-            docker compose -f docker-compose-prod.yml up -d frontend backend ollama postgres tika
-
+            # Optional cleanup
+            # docker image prune -af --filter "until=24h"
+            
