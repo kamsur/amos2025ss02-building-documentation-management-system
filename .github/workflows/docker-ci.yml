@@ -97,11 +97,11 @@ jobs:
 
             echo "Cleaning .NET build artifacts..."
             # Clean .NET build artifacts
-            dotnet clean
+            # dotnet clean
 
             # Stop running stack
-            docker compose down --remove-orphans
-            docker compose -f docker-compose-prod.yml down --remove-orphans
+            # docker compose down --remove-orphans
+            # docker compose -f docker-compose-prod.yml down --remove-orphans
 
             # --- uncomment to reset DB volume ---
             # echo "Dropping Postgres volume to force schema reinitialization..."
