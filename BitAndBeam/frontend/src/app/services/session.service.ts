@@ -41,7 +41,10 @@ export class SessionService {
 
   async login(email: string, password: string): Promise<boolean> {
     try {
-      const response = await this.authApi.authLoginPost({ email, password });
+      // ❗ Create a clean client without token
+      const tempAuthApi = this.apiFactory.create(AuthApi);
+
+      const response = await tempAuthApi.authLoginPost({ email, password });
       const result: any = response.data;
 
       if (result.token && result.user) {
@@ -54,6 +57,7 @@ export class SessionService {
     }
     return false;
   }
+
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
