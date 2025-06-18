@@ -8,7 +8,7 @@ services:
       - ollama
       - tika
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - ASPNETCORE_URLS=http://+:5000
       - CORS__AllowedOrigins=http://amos.b-iq.net,https://amos.b-iq.net
