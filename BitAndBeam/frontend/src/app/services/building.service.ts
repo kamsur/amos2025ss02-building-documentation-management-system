@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, switchMap, map, Observable , from} from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, switchMap, map, Observable, from } from 'rxjs';
 import { ConfigService } from '../config.service';
 import { AxiosResponse } from 'axios';
-import { Configuration, DocumentsApi, Document as ApiDocument, BuildingsApi,
-  Building as ApiBuilding } from '../../api';
+import {
+  Configuration,
+  DocumentsApi,
+  Document as ApiDocument,
+  BuildingsApi,
+  Building as ApiBuilding
+} from '../../api';
 import { ApiClientFactory } from './api-client.factory';
-import { SessionService } from './session.service'; // ✅ Needed to get the token
+import { SessionService } from './session.service';
 
 export interface DocumentItem {
   id: number;
@@ -16,7 +20,7 @@ export interface DocumentItem {
 }
 
 export interface DocumentResponse {
-  documentId: number; // 👈 add this
+  documentId: number;
   title: string;
   fileName: string;
   filePath?: string;
@@ -33,40 +37,40 @@ export interface Building {
 
 @Injectable({ providedIn: 'root' })
 export class BuildingService {
-  private documentsApi: DocumentsApi;
-  private buildingsApi: BuildingsApi;
   private buildingsSubject = new BehaviorSubject<ApiBuilding[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
 
+  constructor(
+    private config: ConfigService,
+    private apiFactory: ApiClientFactory,
+    private session: SessionService
+  ) {}
 
-  constructor( private config: ConfigService, private apiFactory: ApiClientFactory,
-    private session: SessionService // ✅ Get the token here
-  ) {
-
-    const token = this.session.getToken() ?? undefined;
-    this.documentsApi = this.apiFactory.create(DocumentsApi, token);
-    this.buildingsApi = this.apiFactory.create(BuildingsApi, token);
-  }
-  //Buildings
+  // Buildings
   getBuildings(): Observable<Building[]> {
+    const token = this.session.getToken() ?? '';
+    const buildingsApi = this.apiFactory.create(BuildingsApi, token);
+
     return from(
-        this.buildingsApi.apiBuildingsGet().then(res =>
-            res.data.map(apiB => ({
-              id: apiB.buildingId!,
-              name: apiB.name ?? '',
-              documents: [] // you can map documents if needed
-            }))
-        )
+      buildingsApi.apiBuildingsGet().then(res =>
+        res.data.map(apiB => ({
+          id: apiB.buildingId!,
+          name: apiB.name ?? '',
+          documents: []
+        }))
+      )
     );
   }
 
   addBuilding(building: Partial<ApiBuilding>): Observable<Building> {
-    return from(this.buildingsApi.apiBuildingsPost(building)).pipe(
-      switchMap((res) => {
-        const createdId = (res.data as unknown as { id: number }).id;
+    const token = this.session.getToken() ?? '';
+    const buildingsApi = this.apiFactory.create(BuildingsApi, token);
 
-        return from(this.buildingsApi.apiBuildingsIdGet(createdId)).pipe(
-          map((b) => {
+    return from(buildingsApi.apiBuildingsPost(building)).pipe(
+      switchMap(res => {
+        const createdId = (res.data as unknown as { id: number }).id;
+        return from(buildingsApi.apiBuildingsIdGet(createdId)).pipe(
+          map(b => {
             const fetchedBuilding = b.data as ApiBuilding;
             return {
               id: fetchedBuilding.buildingId!,
@@ -79,22 +83,30 @@ export class BuildingService {
     );
   }
 
-
-
-
   deleteBuilding(id: number): Observable<void> {
-    return from(this.buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
+    const token = this.session.getToken() ?? '';
+    const buildingsApi = this.apiFactory.create(BuildingsApi, token);
+
+    return from(buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
   }
 
-  //Docs
+  // Documents
   getDocumentById(id: number): Observable<ApiDocument> {
+    const token = this.session.getToken() ?? '';
+    const documentsApi = this.apiFactory.create(DocumentsApi, token);
+
     return from(
-        this.documentsApi.apiDocumentsIdGet(id)
-            .then(res => (res as unknown as AxiosResponse<ApiDocument>).data)
+      documentsApi.apiDocumentsIdGet(id).then(res =>
+        (res as unknown as AxiosResponse<ApiDocument>).data
+      )
     );
   }
+
   deleteDocument(id: number): Observable<void> {
-    return from(this.documentsApi.apiDocumentsIdDelete(id).then(() => {}));
+    const token = this.session.getToken() ?? '';
+    const documentsApi = this.apiFactory.create(DocumentsApi, token);
+
+    return from(documentsApi.apiDocumentsIdDelete(id).then(() => {}));
   }
 
   downloadDocument(id: number): void {

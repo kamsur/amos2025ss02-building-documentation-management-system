@@ -15,8 +15,9 @@ export class ApiClientFactory {
 
     const config = new Configuration({
       basePath: apiUrl,
-      accessToken: token || ''
+      accessToken: token ? `Bearer ${token}` : undefined
     });
+
 
     return new ApiType(config);
   }
