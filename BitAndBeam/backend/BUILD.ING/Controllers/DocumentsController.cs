@@ -304,6 +304,27 @@ namespace BUILD.ING.Controllers
 
             return File(fileBytes, contentType);
         }
+        [HttpPatch("{id}")]
+        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
+        {
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            if (document == null)
+                return NotFound();
 
+            if (request.CategoryId.HasValue)
+                document.CategoryId = request.CategoryId.Value;
+            if (request.BuildingId.HasValue)
+                document.BuildingId = request.BuildingId.Value;
+
+            _context.SaveChanges();
+
+            return Ok(document);
+        }
+
+        public class DocumentMetadataPatchRequest
+        {
+            public int? CategoryId { get; set; }
+            public int? BuildingId { get; set; }
+        }
     }
 }
