@@ -257,6 +257,115 @@ export interface BuildingDocumentRelation {
 /**
  * 
  * @export
+ * @interface BuildingDto
+ */
+export interface BuildingDto {
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingDto
+     */
+    'buildingId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'name'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'streetName'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'houseNumber'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'postalCode'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'city'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'country'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingDto
+     */
+    'constructionYear'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingDto
+     */
+    'totalArea'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingDto
+     */
+    'floors'?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'description'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'coordinates'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'updatedAt'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof BuildingDto
+     */
+    'organizationId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingDto
+     */
+    'organizationName'?: string | null;
+    /**
+     * 
+     * @type {Array<Int32StringKeyValuePair>}
+     * @memberof BuildingDto
+     */
+    'documents'?: Array<Int32StringKeyValuePair> | null;
+}
+/**
+ * 
+ * @export
  * @interface Document
  */
 export interface Document {
@@ -453,12 +562,25 @@ export interface DocumentCategory {
      * @memberof DocumentCategory
      */
     'subCategories'?: Array<DocumentCategory> | null;
+}
+/**
+ * 
+ * @export
+ * @interface DocumentMetadataPatchRequest
+ */
+export interface DocumentMetadataPatchRequest {
     /**
      * 
-     * @type {Array<Document>}
-     * @memberof DocumentCategory
+     * @type {number}
+     * @memberof DocumentMetadataPatchRequest
      */
-    'documents'?: Array<Document> | null;
+    'categoryId'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof DocumentMetadataPatchRequest
+     */
+    'buildingId'?: number | null;
 }
 /**
  * 
@@ -584,11 +706,48 @@ export interface DocumentTagRelation {
  */
 export interface DocumentUpdateRequest {
     /**
-     * New title of the document
+     * New title, category and/or building of the document. If a property is null, the original value is kept.
      * @type {string}
      * @memberof DocumentUpdateRequest
      */
     'title'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof DocumentUpdateRequest
+     */
+    'description'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof DocumentUpdateRequest
+     */
+    'category'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof DocumentUpdateRequest
+     */
+    'building'?: string | null;
+}
+/**
+ * 
+ * @export
+ * @interface Int32StringKeyValuePair
+ */
+export interface Int32StringKeyValuePair {
+    /**
+     * 
+     * @type {number}
+     * @memberof Int32StringKeyValuePair
+     */
+    'key'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Int32StringKeyValuePair
+     */
+    'value'?: string | null;
 }
 /**
  * 
@@ -1260,7 +1419,7 @@ export const BuildingsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiBuildingsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Building>>> {
+        async apiBuildingsGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<BuildingDto>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsGet(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BuildingsApi.apiBuildingsGet']?.[localVarOperationServerIndex]?.url;
@@ -1284,7 +1443,7 @@ export const BuildingsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiBuildingsIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Building>> {
+        async apiBuildingsIdGet(id: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<BuildingDto>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiBuildingsIdGet(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['BuildingsApi.apiBuildingsIdGet']?.[localVarOperationServerIndex]?.url;
@@ -1346,7 +1505,7 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsGet(options?: any): AxiosPromise<Array<Building>> {
+        apiBuildingsGet(options?: any): AxiosPromise<Array<BuildingDto>> {
             return localVarFp.apiBuildingsGet(options).then((request) => request(axios, basePath));
         },
         /**
@@ -1364,7 +1523,7 @@ export const BuildingsApiFactory = function (configuration?: Configuration, base
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiBuildingsIdGet(id: number, options?: any): AxiosPromise<Building> {
+        apiBuildingsIdGet(id: number, options?: any): AxiosPromise<BuildingDto> {
             return localVarFp.apiBuildingsIdGet(id, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1611,6 +1770,43 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
         /**
          * 
          * @param {number} id 
+         * @param {DocumentMetadataPatchRequest} [documentMetadataPatchRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDocumentsIdPatch: async (id: number, documentMetadataPatchRequest?: DocumentMetadataPatchRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('apiDocumentsIdPatch', 'id', id)
+            const localVarPath = `/api/Documents/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(documentMetadataPatchRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1776,6 +1972,19 @@ export const DocumentsApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @param {number} id 
+         * @param {DocumentMetadataPatchRequest} [documentMetadataPatchRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiDocumentsIdPatch(id: number, documentMetadataPatchRequest?: DocumentMetadataPatchRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDocumentsIdPatch(id, documentMetadataPatchRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DocumentsApi.apiDocumentsIdPatch']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1858,6 +2067,16 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
         /**
          * 
          * @param {number} id 
+         * @param {DocumentMetadataPatchRequest} [documentMetadataPatchRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDocumentsIdPatch(id: number, documentMetadataPatchRequest?: DocumentMetadataPatchRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiDocumentsIdPatch(id, documentMetadataPatchRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {number} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1934,6 +2153,18 @@ export class DocumentsApi extends BaseAPI {
      */
     public apiDocumentsIdGet(id: number, options?: RawAxiosRequestConfig) {
         return DocumentsApiFp(this.configuration).apiDocumentsIdGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {number} id 
+     * @param {DocumentMetadataPatchRequest} [documentMetadataPatchRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DocumentsApi
+     */
+    public apiDocumentsIdPatch(id: number, documentMetadataPatchRequest?: DocumentMetadataPatchRequest, options?: RawAxiosRequestConfig) {
+        return DocumentsApiFp(this.configuration).apiDocumentsIdPatch(id, documentMetadataPatchRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

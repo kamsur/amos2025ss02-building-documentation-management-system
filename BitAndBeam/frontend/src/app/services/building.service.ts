@@ -14,13 +14,15 @@ export interface DocumentItem {
 }
 
 export interface DocumentResponse {
-  documentId: number; // 👈 add this
+  documentId: number;
   title: string;
   fileName: string;
   filePath?: string;
   fileSize: number;
   fileType: string;
   uploadDate: string;
+  buildingId?: number | null;
+  categoryId?: number | null;
 }
 
 export interface Building {
@@ -71,6 +73,42 @@ export class BuildingService {
         );
       })
     );
+  }
+  
+  createBuilding(building: { name: string, [key: string]: any }, sourceId?: number): Observable<Building> {
+    // Create API building object
+    const apiBuilding: Partial<ApiBuilding> = {
+      name: building.name,
+      // Add any other properties needed
+    };
+    
+    // If sourceId is provided, we're cloning from an existing building
+    if (sourceId) {
+      return from(this.buildingsApi.apiBuildingsIdGet(sourceId)).pipe(
+        switchMap(sourceResponse => {
+          const sourceBuilding = sourceResponse.data as ApiBuilding;
+          // Copy relevant properties from source building
+          // (e.g., floor plans, metadata, etc. - adjust as needed)
+          
+          return from(this.buildingsApi.apiBuildingsPost(apiBuilding));
+        }),
+        switchMap(response => {
+          const createdId = (response.data as unknown as { id: number }).id;
+          return from(this.buildingsApi.apiBuildingsIdGet(createdId));
+        }),
+        map(response => {
+          const fetchedBuilding = response.data as ApiBuilding;
+          return {
+            id: fetchedBuilding.buildingId!,
+            name: fetchedBuilding.name ?? '',
+            documents: []
+          } as Building;
+        })
+      );
+    } else {
+      // If no sourceId, just create a new building
+      return this.addBuilding(apiBuilding);
+    }
   }
 
 

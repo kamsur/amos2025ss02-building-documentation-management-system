@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
-using NpgsqlTypes;
 
-namespace BUILD.ING.Models
+namespace BUILD.ING.Dto
 {
-    public class Building
+    public class BuildingDto
     {
         public int BuildingId { get; set; }
         public string Name { get; set; }
@@ -18,13 +16,11 @@ namespace BUILD.ING.Models
         public decimal? TotalArea { get; set; }
         public int? Floors { get; set; }
         public string Description { get; set; }
-        public NpgsqlPoint? Coordinates { get; set; }
+        public string? Coordinates { get; set; } // You may want to format NpgsqlPoint as string or object
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
         public int OrganizationId { get; set; }
-        public Organization Organization { get; set; }
-        public ICollection<Document> Documents { get; set; }
-        public ICollection<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
+        public string? OrganizationName { get; set; }
+        public List<KeyValuePair<int, string>> Documents { get; set; } = new List<KeyValuePair<int, string>>();
     }
 }

@@ -211,7 +211,32 @@ namespace BUILD.ING.Controllers
         {
             var groupId = GetCurrentUserGroupId();
             var documents = _context.Documents.Where(d => d.GroupId == groupId).ToList();
-            return Ok(documents);
+            var categoryMap = _context.DocumentCategories.ToDictionary(c => c.CategoryId, c => c.Name);
+            var buildingMap = _context.Buildings.ToDictionary(b => b.BuildingId, b => b.Name);
+            var dtos = documents.Select(document => new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryId = document.CategoryId,
+                CategoryName = document.CategoryId.HasValue && categoryMap.ContainsKey(document.CategoryId.Value) ? categoryMap[document.CategoryId.Value] : null,
+                BuildingId = document.BuildingId,
+                BuildingName = document.BuildingId.HasValue && buildingMap.ContainsKey(document.BuildingId.Value) ? buildingMap[document.BuildingId.Value] : null,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            }).ToList();
+            return Ok(dtos);
         }
 
         [HttpGet("{id}")]
@@ -221,21 +246,127 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
             if (document == null)
                 return NotFound();
-
-            return Ok(document);
+            var categoryName = document.CategoryId.HasValue
+                ? _context.DocumentCategories.Where(c => c.CategoryId == document.CategoryId.Value).Select(c => c.Name).FirstOrDefault()
+                : null;
+            var buildingName = document.BuildingId.HasValue
+                ? _context.Buildings.Where(b => b.BuildingId == document.BuildingId.Value).Select(b => b.Name).FirstOrDefault()
+                : null;
+            var dto = new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryId = document.CategoryId,
+                CategoryName = categoryName,
+                BuildingId = document.BuildingId,
+                BuildingName = buildingName,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            };
+            return Ok(dto);
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateDocumentTitle(int id, [FromBody] DocumentUpdateRequest request)
+        public IActionResult UpdateDocument(int id, [FromBody] DocumentUpdateRequest request)
         {
             var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
             if (document == null)
                 return NotFound();
 
-            document.Title = request.Title;
-            _context.SaveChanges();
+            // Handle Category lookup or creation
+            if (!string.IsNullOrEmpty(request.Category))
+            {
+                var category = _context.DocumentCategories.FirstOrDefault(c => c.Name == request.Category);
+                if (category == null)
+                {
+                    category = new DocumentCategory { Name = request.Category };
+                    _context.DocumentCategories.Add(category);
+                    _context.SaveChanges(); // Save to get the generated CategoryId
+                }
+                document.CategoryId = category.CategoryId;
+                document.Category = category;
+                if (category.Documents == null)
+                    category.Documents = new List<Document>();
+                if (!category.Documents.Contains(document))
+                    category.Documents.Add(document); // Ensure the document is linked to the category
+            }
 
-            return Ok(document);
+            // Handle Building lookup
+            if (!string.IsNullOrEmpty(request.Building))
+            {
+                var building = _context.Buildings.FirstOrDefault(b => b.Name == request.Building);
+                if (building == null)
+                    return BadRequest($"Building '{request.Building}' not found.");
+                document.BuildingId = building.BuildingId;
+                document.Building = building;
+                if (building.Documents == null)
+                    building.Documents = new List<Document>();
+                if (!building.Documents.Contains(document))
+                    building.Documents.Add(document); // Ensure the document is linked to the building
+            }
+
+            var requestType = request.GetType();
+            var documentType = document.GetType();
+            foreach (var reqProp in requestType.GetProperties())
+            {
+                if (reqProp.Name == "Category" || reqProp.Name == "Building")
+                    continue; // Already handled above
+                var value = reqProp.GetValue(request);
+                if (value == null)
+                    continue; // Skip nulls to keep original value
+                var docProp = documentType.GetProperty(reqProp.Name);
+                if (docProp == null || !docProp.CanWrite)
+                {
+                    return BadRequest($"Field '{reqProp.Name}' does not exist on Document.");
+                }
+                if (!docProp.PropertyType.IsAssignableFrom(reqProp.PropertyType))
+                {
+                    return BadRequest($"Type mismatch for field '{reqProp.Name}': expected {docProp.PropertyType.Name}, got {reqProp.PropertyType.Name}.");
+                }
+                docProp.SetValue(document, value);
+            }
+
+            _context.SaveChanges();
+            // Reload navigation properties to ensure up-to-date values
+            _context.Entry(document).Reference(d => d.Category).Load();
+            _context.Entry(document).Reference(d => d.Building).Load();
+
+            var dto = new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryId = document.CategoryId,
+                CategoryName = document.Category?.Name,
+                BuildingId = document.BuildingId,
+                BuildingName = document.Building?.Name,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            };
+            return Ok(dto);
         }
 
         [HttpDelete("{id}")]
@@ -304,6 +435,70 @@ namespace BUILD.ING.Controllers
 
             return File(fileBytes, contentType);
         }
+        [HttpPatch("{id}")]
+        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
+        {
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            if (document == null)
+                return NotFound();
 
+            if (request.CategoryId.HasValue)
+            {
+                var category = _context.DocumentCategories.FirstOrDefault(c => c.CategoryId == request.CategoryId.Value);
+                if (category == null)
+                    return BadRequest($"Category with ID {request.CategoryId} not found.");
+                document.Category = category;
+                document.CategoryId = request.CategoryId.Value;
+                if (category.Documents == null)
+                    category.Documents = new List<Document>();
+                if (!category.Documents.Contains(document))
+                    category.Documents.Add(document); // Ensure the document is linked to the category
+            }
+            if (request.BuildingId.HasValue)
+            {
+                var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
+                if (building == null)
+                    return BadRequest($"Building with ID {request.BuildingId} not found.");
+                document.Building = building;
+                document.BuildingId = request.BuildingId.Value;
+                if (building.Documents == null)
+                    building.Documents = new List<Document>();
+                if (!building.Documents.Contains(document))
+                    building.Documents.Add(document); // Ensure the document is linked to the building
+            }
+
+            _context.SaveChanges();
+
+            var dto = new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryId = document.CategoryId,
+                CategoryName = document.Category?.Name,
+                BuildingId = document.BuildingId,
+                BuildingName = document.Building?.Name,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            };
+            return Ok(dto);
+        }
+
+        public class DocumentMetadataPatchRequest
+        {
+            public int? CategoryId { get; set; }
+            public int? BuildingId { get; set; }
+        }
     }
 }
