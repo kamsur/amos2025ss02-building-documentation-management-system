@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthApi } from '../../api';
 import jwt_decode from 'jwt-decode';
 import { ApiClientFactory } from './api-client.factory';
+import { toObservable } from '@angular/core/rxjs-interop'; // ✅ ADD THIS
 
 interface User {
   id: number;
@@ -23,8 +24,9 @@ interface DecodedToken {
 export class SessionService {
   private tokenKey = 'jwt_token';
   private token = signal<string | null>(localStorage.getItem(this.tokenKey));
-  private user = signal<User | null>(null);
+  readonly token$ = toObservable(this.token); // ✅ FIXED — observable, supports .pipe()
 
+  private user = signal<User | null>(null);
   isAuthenticated = computed(() => !!this.token());
   currentUser = this.user.asReadonly();
 
@@ -34,9 +36,9 @@ export class SessionService {
     private router: Router,
     private apiFactory: ApiClientFactory
   ) {
+    this.restoreSession();
     const token = this.getToken();
     this.authApi = this.apiFactory.create(AuthApi, token);
-    this.restoreSession();
   }
 
   async login(email: string, password: string): Promise<boolean> {
@@ -55,7 +57,6 @@ export class SessionService {
     return false;
   }
 
-
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     this.token.set(null);
@@ -68,9 +69,7 @@ export class SessionService {
     this.user.set(user);
     localStorage.setItem(this.tokenKey, token);
 
-    // Refresh AuthApi with new token
-    this.authApi = this.apiFactory.create(AuthApi, token);
-
+    this.authApi = this.apiFactory.create(AuthApi, token); // ✅ Refresh with token
     this.scheduleAutoLogout(token);
   }
 
@@ -90,6 +89,8 @@ export class SessionService {
         organizationId: Number(decoded.org)
       };
       this.user.set(restoredUser);
+
+      this.authApi = this.apiFactory.create(AuthApi, token); // ✅ Recreate API
       this.scheduleAutoLogout(token);
     } else {
       this.logout();
@@ -109,6 +110,8 @@ export class SessionService {
   }
 
   getToken(): string | undefined {
-    return this.token() ?? undefined;
+    const value = this.token();
+    console.log('[SessionService] getToken:', value); // 🐛 Debug
+    return value ?? undefined;
   }
 }

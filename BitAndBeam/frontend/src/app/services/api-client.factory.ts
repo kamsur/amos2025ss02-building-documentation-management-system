@@ -13,6 +13,13 @@ export class ApiClientFactory {
       throw new Error('❌ API URL is missing in ConfigService.');
     }
 
+    if (token) {
+      console.log('[ApiClientFactory] ✅ Using token:', token);
+    } else {
+      console.warn('[ApiClientFactory] ⚠️ No token provided!');
+    }
+
+
     const config = new Configuration({
       basePath: apiUrl,
       accessToken: token ? `Bearer ${token}` : undefined
