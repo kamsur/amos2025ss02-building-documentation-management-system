@@ -46,7 +46,31 @@ export interface Building {
      * @type {string}
      * @memberof Building
      */
-    'address'?: string | null;
+    'streetName'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Building
+     */
+    'houseNumber'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Building
+     */
+    'postalCode'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Building
+     */
+    'city'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Building
+     */
+    'country'?: string | null;
     /**
      * 
      * @type {number}
@@ -131,7 +155,31 @@ export interface BuildingCreateDto {
      * @type {string}
      * @memberof BuildingCreateDto
      */
-    'address'?: string | null;
+    'streetName'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'houseNumber'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'postalCode'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'city'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof BuildingCreateDto
+     */
+    'country'?: string | null;
     /**
      * 
      * @type {number}

@@ -1,3 +1,7 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using BUILD.ING.Data;
 using BUILD.ING.Models;
 using BUILD.ING.Services;
@@ -30,7 +34,7 @@ namespace BUILD.ING.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UploadDocument(IFormFile file)
+        public async Task<IActionResult> UploadDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File is required");
@@ -40,39 +44,122 @@ namespace BUILD.ING.Controllers
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
 
-            // Save the file to disk
-            using var stream = new FileStream(fullPath, FileMode.Create);
-            await file.CopyToAsync(stream).ConfigureAwait(false);
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream).ConfigureAwait(false);
+            }
 
-            // Extract metadata with Tika
+            byte[] fileBytes;
+            using (var ms = new MemoryStream())
+            {
+                await file.CopyToAsync(ms).ConfigureAwait(false);
+                fileBytes = ms.ToArray();
+            }
+
             string metadata = "{}";
+            string textForOllama = string.Empty;
+
             try
             {
-                // Convert file to byte array for Tika processing
-                byte[] fileBytes;
-                using (var ms = new MemoryStream())
-                {
-                    await file.CopyToAsync(ms).ConfigureAwait(false);
-                    fileBytes = ms.ToArray();
-                }
-
-                // Call Tika service to extract metadata
                 metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
-                _logger.LogInformation("Successfully extracted metadata for file {FileName}", file.FileName);
+                textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
+                _logger.LogInformation("✅ Metadata and text extracted for {FileName}", file.FileName);
             }
             catch (Exception ex)
             {
-                // Log error but continue with upload process
-                _logger.LogError(ex, "Failed to extract metadata for file {FileName}", file.FileName);
-                // Empty metadata will be stored
+                _logger.LogError(ex, "❌ Tika extraction failed for file {FileName}", file.FileName);
+            }
+
+            Dictionary<string, string>? parsedAddress = null;
+            Building? matchedBuilding = null;
+
+            try
+            {
+                var shortText = textForOllama.Length > 3000 ? textForOllama.Substring(0, 3000) : textForOllama;
+
+                var prompt = $$"""
+                The following is the extracted text from a German document. Your task is to identify if it contains an address under the field "Adresse" or in free text.
+
+                Extract the address **only if it looks like a valid building address**, and return the result in JSON format with the following 4 fields:
+
+                - street
+                - house_number
+                - zip_code
+                - city
+
+                All values must be strings or null. DO NOT return markdown or explanation.
+
+                Example:
+                {
+                    "street": "Riedener Str.",
+                    "house_number": "1a",
+                    "zip_code": "90518",
+                    "city": "Altdorf"
+                }
+
+                Text:
+                {{shortText}}
+                """;
+
+                var client = httpClientFactory.CreateClient();
+                var json = JsonSerializer.Serialize(new { prompt });
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("http://ollama:8000/api/Ollama/ask", content).ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var ollamaResultJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var ollamaResult = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
+                        ollamaResultJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    parsedAddress = JsonSerializer.Deserialize<Dictionary<string, string>>(ollamaResult?.Response ?? "{}", new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (parsedAddress != null && parsedAddress.TryGetValue("street", out var street) &&
+                        parsedAddress.TryGetValue("zip_code", out var zipCode))
+                    {
+                        parsedAddress.TryGetValue("house_number", out var houseNumber);
+                        parsedAddress.TryGetValue("city", out var city);
+
+                        var buildings = _context.Buildings.ToList();
+                        foreach (var building in buildings)
+                        {
+                            bool matchesStreet = string.Equals(building.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
+                            bool matchesZip = string.Equals(building.PostalCode?.Trim(), zipCode?.Trim(), StringComparison.OrdinalIgnoreCase);
+                            bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) ||
+                                string.Equals(building.HouseNumber?.Trim(), houseNumber?.Trim(), StringComparison.OrdinalIgnoreCase);
+                            bool matchesCity = string.IsNullOrWhiteSpace(city) ||
+                                string.Equals(building.City?.Trim(), city?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                            if (matchesStreet && matchesZip && matchesHouse && matchesCity)
+                            {
+                                matchedBuilding = building;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ Ollama service failed to respond.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Ollama analysis failed");
             }
 
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
                 FileName = file.FileName,
-                FilePath = file.FileName, // Just store file name
-                FileType = Path.GetExtension(file.FileName)?.TrimStart('.').ToLower() ?? "unknown",
+                FilePath = file.FileName,
+                FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
                 FileSize = (int) file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
@@ -80,7 +167,7 @@ namespace BUILD.ING.Controllers
                 Status = "draft",
                 IsPublic = false,
                 Description = "No description provided",
-                Metadata = metadata, // Store the extracted metadata
+                Metadata = metadata,
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
                 GroupId = GetCurrentUserGroupId()
@@ -92,7 +179,31 @@ namespace BUILD.ING.Controllers
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
-            return Ok(new { document.DocumentId, FileUrl = fileUrl, HasMetadata = metadata != "{}" });
+            return Ok(new
+            {
+                document.DocumentId,
+                FileUrl = fileUrl,
+                HasMetadata = metadata != "{}",
+                SuggestedAddress = parsedAddress != null && parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
+                    ? parsedAddress
+                    : new Dictionary<string, string>
+                    {
+                        { "street", "Couldn't identify" },
+                        { "house_number", "Couldn't identify" },
+                        { "zip_code", "Couldn't identify" },
+                        { "city", "Couldn't identify" }
+                    },
+                DetectedBuilding = matchedBuilding != null
+                    ? new
+                    {
+                        matchedBuilding.BuildingId,
+                        matchedBuilding.StreetName,
+                        matchedBuilding.HouseNumber,
+                        matchedBuilding.PostalCode,
+                        matchedBuilding.City
+                    }
+                    : null
+            });
         }
 
         [HttpGet]
