@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
 import { BuildingService , DocumentItem , Building } from '../../services/building.service';
-import { filter, switchMap, take } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -23,16 +22,10 @@ export class SidebarComponent {
     public buildingService: BuildingService
   ) {}
   ngOnInit(): void {
-    this.session.token$
-      .pipe(
-        filter(token => !!token),        // ✅ wait until token is set
-        take(1),                         // ✅ only fetch once
-        switchMap(() => this.buildingService.getBuildings())
-      )
-      .subscribe({
-        next: data => this.buildings = data,
-        error: err => console.error('❌ Failed to load buildings', err)
-      });
+    this.buildingService.getBuildings().subscribe({
+      next: (data) => this.buildings = data,
+      error: (err) => console.error('Failed to load buildings', err)
+    });
   }
 
   toggleExplorer() {

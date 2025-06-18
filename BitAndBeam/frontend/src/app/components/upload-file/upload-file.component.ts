@@ -5,8 +5,6 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import type { AxiosResponse } from 'axios';
-import { filter, switchMap, take } from 'rxjs';
-import { SessionService } from '../../services/session.service';
 
 import {
   DocumentsApi,
@@ -53,24 +51,17 @@ export class UploadFileComponent implements OnInit {
     private apiFactory: ApiClientFactory, // ✅ centralized factory
     private config: ConfigService,
     private router: Router,
-    public buildingService: BuildingService,
-    public session: SessionService
+    public buildingService: BuildingService
   ) {
     this.documentsApi = this.apiFactory.create(DocumentsApi);
     this.ollamaApi = this.apiFactory.create(OllamaApi);
   }
 
   ngOnInit() {
-    this.session.token$
-      .pipe(
-        filter(token => !!token),
-        take(1),
-        switchMap(() => this.buildingService.getBuildings())
-      )
-      .subscribe({
-        next: data => this.buildings = data,
-        error: err => console.error('❌ Failed to fetch buildings', err)
-      });
+    this.buildingService.getBuildings().subscribe({
+      next: (data) => (this.buildings = data),
+      error: (err) => console.error('Failed to fetch buildings', err)
+    });
   }
 
   onFileSelected(event: any) {

@@ -1,9 +1,8 @@
+// session.service.ts
 import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthApi } from '../../api';
+import { AuthApi, Configuration } from '../../api';
 import jwt_decode from 'jwt-decode';
-import { ApiClientFactory } from './api-client.factory';
-import { toObservable } from '@angular/core/rxjs-interop'; // ✅ ADD THIS
 
 interface User {
   id: number;
@@ -24,30 +23,26 @@ interface DecodedToken {
 export class SessionService {
   private tokenKey = 'jwt_token';
   private token = signal<string | null>(localStorage.getItem(this.tokenKey));
-  readonly token$ = toObservable(this.token); // ✅ FIXED — observable, supports .pipe()
-
   private user = signal<User | null>(null);
+
   isAuthenticated = computed(() => !!this.token());
   currentUser = this.user.asReadonly();
 
   private authApi: AuthApi;
 
-  constructor(
-    private router: Router,
-    private apiFactory: ApiClientFactory
-  ) {
+  constructor(private router: Router) {
+    const config = new Configuration({ basePath: 'http://localhost:5001' });
+    this.authApi = new AuthApi(config);
     this.restoreSession();
-    const token = this.getToken();
-    this.authApi = this.apiFactory.create(AuthApi, token);
   }
 
   async login(email: string, password: string): Promise<boolean> {
     try {
-      const tempAuthApi = this.apiFactory.create(AuthApi); // no token
-      const response = await tempAuthApi.authLoginPost({ email, password });
-      const result = response.data as unknown as { token: string; user: any };
+      const response = await this.authApi.authLoginPost({ email, password });
+      const result: any = response.data;
 
       if (result.token && result.user) {
+        console.log('✅ Token from login:', result.token);
         this.setSession(result.token, result.user);
         return true;
       }
@@ -68,8 +63,6 @@ export class SessionService {
     this.token.set(token);
     this.user.set(user);
     localStorage.setItem(this.tokenKey, token);
-
-    this.authApi = this.apiFactory.create(AuthApi, token); // ✅ Refresh with token
     this.scheduleAutoLogout(token);
   }
 
@@ -89,8 +82,6 @@ export class SessionService {
         organizationId: Number(decoded.org)
       };
       this.user.set(restoredUser);
-
-      this.authApi = this.apiFactory.create(AuthApi, token); // ✅ Recreate API
       this.scheduleAutoLogout(token);
     } else {
       this.logout();
@@ -109,9 +100,7 @@ export class SessionService {
     }
   }
 
-  getToken(): string | undefined {
-    const value = this.token();
-    console.log('[SessionService] getToken:', value); // 🐛 Debug
-    return value ?? undefined;
+  getToken(): string | null {
+    return this.token();
   }
 }
