@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using NpgsqlTypes;
 
 namespace BUILD.ING.Models
@@ -23,8 +24,8 @@ namespace BUILD.ING.Models
 
         public int OrganizationId { get; set; }
         public Organization Organization { get; set; }
-
         public ICollection<Document> Documents { get; set; }
         public ICollection<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
     }
 }
+
