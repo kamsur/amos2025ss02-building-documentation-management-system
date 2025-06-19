@@ -7,7 +7,7 @@ using BUILD.ING.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging; //
 using NpgsqlTypes;
 
 namespace BUILD.ING.Controllers
@@ -18,128 +18,212 @@ namespace BUILD.ING.Controllers
     public class BuildingsController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<BuildingsController> _logger;
-
+        private readonly ILogger<BuildingsController> _logger;  // ADDED: Inject ILogger for logging
         public BuildingsController(AppDbContext context, ILogger<BuildingsController> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        private int GetOrgId() =>
-            int.TryParse(User.FindFirst("org")?.Value, out var id)
-                ? id
-                : throw new UnauthorizedAccessException("Organization claim missing.");
-
         // POST: api/Buildings
+        // Creates a new building and returns its ID
         [HttpPost]
         public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
         {
-            var orgId = GetOrgId();
-            _logger.LogInformation("CreateBuilding (org {Org})", orgId);
+            _logger.LogInformation("CreateBuilding called at {Time}", DateTime.UtcNow); // ADDED: Log method entry
+            // ✅ Convert coordinate data if present
+            NpgsqlPoint? coordinates = null;
+            if (dto.Coordinates.HasValue)
+            {
+                coordinates = new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y);
+            }
 
-            NpgsqlPoint? coordinates = dto.Coordinates.HasValue
-                ? new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y)
-                : null;
 
             var building = new Building
             {
                 Name = dto.Name,
-                Address = dto.Address,
+                StreetName = dto.StreetName,
+                HouseNumber = dto.HouseNumber,
+                PostalCode = dto.PostalCode,
+                City = dto.City,
+                Country = dto.Country,
                 ConstructionYear = dto.ConstructionYear,
                 TotalArea = dto.TotalArea,
                 Floors = dto.Floors,
                 Description = dto.Description,
-                OrganizationId = orgId,
+                OrganizationId = dto.OrganizationId,
                 Coordinates = coordinates,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
+                Documents = new List<Document>()
             };
 
             _context.Buildings.Add(building);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            _logger.LogInformation("Building {Id} created in org {Org}", building.BuildingId, orgId);
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+                _logger.LogInformation("Building created successfully with ID {BuildingId}", building.BuildingId); // ADDED: Log success
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating building"); // ADDED: Log exception
+                return StatusCode(500, ex.Message);
+            }
+
             return Ok(new { id = building.BuildingId });
         }
 
         // GET: api/Buildings
+        // Returns a list of all buildings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Building>>> GetBuildings()
+        public async Task<ActionResult<IEnumerable<BuildingDto>>> GetBuildings()
         {
-            var orgId = GetOrgId();
-            _logger.LogInformation("GetBuildings (org {Org})", orgId);
+            _logger.LogInformation("GetBuildings called at {Time}", DateTime.UtcNow);
 
-            var buildings = await _context.Buildings
-                                          .Where(b => b.OrganizationId == orgId)
-                                          .ToListAsync()
-                                          .ConfigureAwait(false);
-
-            return buildings;
+            var buildings = await _context.Buildings.ToListAsync().ConfigureAwait(false);
+            var buildingIds = buildings.Select(b => b.BuildingId).ToList();
+            var documents = _context.Documents
+                .Where(d => d.BuildingId.HasValue && buildingIds.Contains(d.BuildingId.Value))
+                .Select(d => new { d.BuildingId, d.DocumentId, d.Title })
+                .ToList();
+            var orgMap = _context.Organizations.ToDictionary(o => o.OrganizationId, o => o.Name);
+            var dtos = buildings.Select(b => new BuildingDto
+            {
+                BuildingId = b.BuildingId,
+                Name = b.Name,
+                StreetName = b.StreetName,
+                HouseNumber = b.HouseNumber,
+                PostalCode = b.PostalCode,
+                City = b.City,
+                Country = b.Country,
+                ConstructionYear = b.ConstructionYear,
+                TotalArea = b.TotalArea,
+                Floors = b.Floors,
+                Description = b.Description,
+                Coordinates = b.Coordinates?.ToString(),
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt,
+                OrganizationId = b.OrganizationId,
+                OrganizationName = orgMap.TryGetValue(b.OrganizationId, out string? value) ? value : null,
+                Documents = documents.Where(d => d.BuildingId == b.BuildingId)
+                    .Select(d => new KeyValuePair<int, string>(d.DocumentId, d.Title)).ToList()
+            }).ToList();
+            _logger.LogInformation("GetBuildings returned {Count} records", dtos.Count);
+            return Ok(dtos);
         }
 
         // GET: api/Buildings/{id}
+        // Returns a single building by ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<Building>> GetBuilding(int id)
+        public async Task<ActionResult<BuildingDto>> GetBuilding(int id)
         {
-            var orgId = GetOrgId();
-            _logger.LogInformation("GetBuilding {Id} (org {Org})", id, orgId);
+            _logger.LogInformation("GetBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
 
-            var building = await _context.Buildings
-                                         .Include(b => b.Documents)
-                                         .Include(b => b.BuildingDocumentRelations)
-                                         .FirstOrDefaultAsync(b => b.BuildingId == id && b.OrganizationId == orgId)
-                                         .ConfigureAwait(false);
+            var building = await _context.Buildings.FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
+            if (building == null)
+            {
+                _logger.LogWarning("GetBuilding did not find building with ID {BuildingId}", id);
+                return NotFound();
+            }
 
-            return building == null ? NotFound() : Ok(building);
+            var orgName = _context.Organizations.Where(o => o.OrganizationId == building.OrganizationId).Select(o => o.Name).FirstOrDefault();
+            var documents = _context.Documents
+                .Where(d => d.BuildingId == id)
+                .Select(d => new KeyValuePair<int, string>(d.DocumentId, d.Title))
+                .ToList();
+            var dto = new BuildingDto
+            {
+                BuildingId = building.BuildingId,
+                Name = building.Name,
+                StreetName = building.StreetName,
+                HouseNumber = building.HouseNumber,
+                PostalCode = building.PostalCode,
+                City = building.City,
+                Country = building.Country,
+                ConstructionYear = building.ConstructionYear,
+                TotalArea = building.TotalArea,
+                Floors = building.Floors,
+                Description = building.Description,
+                Coordinates = building.Coordinates?.ToString(),
+                CreatedAt = building.CreatedAt,
+                UpdatedAt = building.UpdatedAt,
+                OrganizationId = building.OrganizationId,
+                OrganizationName = orgName,
+                Documents = documents
+            };
+            _logger.LogInformation("GetBuilding found building with ID {BuildingId}", id);
+            return Ok(dto);
         }
 
         // PUT: api/Buildings/{id}
+        // Updates a building by ID
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBuilding(int id, [FromBody] Building updated)
+        public async Task<IActionResult> UpdateBuilding(int id, [FromBody] Building updatedBuilding)
         {
-            var orgId = GetOrgId();
-            if (id != updated.BuildingId) return BadRequest("Mismatched Building ID");
+            if (id != updatedBuilding.BuildingId)
+                return BadRequest("Mismatched Building ID");
 
-            var existing = await _context.Buildings
-                                         .FirstOrDefaultAsync(b => b.BuildingId == id && b.OrganizationId == orgId)
-                                         .ConfigureAwait(false);
+            //var existingBuilding = await _context.Buildings.FindAsync(id).ConfigureAwait(false);
+            var existingBuilding = await _context.Buildings
+                .Include(b => b.Documents)
+                .Include(b => b.BuildingDocumentRelations)
+                .FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
 
-            if (existing == null) return NotFound();
 
-            _context.Entry(existing).CurrentValues.SetValues(updated);
-            existing.UpdatedAt = DateTime.UtcNow;
-            existing.OrganizationId = orgId;
+            if (existingBuilding == null)
+                return NotFound();
 
-            await _context.SaveChangesAsync().ConfigureAwait(false);
+            // If the incoming organizationId is null or 0, preserve existing one
+            if (updatedBuilding.OrganizationId == 0)
+                updatedBuilding.OrganizationId = existingBuilding.OrganizationId;
+
+            _context.Entry(existingBuilding).CurrentValues.SetValues(updatedBuilding);
+
+
+            // Update only editable fields
+            existingBuilding.Name = updatedBuilding.Name;
+            existingBuilding.StreetName = updatedBuilding.StreetName;
+            existingBuilding.HouseNumber = updatedBuilding.HouseNumber;
+            existingBuilding.PostalCode = updatedBuilding.PostalCode;
+            existingBuilding.City = updatedBuilding.City;
+            existingBuilding.Country = updatedBuilding.Country;
+            existingBuilding.ConstructionYear = updatedBuilding.ConstructionYear;
+            existingBuilding.TotalArea = updatedBuilding.TotalArea;
+            existingBuilding.Floors = updatedBuilding.Floors;
+            existingBuilding.Description = updatedBuilding.Description;
+            existingBuilding.Coordinates = updatedBuilding.Coordinates;
+            existingBuilding.UpdatedAt = DateTime.UtcNow;
+
+            _context.Entry(existingBuilding).Property(b => b.UpdatedAt).IsModified = true;
+            _context.Entry(existingBuilding).Property(b => b.Coordinates).IsModified = true;
+
+            try
+            {
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("‼️ ERROR during SaveChanges: " + ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+
+
+            //await _context.SaveChangesAsync();
             return NoContent();
         }
-
-        // DELETE: api/Buildings/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBuilding(int id)
-        {
-            var orgId = GetOrgId();
-            var building = await _context.Buildings
-                                         .Include(b => b.BuildingDocumentRelations)
-                                         .FirstOrDefaultAsync(b => b.BuildingId == id && b.OrganizationId == orgId)
-                                         .ConfigureAwait(false);
-
-            if (building == null) return NotFound();
-
-            _context.BuildingDocumentRelations.RemoveRange(building.BuildingDocumentRelations);
-            _context.Buildings.Remove(building);
-            await _context.SaveChangesAsync().ConfigureAwait(false);
-            return NoContent();
-        }
-
-        // Debug helpers
 
         [HttpGet("debug-db")]
         public IActionResult GetDbInfo()
         {
             var conn = _context.Database.GetDbConnection();
-            return Ok(new { conn.Database, conn.DataSource, conn.ConnectionString });
+            return Ok(new
+            {
+                conn.Database,
+                conn.DataSource,
+                conn.ConnectionString
+            });
         }
 
         [HttpGet("debug-full")]
@@ -153,6 +237,42 @@ namespace BUILD.ING.Controllers
                 Source = conn.DataSource,
                 Db = conn.Database
             });
+        }
+
+
+
+        // DELETE: api/Buildings/{id}
+        // Deletes a building and its related documents
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBuilding(int id)
+        {
+            _logger.LogInformation("DeleteBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
+
+            var building = await _context.Buildings
+                .Include(b => b.BuildingDocumentRelations)
+                .FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
+
+            if (building == null)
+            {
+                _logger.LogWarning("DeleteBuilding could not find building with ID {BuildingId}", id);
+                return NotFound();
+            }
+
+            try
+            {
+                _context.BuildingDocumentRelations.RemoveRange(building.BuildingDocumentRelations);
+                _context.Buildings.Remove(building);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+
+                _logger.LogInformation("DeleteBuilding successfully deleted building with ID {BuildingId}", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting building with ID {BuildingId}", id);
+                return StatusCode(500, ex.Message);
+            }
+
+            return NoContent();
         }
     }
 }
