@@ -40,6 +40,8 @@ export class FileViewComponent {
       this.notFound = true;
       return;
     }
+    this.buildingService.getBuildings().subscribe(b => this.buildings = b);
+    this.categoryService.getCategories().subscribe(c => this.categories = c);
 
     this.buildingService.getDocumentById(id).subscribe({
       next: (doc: ApiDocument) => {
