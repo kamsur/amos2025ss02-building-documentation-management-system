@@ -8,14 +8,18 @@ export class ApiClientFactory {
   constructor(private config: ConfigService, private session: SessionService) {}
 
 
-  create<T>(type: new (cfg: Configuration) => T, token?: string): T {
-    const authToken = token ?? this.session.getToken() ?? undefined;
+  create<T>(type: new (cfg: Configuration) => T): T {
     const config = new Configuration({
       basePath: this.config.apiUrl,
-      accessToken: authToken
+
+      // ✅ This injects the token as Authorization header on every request
+      accessToken: () => {
+        const token = this.session.getToken();
+        console.log('✅ Using token in ApiClientFactory:', token);
+        return token || '';
+      }
     });
 
-    console.log('✅ Using token in ApiClientFactory:', authToken);
     return new type(config);
   }
 }

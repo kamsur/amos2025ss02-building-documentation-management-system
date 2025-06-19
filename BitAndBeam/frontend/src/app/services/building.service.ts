@@ -48,8 +48,7 @@ export class BuildingService {
 
   // Buildings
   getBuildings(): Observable<Building[]> {
-    const token = this.session.getToken() ?? '';
-    const buildingsApi = this.apiFactory.create(BuildingsApi, token);
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
 
     return from(
       buildingsApi.apiBuildingsGet().then(res =>
@@ -63,8 +62,7 @@ export class BuildingService {
   }
 
   addBuilding(building: Partial<ApiBuilding>): Observable<Building> {
-    const token = this.session.getToken() ?? '';
-    const buildingsApi = this.apiFactory.create(BuildingsApi, token);
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
 
     return from(buildingsApi.apiBuildingsPost(building)).pipe(
       switchMap(res => {
@@ -84,16 +82,14 @@ export class BuildingService {
   }
 
   deleteBuilding(id: number): Observable<void> {
-    const token = this.session.getToken() ?? '';
-    const buildingsApi = this.apiFactory.create(BuildingsApi, token);
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
 
     return from(buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
   }
 
   // Documents
   getDocumentById(id: number): Observable<ApiDocument> {
-    const token = this.session.getToken() ?? '';
-    const documentsApi = this.apiFactory.create(DocumentsApi, token);
+    const documentsApi = this.apiFactory.create(DocumentsApi);
 
     return from(
       documentsApi.apiDocumentsIdGet(id).then(res =>
@@ -103,8 +99,7 @@ export class BuildingService {
   }
 
   deleteDocument(id: number): Observable<void> {
-    const token = this.session.getToken() ?? '';
-    const documentsApi = this.apiFactory.create(DocumentsApi, token);
+    const documentsApi = this.apiFactory.create(DocumentsApi);
 
     return from(documentsApi.apiDocumentsIdDelete(id).then(() => {}));
   }
