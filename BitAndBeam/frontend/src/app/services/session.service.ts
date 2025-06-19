@@ -43,11 +43,13 @@ export class SessionService {
 
       if (result.token && result.user) {
         console.log('✅ Token from login:', result.token);
+
+        // ✅ Changed: scheduleAutoLogout is now called asynchronously (non-blocking)
         this.setSession(result.token, result.user);
         return true;
       }
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error('❌ Login failed:', err);
     }
     return false;
   }
@@ -63,31 +65,39 @@ export class SessionService {
     this.token.set(token);
     this.user.set(user);
     sessionStorage.setItem(this.tokenKey, token);
-    this.scheduleAutoLogout(token);
+    setTimeout(() => this.scheduleAutoLogout(token), 0);
   }
+
 
   private restoreSession(): void {
     const token = sessionStorage.getItem(this.tokenKey);
     if (!token) return;
 
-    const decoded = jwt_decode<DecodedToken>(token);
-    const now = Date.now() / 1000;
+    try {
+      const decoded = jwt_decode<DecodedToken>(token);
+      const now = Date.now() / 1000;
 
-    if (decoded.exp > now) {
-      this.token.set(token);
-      const restoredUser: User = {
-        id: Number(decoded.uid),
-        email: decoded.sub,
-        role: decoded.r,
-        organizationId: Number(decoded.org)
-      };
-      this.user.set(restoredUser);
-      this.scheduleAutoLogout(token);
-    } else {
+      if (decoded.exp > now) {
+        this.token.set(token);
+        const restoredUser: User = {
+          id: Number(decoded.uid),
+          email: decoded.sub,
+          role: decoded.r,
+          organizationId: Number(decoded.org)
+        };
+        this.user.set(restoredUser);
+
+        // ✅ Changed: use non-blocking timeout for auto-logout
+        setTimeout(() => this.scheduleAutoLogout(token), 0);
+      } else {
+        this.logout();
+      }
+    } catch {
+      // ✅ Added: defensive catch block for malformed/invalid token
       this.logout();
     }
   }
-
+  
   private scheduleAutoLogout(token: string): void {
     const decoded = jwt_decode<DecodedToken>(token);
     const expiresAt = decoded.exp * 1000;
