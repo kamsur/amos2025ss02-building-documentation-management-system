@@ -28,6 +28,15 @@ namespace BUILD.ING.Services
         /// <param name="fileBytes">The file contents as a byte array.</param>
         /// <param name="fileName">The file name (for logging).</param>
         /// <returns>Extracted text or a fallback message in case of error.</returns>
+        /// <summary>
+        /// Backwards-compatible overload that assumes OCR when needed (performOcr=true)
+        /// </summary>
+        public Task<string> ExtractTextAsync(byte[] fileBytes, string fileName)
+        {
+            // default behaviour: allow OCR for maximum accuracy
+            return ExtractTextAsync(fileBytes, fileName, true);
+        }
+
         public async Task<string> ExtractTextAsync(byte[] fileBytes, string fileName, bool performOcr)
         {
             try

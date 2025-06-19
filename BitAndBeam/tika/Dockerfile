@@ -1,5 +1,8 @@
 # Custom Apache Tika image with Tesseract OCR and multi-language support
-FROM apache/tika:2.9.1
+# Use the latest official Apache Tika image (2.x). If a specific version is required,
+# check available tags with:  docker pull apache/tika:<TAB>
+# At time of writing 2.9.1 is not published, so we pin to 2.9.0 as the newest.
+FROM apache/tika:latest
 
 # Switch to root to install extra packages
 USER root
