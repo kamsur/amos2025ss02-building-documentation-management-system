@@ -5,26 +5,17 @@ import { SessionService } from './session.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiClientFactory {
-  constructor(
-    private configService: ConfigService,
-    private session: SessionService // ✅ Inject SessionService
-  ) {}
+  constructor(private config: ConfigService, private session: SessionService) {}
 
-  create<T>(ApiType: new (config: Configuration) => T, token?: string): T {
-    const apiUrl = this.configService.apiUrl;
 
-    const resolvedToken = token ?? this.session.getToken();
-    if (resolvedToken) {
-      console.log('[ApiClientFactory] ✅ Using token:', resolvedToken);
-    } else {
-      console.warn('[ApiClientFactory] ⚠️ No token provided!');
-    }
-
+  create<T>(type: new (cfg: Configuration) => T, token?: string): T {
+    const authToken = token ?? this.session.getToken() ?? undefined;
     const config = new Configuration({
-      basePath: apiUrl,
-      accessToken: resolvedToken ?? ''
+      basePath: this.config.apiUrl,
+      accessToken: authToken
     });
 
-    return new ApiType(config);
+    console.log('✅ Using token in ApiClientFactory:', authToken);
+    return new type(config);
   }
 }
