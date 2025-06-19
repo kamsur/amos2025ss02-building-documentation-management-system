@@ -9,16 +9,20 @@ export class ApiClientFactory {
 
 
   create<T>(type: new (cfg: Configuration) => T): T {
+    const token = this.session.getToken();
+
     const config = new Configuration({
       basePath: this.config.apiUrl,
 
-      // ✅ This injects the token as Authorization header on every request
-      accessToken: () => {
-        const token = this.session.getToken();
-        console.log('✅ Using token in ApiClientFactory:', token);
-        return token || '';
+      // ✅ Axios clients require headers to be explicitly passed
+      baseOptions: {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : ''
+        }
       }
     });
+
+    console.log('✅ Attaching Authorization header:', config.baseOptions?.headers);
 
     return new type(config);
   }
