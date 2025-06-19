@@ -22,7 +22,7 @@ interface DecodedToken {
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private tokenKey = 'jwt_token';
-  private token = signal<string | null>(localStorage.getItem(this.tokenKey));
+  private token = signal<string | null>(sessionStorage.getItem(this.tokenKey));
   private user = signal<User | null>(null);
 
   isAuthenticated = computed(() => !!this.token());
@@ -53,7 +53,7 @@ export class SessionService {
   }
 
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
+    sessionStorage.removeItem(this.tokenKey);
     this.token.set(null);
     this.user.set(null);
     this.router.navigate(['/login']);
@@ -62,12 +62,12 @@ export class SessionService {
   private setSession(token: string, user: User): void {
     this.token.set(token);
     this.user.set(user);
-    localStorage.setItem(this.tokenKey, token);
+    sessionStorage.setItem(this.tokenKey, token);
     this.scheduleAutoLogout(token);
   }
 
   private restoreSession(): void {
-    const token = localStorage.getItem(this.tokenKey);
+    const token = sessionStorage.getItem(this.tokenKey);
     if (!token) return;
 
     const decoded = jwt_decode<DecodedToken>(token);
