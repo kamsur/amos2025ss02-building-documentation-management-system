@@ -5,7 +5,7 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { ConfigService } from '../../config.service';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
-import { Configuration, DocumentsApi, Document as ApiDocument } from '../../../api';
+import { Configuration, DocumentsApi, Document as ApiDocument, DocumentMetadataPatchRequest } from '../../../api';
 import { CategoryService, Category } from '../../services/category.service';
 import { ApiClientFactory } from '../../services/api-client.factory';
 
@@ -61,6 +61,8 @@ export class FileViewComponent {
             { label: 'Type', value: doc.fileType ?? 'unknown' },
           ],
         };
+        this.selectedBuildingId = doc.buildingId ?? null;
+        this.selectedCategoryId = doc.categoryId ?? null;
         // Determine file type for viewer
         const fileType = (doc.fileType ?? '').toLowerCase();
         this.isPdf = fileType === 'pdf';
@@ -72,6 +74,32 @@ export class FileViewComponent {
       },
     });
   }
+  // ✅ Save changes to backend
+  saveMetadataChanges(): void {
+    if (!this.selectedFile?.id) return;
+
+    this.loading = true;
+    this.toastMessage = '';
+
+    const patchRequest: DocumentMetadataPatchRequest = {
+      buildingId: this.selectedBuildingId,
+      categoryId: this.selectedCategoryId
+    };
+
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
+      .then(() => {
+        this.toastMessage = '✅ Metadata updated successfully.';
+        setTimeout(() => this.toastMessage = '', 4000);
+      })
+      .catch(() => {
+        this.toastMessage = '❌ Failed to update metadata.';
+      })
+      .finally(() => {
+        this.loading = false;
+      });
+  }
+
   downloadFile(): void {
     if (this.selectedFile?.id) {
       this.buildingService.downloadDocument(this.selectedFile.id);
