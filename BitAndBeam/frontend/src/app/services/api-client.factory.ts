@@ -21,9 +21,6 @@ export class ApiClientFactory {
         }
       }
     });
-
-    console.log('✅ Attaching Authorization header:', config.baseOptions?.headers);
-
     return new type(config);
   }
 }
