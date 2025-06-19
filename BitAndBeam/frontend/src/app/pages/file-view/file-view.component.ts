@@ -6,6 +6,8 @@ import { ConfigService } from '../../config.service';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
 import { Configuration, DocumentsApi, Document as ApiDocument } from '../../../api';
+import { CategoryService, Category } from '../../services/category.service';
+import { ApiClientFactory } from '../../services/api-client.factory';
 
 @Component({
   standalone: true,
@@ -20,8 +22,15 @@ export class FileViewComponent {
   notFound = false;
   isPdf = false;
   isImage = false;
-
-  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
+// ✅ NEW: For dropdown metadata editing
+  buildings: any[] = [];
+  categories: Category[] = [];
+  selectedBuildingId: number | null = null;
+  selectedCategoryId: number | null = null;
+  // ✅ NEW: Feedback states
+  loading = false;
+  toastMessage = '';
+  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService, private categoryService: CategoryService, private apiFactory: ApiClientFactory) {}
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = Number(idParam);
