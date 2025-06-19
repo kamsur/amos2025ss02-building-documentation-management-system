@@ -1,9 +1,4 @@
-# Custom Apache Tika image with Tesseract OCR and multi-language support
-# Use the latest official Apache Tika image (2.x). If a specific version is required,
-# check available tags with:  docker pull apache/tika:<TAB>
-# At time of writing 2.9.1 is not published, so we pin to 2.9.0 as the newest.
 FROM apache/tika:latest
-
 # Switch to root to install extra packages
 USER root
 
@@ -21,10 +16,11 @@ RUN apt-get update \
 COPY tika-config.xml /tika-config.xml
 
 # Expose the configuration path as env variable (Tika reads this automatically)
-ENV TIKA_CONFIG=/tika-config.xml
+ENV TIKA_CONFIG=file:///tika-config.xml
 
-# Switch back to the unprivileged user used by upstream image
-USER tika
+# Run as root (apache/tika:latest may not define a 'tika' user)
+# If non-root execution is required, create a user with `useradd` and adjust permissions.
+# USER tika
 
 # Default command provided by base image (no change)
 CMD ["/docker-entrypoint.sh"]

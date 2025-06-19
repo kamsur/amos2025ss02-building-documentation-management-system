@@ -1,22 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tika-config xmlns="http://tika.apache.org/tika-config">
-    <!-- Enable OCR with Tesseract -->
-    <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
-        <params>
-            <!-- Auto means Tika will pick best strategy depending on doc type -->
-            <param name="ocrStrategy" value="auto"/>
-            <param name="language" value="eng+deu+fra"/>
-            <!-- Performance limits -->
-            <param name="ocrTimeoutMillis" value="20000"/>
-        </params>
-    </parser>
-
+<properties>
+    <parsers>
+        <parser class="org.apache.tika.parser.DefaultParser">
+            <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+        </parser>
+        <parser class="org.apache.tika.parser.pdf.PDFParser">
+            <params>
+                <param name="extractInlineImages" type="bool">true</param>
+                <param name="ocrStrategy" type="string">auto</param>
+                <param name="ocrLanguage" type="string">deu+eng+fra</param>
+                <param name="ocrTimeout" type="int">120000</param>
+            </params>
+        </parser>
+        <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
+            <params>
+                <param name="language" type="string">deu+eng+fra</param>
+                <param name="timeoutSeconds" type="int">120</param>
+                <param name="density" type="int">300</param>
+                <param name="tessdataPath" type="string">/usr/share/tesseract-ocr/4.00/tessdata</param>
+                <param name="tesseractPath" type="string">/usr/bin/tesseract</param>
+                <param name="enableImageProcessing" type="bool">true</param>
+                <param name="applyRotation" type="bool">true</param>
+                <param name="ocrImageFormatName" type="string">tiff</param>
+                <param name="tesseractOptions" type="string">--psm 3 --oem 3</param>
+            </params>
+        </parser>
+    </parsers>
+    <detectors>
+        <detector class="org.apache.tika.detect.DefaultDetector"/>
+    </detectors>
+    <service-loader initializableProblemHandler="ignore"/>
+    <metadata-filter class="org.apache.tika.metadata.filter.DefaultMetadataFilter"/>
+    
     <!-- Limit overall text extraction size for safety -->
-    <overrideMimeTypes>
-        <mimeType type="*/*">
-            <set name="maxExtract">
-                <int>1000000</int>
-            </set>
-        </mimeType>
-    </overrideMimeTypes>
-</tika-config>
+    <max-extract-size>30000000</max-extract-size>
+</properties>
