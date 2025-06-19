@@ -5,7 +5,7 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { ConfigService } from '../../config.service';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
-import { Configuration, DocumentsApi, Document as ApiDocument, DocumentMetadataPatchRequest } from '../../../api';
+import { Configuration, DocumentsApi, Document as ApiDocument } from '../../../api';
 import { CategoryService, Category } from '../../services/category.service';
 import { ApiClientFactory } from '../../services/api-client.factory';
 
@@ -22,15 +22,12 @@ export class FileViewComponent {
   notFound = false;
   isPdf = false;
   isImage = false;
-// ✅ NEW: For dropdown metadata editing
   buildings: any[] = [];
   categories: Category[] = [];
   selectedBuildingId: number | null = null;
   selectedCategoryId: number | null = null;
-  // ✅ NEW: Feedback states
-  loading = false;
-  toastMessage = '';
-  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService, private categoryService: CategoryService, private apiFactory: ApiClientFactory) {}
+
+  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = Number(idParam);
@@ -74,7 +71,22 @@ export class FileViewComponent {
       },
     });
   }
-  // ✅ Save changes to backend
+  downloadFile(): void {
+    if (this.selectedFile?.id) {
+      this.buildingService.downloadDocument(this.selectedFile.id);
+    }
+  }
+
+  deleteFile(): void {
+    if (!this.selectedFile?.id) return;
+
+    this.buildingService.deleteDocument(this.selectedFile.id).subscribe({
+      next: () => this.router.navigate(['/upload']),
+      error: (err) => console.error('Delete failed:', err)
+    });
+  }
+
+  // ✅ New method: update building/category
   saveMetadataChanges(): void {
     if (!this.selectedFile?.id) return;
 
@@ -100,18 +112,4 @@ export class FileViewComponent {
       });
   }
 
-  downloadFile(): void {
-    if (this.selectedFile?.id) {
-      this.buildingService.downloadDocument(this.selectedFile.id);
-    }
-  }
-
-  deleteFile(): void {
-    if (!this.selectedFile?.id) return;
-
-    this.buildingService.deleteDocument(this.selectedFile.id).subscribe({
-      next: () => this.router.navigate(['/upload']),
-      error: (err) => console.error('Delete failed:', err)
-    });
-  }
 }
