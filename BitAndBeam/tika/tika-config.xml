@@ -17,7 +17,7 @@
                 <param name="language" type="string">deu+eng+fra</param>
                 <param name="timeoutSeconds" type="int">120</param>
                 <param name="density" type="int">300</param>
-                <param name="tessdataPath" type="string">/usr/share/tesseract-ocr/4.00/tessdata</param>
+                <param name="tessdataPath" type="string">/usr/share/tesseract-ocr/4.0/tessdata</param>
                 <param name="tesseractPath" type="string">/usr/bin/tesseract</param>
                 <param name="enableImageProcessing" type="bool">true</param>
                 <param name="applyRotation" type="bool">true</param>
