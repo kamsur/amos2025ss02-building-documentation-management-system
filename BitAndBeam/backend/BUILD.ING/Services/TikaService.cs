@@ -44,15 +44,10 @@ namespace BUILD.ING.Services
                 using var content = new ByteArrayContent(fileBytes);
                 content.Headers.Add("Content-Disposition", $"attachment; filename={fileName}");
 
-                // performance and OCR headers
-                content.Headers.Add("X-Tika-OCRTimeoutMillis", DefaultOcrTimeoutMillis.ToString());
-                content.Headers.Add("X-Tika-MaxExtract", DefaultMaxExtractLength.ToString());
-                if (performOcr)
-                {
-                    // Let Tika decide best strategy but allow OCR for images/scans
-                    content.Headers.Add("X-Tika-PDFOcrStrategy", "auto");
-                    content.Headers.Add("X-Tika-OCRLanguage", "eng+deu+fra");
-                }
+                // For Tika 3.x, most tuning can be done via server-side config.
+                // Remove legacy headers that are no longer supported to avoid 400/500 errors.
+                // If specific tuning is required in the future, update to the new header names.
+
 
                 var request = new HttpRequestMessage(HttpMethod.Put, "http://tika:9998/tika")
                 {

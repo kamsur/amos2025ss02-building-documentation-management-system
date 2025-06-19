@@ -1,36 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <properties>
+    <!-- Simple configuration with just OCR enabled -->
     <parsers>
         <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+            <!-- Include all default parsers, including OCR -->
         </parser>
+        
+        <!-- Explicitly configure OCR for PDF files -->
         <parser class="org.apache.tika.parser.pdf.PDFParser">
             <params>
                 <param name="extractInlineImages" type="bool">true</param>
                 <param name="ocrStrategy" type="string">auto</param>
-                <param name="ocrLanguage" type="string">deu+eng+fra</param>
-                <param name="ocrTimeout" type="int">120000</param>
             </params>
         </parser>
+        
+        <!-- Configure OCR with minimal settings -->
         <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
             <params>
-                <param name="language" type="string">deu+eng+fra</param>
-                <param name="timeoutSeconds" type="int">120</param>
-                <param name="density" type="int">300</param>
-
-                <param name="enableImageProcessing" type="bool">true</param>
-                <param name="applyRotation" type="bool">true</param>
-                <param name="ocrImageFormatName" type="string">tiff</param>
-                <param name="tesseractOptions" type="string">--psm 3 --oem 3</param>
+                <param name="language" type="string">deu+eng</param>
             </params>
         </parser>
     </parsers>
+    
     <detectors>
         <detector class="org.apache.tika.detect.DefaultDetector"/>
     </detectors>
-    <service-loader initializableProblemHandler="ignore"/>
-    <metadata-filter class="org.apache.tika.metadata.filter.DefaultMetadataFilter"/>
-    
-    <!-- Limit overall text extraction size for safety -->
-    <max-extract-size>30000000</max-extract-size>
 </properties>
