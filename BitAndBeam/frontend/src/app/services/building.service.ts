@@ -41,12 +41,21 @@ export interface Building {
 export class BuildingService {
   private buildingsSubject = new BehaviorSubject<ApiBuilding[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
+  private buildingsApi: BuildingsApi;
+  private documentsApi: DocumentsApi;
+
+
 
   constructor(
     private config: ConfigService,
     private apiFactory: ApiClientFactory,
     private session: SessionService
-  ) {}
+    
+
+  ) {
+    this.buildingsApi = this.apiFactory.create(BuildingsApi);
+    this.documentsApi = this.apiFactory.create(DocumentsApi);
+  }
 
   // Buildings
   getBuildings(): Observable<Building[]> {
@@ -82,14 +91,14 @@ export class BuildingService {
       })
     );
   }
-  
+
   createBuilding(building: { name: string, [key: string]: any }, sourceId?: number): Observable<Building> {
     // Create API building object
     const apiBuilding: Partial<ApiBuilding> = {
       name: building.name,
       // Add any other properties needed
     };
-    
+
     // If sourceId is provided, we're cloning from an existing building
     if (sourceId) {
       return from(this.buildingsApi.apiBuildingsIdGet(sourceId)).pipe(
@@ -97,7 +106,7 @@ export class BuildingService {
           const sourceBuilding = sourceResponse.data as ApiBuilding;
           // Copy relevant properties from source building
           // (e.g., floor plans, metadata, etc. - adjust as needed)
-          
+
           return from(this.buildingsApi.apiBuildingsPost(apiBuilding));
         }),
         switchMap(response => {

@@ -769,25 +769,6 @@ export interface LoginRequest {
     'password'?: string | null;
 }
 /**
- * Represents the data sent when a user logs in.
- * @export
- * @interface LoginRequest
- */
-export interface LoginRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof LoginRequest
-     */
-    'email'?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof LoginRequest
-     */
-    'password'?: string | null;
-}
-/**
  * 
  * @export
  * @interface NpgsqlPoint
