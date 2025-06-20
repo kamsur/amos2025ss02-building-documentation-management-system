@@ -383,19 +383,65 @@ namespace BUILD.ING.Controllers
             if (document == null)
                 return NotFound();
 
+            var requestType = request.GetType();
+            var documentType = document.GetType();
+            foreach (var reqProp in requestType.GetProperties())
+            {
+                var value = reqProp.GetValue(request);
+                var docProp = documentType.GetProperty(reqProp.Name);
+                if (docProp == null || !docProp.CanWrite)
+                {
+                    return BadRequest($"Field '{reqProp.Name}' does not exist on Document.");
+                }
+                if (!docProp.PropertyType.IsAssignableFrom(reqProp.PropertyType))
+                {
+                    return BadRequest($"Type mismatch for field '{reqProp.Name}': expected {docProp.PropertyType.Name}, got {reqProp.PropertyType.Name}.");
+                }
+                docProp.SetValue(document, value);
+            }
+
+            _context.SaveChanges();
+
+            var dto = new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryId = document.CategoryId,
+                BuildingId = document.BuildingId,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            };
+            return Ok(dto);
+        }
+
+        [HttpPatch("{id}")]
+        public IActionResult UpdateDocument(int id, [FromBody] DocumentMetadataPatchRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            if (document == null)
+                return NotFound();
+
             // Handle CategoryId logic (creation removed)
             var categories = ReadAndEnsureCategoryIds();
             if (request.CategoryId.HasValue)
             {
                 var category = categories.FirstOrDefault(c => c.Id.HasValue && c.Id.Value == request.CategoryId.Value);
-                if (category != null)
-                {
-                    document.CategoryId = request.CategoryId.Value;
-                }
-                else
-                {
+                if (category == null)
                     return BadRequest($"Category with ID {request.CategoryId} not found.");
-                }
+                document.CategoryId = request.CategoryId.Value;
             }
             else
             {
@@ -413,28 +459,6 @@ namespace BUILD.ING.Controllers
             else
             {
                 document.BuildingId = null;
-            }
-
-            // ...existing code for other fields...
-            var requestType = request.GetType();
-            var documentType = document.GetType();
-            foreach (var reqProp in requestType.GetProperties())
-            {
-                if (reqProp.Name == "CategoryId" || reqProp.Name == "CategoryName" || reqProp.Name == "BuildingId")
-                    continue; // Already handled above
-                var value = reqProp.GetValue(request);
-                if (value == null)
-                    continue; // Skip nulls to keep original value
-                var docProp = documentType.GetProperty(reqProp.Name);
-                if (docProp == null || !docProp.CanWrite)
-                {
-                    return BadRequest($"Field '{reqProp.Name}' does not exist on Document.");
-                }
-                if (!docProp.PropertyType.IsAssignableFrom(reqProp.PropertyType))
-                {
-                    return BadRequest($"Type mismatch for field '{reqProp.Name}': expected {docProp.PropertyType.Name}, got {reqProp.PropertyType.Name}.");
-                }
-                docProp.SetValue(document, value);
             }
 
             _context.SaveChanges();
@@ -598,19 +622,16 @@ namespace BUILD.ING.Controllers
         //     }
     }
 
-    // public class DocumentMetadataPatchRequest
-    // {
-    //     public int? CategoryId { get; set; }
-    //     public int? BuildingId { get; set; }
-    // }
-
-    public class DocumentUpdateRequest
+    public class DocumentMetadataPatchRequest
     {
         public int? CategoryId { get; set; }
         public int? BuildingId { get; set; }
+    }
+
+    public class DocumentUpdateRequest
+    {
         public string? Title { get; set; }
         public string? Description { get; set; }
-        // ...existing fields...
     }
 
     public class DocumentCategoryCreateRequest
