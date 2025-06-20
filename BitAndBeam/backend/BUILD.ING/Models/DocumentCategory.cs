@@ -6,15 +6,19 @@ namespace BUILD.ING.Models
 {
     public class DocumentCategory
     {
-        public int CategoryId { get; set; }
-        public string Name { get; set; }
-        public string? Description { get; set; }
-        public int? ParentCategoryId { get; set; }
-        public DateTime CreatedAt { get; set; }
+        [JsonPropertyName("id")]
+        public int? Id { get; set; }
 
-        public DocumentCategory ParentCategory { get; set; }
-        public ICollection<DocumentCategory> SubCategories { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("fields")]
+        public List<Dictionary<string, string>> Fields { get; set; } = new();
+
         [JsonIgnore]
-        public ICollection<Document> Documents { get; set; }
+        public List<int> Documents { get; set; } = new();
     }
 }

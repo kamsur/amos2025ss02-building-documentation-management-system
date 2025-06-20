@@ -23,9 +23,7 @@ namespace BUILD.ING.Models
         public string FileName { get; set; }
         public DateTime UploadedAt { get; set; }
         public string GroupId { get; set; }
-        public Building Building { get; set; }
         public User Uploader { get; set; }
-        public DocumentCategory Category { get; set; }
         public ICollection<DocumentTagRelation> DocumentTagRelations { get; set; }
         public ICollection<DocumentPermission> DocumentPermissions { get; set; }
         public ICollection<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }

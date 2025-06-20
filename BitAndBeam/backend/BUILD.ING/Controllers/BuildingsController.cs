@@ -28,14 +28,12 @@ namespace BUILD.ING.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBuilding([FromBody] BuildingCreateDto dto)
         {
-            _logger.LogInformation("CreateBuilding called at {Time}", DateTime.UtcNow); // ADDED: Log method entry
-            // ✅ Convert coordinate data if present
+            _logger.LogInformation("CreateBuilding called at {Time}", DateTime.UtcNow);
             NpgsqlPoint? coordinates = null;
             if (dto.Coordinates.HasValue)
             {
                 coordinates = new NpgsqlPoint(dto.Coordinates.Value.X, dto.Coordinates.Value.Y);
             }
-
 
             var building = new Building
             {
@@ -54,7 +52,6 @@ namespace BUILD.ING.Controllers
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 BuildingDocumentRelations = new List<BuildingDocumentRelation>(),
-                Documents = new List<Document>()
             };
 
             _context.Buildings.Add(building);
@@ -84,7 +81,7 @@ namespace BUILD.ING.Controllers
             var buildingIds = buildings.Select(b => b.BuildingId).ToList();
             var documents = _context.Documents
                 .Where(d => d.BuildingId.HasValue && buildingIds.Contains(d.BuildingId.Value))
-                .Select(d => new { d.BuildingId, d.DocumentId, d.Title })
+                .Select(d => new { d.BuildingId, d.DocumentId })
                 .ToList();
             var orgMap = _context.Organizations.ToDictionary(o => o.OrganizationId, o => o.Name);
             var dtos = buildings.Select(b => new BuildingDto
@@ -106,7 +103,7 @@ namespace BUILD.ING.Controllers
                 OrganizationId = b.OrganizationId,
                 OrganizationName = orgMap.TryGetValue(b.OrganizationId, out string? value) ? value : null,
                 Documents = documents.Where(d => d.BuildingId == b.BuildingId)
-                    .Select(d => new KeyValuePair<int, string>(d.DocumentId, d.Title)).ToList()
+                    .Select(d => d.DocumentId).ToList()
             }).ToList();
             _logger.LogInformation("GetBuildings returned {Count} records", dtos.Count);
             return Ok(dtos);
@@ -127,9 +124,9 @@ namespace BUILD.ING.Controllers
             }
 
             var orgName = _context.Organizations.Where(o => o.OrganizationId == building.OrganizationId).Select(o => o.Name).FirstOrDefault();
-            var documents = _context.Documents
+            var documentIds = _context.Documents
                 .Where(d => d.BuildingId == id)
-                .Select(d => new KeyValuePair<int, string>(d.DocumentId, d.Title))
+                .Select(d => d.DocumentId)
                 .ToList();
             var dto = new BuildingDto
             {
@@ -149,7 +146,7 @@ namespace BUILD.ING.Controllers
                 UpdatedAt = building.UpdatedAt,
                 OrganizationId = building.OrganizationId,
                 OrganizationName = orgName,
-                Documents = documents
+                Documents = documentIds
             };
             _logger.LogInformation("GetBuilding found building with ID {BuildingId}", id);
             return Ok(dto);
@@ -165,7 +162,7 @@ namespace BUILD.ING.Controllers
 
             //var existingBuilding = await _context.Buildings.FindAsync(id).ConfigureAwait(false);
             var existingBuilding = await _context.Buildings
-                .Include(b => b.Documents)
+                //.Include(b => b.Documents)
                 .Include(b => b.BuildingDocumentRelations)
                 .FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
 

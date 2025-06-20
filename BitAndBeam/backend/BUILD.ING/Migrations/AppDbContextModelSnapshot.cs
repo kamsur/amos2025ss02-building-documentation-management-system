@@ -209,7 +209,7 @@ namespace Build.ING.Migrations
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("DocumentCategories");
+                    // b.ToTable("DocumentCategories");
                 });
 
             modelBuilder.Entity("BUILD.ING.Models.DocumentPermission", b =>

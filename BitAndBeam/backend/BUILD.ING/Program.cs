@@ -99,7 +99,7 @@ builder.Services.AddSwaggerGen(options =>
 
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "BUILD.ING API", Version = "v1" });
     options.SchemaFilter<BuildingRequestExampleSchemaFilter>();
-    options.SchemaFilter<DocumentMetadataPatchRequestExampleSchemaFilter>();
+    options.SchemaFilter<DocumentUpdateRequestExampleSchemaFilter>();
 
     // 🔐 Add JWT Authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
