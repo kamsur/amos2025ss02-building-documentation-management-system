@@ -531,71 +531,71 @@ namespace BUILD.ING.Controllers
             return File(fileBytes, contentType);
         }
 
-    //     [HttpPatch("{id}")]
-    //     public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
-    //     {
-    //         ArgumentNullException.ThrowIfNull(request);
-    //         var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
-    //         if (document == null)
-    //             return NotFound();
+        //     [HttpPatch("{id}")]
+        //     public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
+        //     {
+        //         ArgumentNullException.ThrowIfNull(request);
+        //         var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+        //         if (document == null)
+        //             return NotFound();
 
-    //         // Handle CategoryId logic (creation removed)
-    //         var categories = ReadAndEnsureCategoryIds();
-    //         if (request.CategoryId.HasValue)
-    //         {
-    //             var category = categories.FirstOrDefault(c => c.Id.HasValue && c.Id.Value == request.CategoryId.Value);
-    //             if (category != null)
-    //             {
-    //                 document.CategoryId = request.CategoryId.Value;
-    //             }
-    //             else
-    //             {
-    //                 return BadRequest($"Category with ID {request.CategoryId} not found.");
-    //             }
-    //         }
-    //         else
-    //         {
-    //             document.CategoryId = null;
-    //         }
+        //         // Handle CategoryId logic (creation removed)
+        //         var categories = ReadAndEnsureCategoryIds();
+        //         if (request.CategoryId.HasValue)
+        //         {
+        //             var category = categories.FirstOrDefault(c => c.Id.HasValue && c.Id.Value == request.CategoryId.Value);
+        //             if (category != null)
+        //             {
+        //                 document.CategoryId = request.CategoryId.Value;
+        //             }
+        //             else
+        //             {
+        //                 return BadRequest($"Category with ID {request.CategoryId} not found.");
+        //             }
+        //         }
+        //         else
+        //         {
+        //             document.CategoryId = null;
+        //         }
 
-    //         // Handle BuildingId logic (same as PUT)
-    //         if (request.BuildingId.HasValue)
-    //         {
-    //             var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
-    //             if (building == null)
-    //                 return BadRequest($"Building with ID {request.BuildingId} not found.");
-    //             document.BuildingId = request.BuildingId.Value;
-    //         }
-    //         else
-    //         {
-    //             document.BuildingId = null;
-    //         }
+        //         // Handle BuildingId logic (same as PUT)
+        //         if (request.BuildingId.HasValue)
+        //         {
+        //             var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
+        //             if (building == null)
+        //                 return BadRequest($"Building with ID {request.BuildingId} not found.");
+        //             document.BuildingId = request.BuildingId.Value;
+        //         }
+        //         else
+        //         {
+        //             document.BuildingId = null;
+        //         }
 
-    //         _context.SaveChanges();
+        //         _context.SaveChanges();
 
-    //         var dto = new BUILD.ING.Dto.DocumentDto
-    //         {
-    //             DocumentId = document.DocumentId,
-    //             Title = document.Title,
-    //             FilePath = document.FilePath,
-    //             FileType = document.FileType,
-    //             FileSize = document.FileSize,
-    //             CategoryId = document.CategoryId,
-    //             BuildingId = document.BuildingId,
-    //             UploadedBy = document.UploadedBy,
-    //             UploadDate = document.UploadDate,
-    //             LastModified = document.LastModified,
-    //             Version = document.Version,
-    //             Status = document.Status,
-    //             Description = document.Description,
-    //             IsPublic = document.IsPublic,
-    //             Metadata = document.Metadata,
-    //             FileName = document.FileName,
-    //             UploadedAt = document.UploadedAt,
-    //             GroupId = document.GroupId
-    //         };
-    //         return Ok(dto);
-    //     }
+        //         var dto = new BUILD.ING.Dto.DocumentDto
+        //         {
+        //             DocumentId = document.DocumentId,
+        //             Title = document.Title,
+        //             FilePath = document.FilePath,
+        //             FileType = document.FileType,
+        //             FileSize = document.FileSize,
+        //             CategoryId = document.CategoryId,
+        //             BuildingId = document.BuildingId,
+        //             UploadedBy = document.UploadedBy,
+        //             UploadDate = document.UploadDate,
+        //             LastModified = document.LastModified,
+        //             Version = document.Version,
+        //             Status = document.Status,
+        //             Description = document.Description,
+        //             IsPublic = document.IsPublic,
+        //             Metadata = document.Metadata,
+        //             FileName = document.FileName,
+        //             UploadedAt = document.UploadedAt,
+        //             GroupId = document.GroupId
+        //         };
+        //         return Ok(dto);
+        //     }
     }
 
     // public class DocumentMetadataPatchRequest
