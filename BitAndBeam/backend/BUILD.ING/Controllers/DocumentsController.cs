@@ -170,10 +170,12 @@ namespace BUILD.ING.Controllers
                 Status = "draft",
                 IsPublic = false,
                 Description = "No description provided",
-                Metadata = metadata, // Store the extracted metadata
+                Metadata = metadata,
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
-                GroupId = GetCurrentUserGroupId()
+                GroupId = GetCurrentUserGroupId(),
+                BuildingId = matchedBuilding?.BuildingId,
+                Building = matchedBuilding
             };
 
             _context.Documents.Add(document);
@@ -196,18 +198,11 @@ namespace BUILD.ING.Controllers
                         { "zip_code", "Couldn't identify" },
                         { "city", "Couldn't identify" }
                     },
-                DetectedBuilding = matchedBuilding != null
-                    ? new
-                    {
-                        matchedBuilding.BuildingId,
-                        matchedBuilding.StreetName,
-                        matchedBuilding.HouseNumber,
-                        matchedBuilding.PostalCode,
-                        matchedBuilding.City
-                    }
-                    : null
+                BuildingId = matchedBuilding?.BuildingId,
+                BuildingName = matchedBuilding?.Name
             });
         }
+
 
         [HttpGet]
         public IActionResult GetAllDocuments()
