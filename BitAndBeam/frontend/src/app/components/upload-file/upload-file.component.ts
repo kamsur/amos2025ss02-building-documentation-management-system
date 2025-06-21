@@ -11,6 +11,7 @@ import { BuildingService } from '../../services/building.service';
 import { CategoryService } from '../../services/category.service';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
+import { ApiClientFactory } from '../../services/api-client.factory'; // ✅ NEW
 
 @Component({
   selector: 'app-upload-file',
@@ -42,13 +43,14 @@ export class UploadFileComponent implements OnInit {
 
 
   constructor(
+    private apiFactory: ApiClientFactory, // ✅ centralized factory
     private config: ConfigService,
     private router: Router,
     public buildingService: BuildingService,
     private categoryService: CategoryService
   ) {
-    this.documentsApi = new DocumentsApi(new Configuration({ basePath: this.config.apiUrl }));
-    this.ollamaApi = new OllamaApi(new Configuration({ basePath: this.config.apiUrl }));
+    this.documentsApi = this.apiFactory.create(DocumentsApi);
+    this.ollamaApi = this.apiFactory.create(OllamaApi);
   }
 
   ngOnInit() {
