@@ -132,6 +132,7 @@ namespace BUILD.ING.Controllers
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
             Building? matchedBuilding = null;
+            DocumentCategory? matchedCategory = null;
 
             // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
             try
@@ -261,7 +262,7 @@ namespace BUILD.ING.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
+                FileSize = (int)file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
