@@ -23,11 +23,11 @@ export class SidebarComponent {
     private sidebarRefreshService: SidebarRefreshService
   ) {}
   ngOnInit(): void {
-    this.buildingService.getBuildings().subscribe({
-      next: (data) => this.buildings = data,
-      error: (err) => console.error('Failed to load buildings', err)
-
-    });
+    this.buildingService.getGroupedDocuments().subscribe({
+      next: (data) => this.groupedDocuments = data,
+      error: (err) => console.error('Failed to load grouped documents', err)
+    }); 
+    
     this.sidebarRefreshService.refresh$.subscribe(() => {
       console.log('📣 Sidebar refresh triggered');
       this.buildingService.getBuildings().subscribe({
