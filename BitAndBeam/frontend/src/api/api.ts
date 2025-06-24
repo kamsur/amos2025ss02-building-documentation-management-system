@@ -395,10 +395,10 @@ export interface Document {
     'fileSize'?: number;
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof Document
      */
-    'categoryId'?: number | null;
+    'categoryName'?: string | null;
     /**
      * 
      * @type {number}
@@ -499,40 +499,15 @@ export interface Document {
 /**
  * 
  * @export
- * @interface DocumentCategoryCreateRequest
- */
-export interface DocumentCategoryCreateRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof DocumentCategoryCreateRequest
-     */
-    'name'?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof DocumentCategoryCreateRequest
-     */
-    'description'?: string | null;
-    /**
-     * 
-     * @type {Array<{ [key: string]: string; }>}
-     * @memberof DocumentCategoryCreateRequest
-     */
-    'fields'?: Array<{ [key: string]: string; }> | null;
-}
-/**
- * 
- * @export
  * @interface DocumentMetadataPatchRequest
  */
 export interface DocumentMetadataPatchRequest {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof DocumentMetadataPatchRequest
      */
-    'categoryId'?: number | null;
+    'categoryName'?: string | null;
     /**
      * 
      * @type {number}
@@ -1822,42 +1797,6 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
-         * @param {DocumentCategoryCreateRequest} [documentCategoryCreateRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiDocumentsCategoriesPost: async (documentCategoryCreateRequest?: DocumentCategoryCreateRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/Documents/categories`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication Bearer required
-            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(documentCategoryCreateRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2176,18 +2115,6 @@ export const DocumentsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {DocumentCategoryCreateRequest} [documentCategoryCreateRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiDocumentsCategoriesPost(documentCategoryCreateRequest?: DocumentCategoryCreateRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDocumentsCategoriesPost(documentCategoryCreateRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DocumentsApi.apiDocumentsCategoriesPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2303,15 +2230,6 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
-         * @param {DocumentCategoryCreateRequest} [documentCategoryCreateRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiDocumentsCategoriesPost(documentCategoryCreateRequest?: DocumentCategoryCreateRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiDocumentsCategoriesPost(documentCategoryCreateRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2401,17 +2319,6 @@ export class DocumentsApi extends BaseAPI {
      */
     public apiDocumentsCategoriesGet(options?: RawAxiosRequestConfig) {
         return DocumentsApiFp(this.configuration).apiDocumentsCategoriesGet(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {DocumentCategoryCreateRequest} [documentCategoryCreateRequest] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DocumentsApi
-     */
-    public apiDocumentsCategoriesPost(documentCategoryCreateRequest?: DocumentCategoryCreateRequest, options?: RawAxiosRequestConfig) {
-        return DocumentsApiFp(this.configuration).apiDocumentsCategoriesPost(documentCategoryCreateRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

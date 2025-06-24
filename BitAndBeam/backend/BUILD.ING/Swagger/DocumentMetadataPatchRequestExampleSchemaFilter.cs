@@ -19,7 +19,7 @@ namespace BUILD.ING.Swagger
             {
                 schema.Example = new OpenApiObject
                 {
-                    ["categoryId"] = new OpenApiNull(),
+                    ["categoryName"] = new OpenApiNull(),
                     ["buildingId"] = new OpenApiNull(),
                 };
             }

@@ -37,43 +37,13 @@ namespace BUILD.ING.Controllers
 
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
 
-        private static List<DocumentCategory> ReadAndEnsureCategoryIds()
+        private static List<DocumentCategory> ReadCategories()
         {
             var json = System.IO.File.ReadAllText(CategoriesJsonPath);
             using var doc = JsonDocument.Parse(json);
             var categoriesElem = doc.RootElement.GetProperty("categories");
             var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(categoriesElem.GetRawText()) ?? new();
-            bool changed = false;
-            int maxId = categories.Where(c => c.Id.HasValue).Select(c => c.Id.Value).DefaultIfEmpty(0).Max();
-            foreach (var cat in categories)
-            {
-                if (!cat.Id.HasValue)
-                {
-                    cat.Id = ++maxId;
-                    changed = true;
-                }
-            }
-            if (changed)
-            {
-                // Write back to JSON
-                var newJsonObj = new Dictionary<string, object>();
-                foreach (var prop in doc.RootElement.EnumerateObject())
-                {
-                    if (prop.Name == "categories")
-                        newJsonObj[prop.Name] = categories;
-                    else
-                        newJsonObj[prop.Name] = JsonSerializer.Deserialize<object>(prop.Value.GetRawText()) ?? new object();
-                }
-                var newJson = JsonSerializer.Serialize(newJsonObj, CachedJsonSerializerOptions);
-                System.IO.File.WriteAllText(CategoriesJsonPath, newJson);
-            }
             return categories;
-        }
-
-        private static int GenerateNewCategoryId(List<DocumentCategory> categories)
-        {
-            int maxId = categories.Where(c => c.Id.HasValue).Select(c => c.Id.Value).DefaultIfEmpty(0).Max();
-            return maxId + 1;
         }
 
         [HttpPost]
@@ -261,7 +231,7 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
@@ -292,7 +262,7 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
@@ -314,66 +284,55 @@ namespace BUILD.ING.Controllers
         {
             if (!System.IO.File.Exists(CategoriesJsonPath))
                 return NotFound("document_categories.json not found");
-            var categories = ReadAndEnsureCategoryIds();
-            var documents = _context.Documents.ToList();
-            foreach (var cat in categories)
-            {
-                cat.Documents = documents.Where(d => d.CategoryId.HasValue && cat.Id.HasValue && d.CategoryId.Value == cat.Id.Value)
-                                        .Select(d => d.DocumentId).ToList();
-            }
+            var categories = ReadCategories();
             var result = categories.Select(c => new
             {
-                id = c.Id,
                 name = c.Name,
                 description = c.Description,
                 fields = c.Fields,
-                documents = c.Documents
             }).ToList();
             return Ok(result);
         }
 
-        [HttpPost("categories")]
-        public IActionResult CreateCategory([FromBody] DocumentCategoryCreateRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.Name))
-                return BadRequest("Category name is required.");
+        // [HttpPost("categories")]
+        // public IActionResult CreateCategory([FromBody] DocumentCategoryCreateRequest request)
+        // {
+        //     if (string.IsNullOrWhiteSpace(request.Name))
+        //         return BadRequest("Category name is required.");
 
-            var categories = ReadAndEnsureCategoryIds();
-            if (categories.Any(c => string.Equals(c.Name, request.Name, StringComparison.OrdinalIgnoreCase)))
-                return Conflict($"Category with name '{request.Name}' already exists.");
+        //     var categories = ReadCategories();
+        //     if (categories.Any(c => string.Equals(c.Name, request.Name, StringComparison.OrdinalIgnoreCase)))
+        //         return Conflict($"Category with name '{request.Name}' already exists.");
 
-            var newId = GenerateNewCategoryId(categories);
-            var newCategory = new DocumentCategory
-            {
-                Id = newId,
-                Name = request.Name!,
-                Description = request.Description,
-                Fields = request.Fields ?? new List<Dictionary<string, string>>()
-            };
-            categories.Add(newCategory);
+        //     var newCategory = new DocumentCategory
+        //     {
+        //         Name = request.Name!,
+        //         Description = request.Description,
+        //         Fields = request.Fields ?? new List<Dictionary<string, string>>()
+        //     };
+        //     categories.Add(newCategory);
 
-            // Write back to JSON
-            var json = System.IO.File.ReadAllText(CategoriesJsonPath);
-            using var docJson = JsonDocument.Parse(json);
-            var newJsonObj = new Dictionary<string, object>();
-            foreach (var prop in docJson.RootElement.EnumerateObject())
-            {
-                if (prop.Name == "categories")
-                    newJsonObj[prop.Name] = categories;
-                else
-                    newJsonObj[prop.Name] = JsonSerializer.Deserialize<object>(prop.Value.GetRawText()) ?? new object();
-            }
-            var newJson = JsonSerializer.Serialize(newJsonObj, CachedJsonSerializerOptions);
-            System.IO.File.WriteAllText(CategoriesJsonPath, newJson);
+        //     // Write back to JSON
+        //     var json = System.IO.File.ReadAllText(CategoriesJsonPath);
+        //     using var docJson = JsonDocument.Parse(json);
+        //     var newJsonObj = new Dictionary<string, object>();
+        //     foreach (var prop in docJson.RootElement.EnumerateObject())
+        //     {
+        //         if (prop.Name == "categories")
+        //             newJsonObj[prop.Name] = categories;
+        //         else
+        //             newJsonObj[prop.Name] = JsonSerializer.Deserialize<object>(prop.Value.GetRawText()) ?? new object();
+        //     }
+        //     var newJson = JsonSerializer.Serialize(newJsonObj, CachedJsonSerializerOptions);
+        //     System.IO.File.WriteAllText(CategoriesJsonPath, newJson);
 
-            return CreatedAtAction(nameof(GetDocumentCategories), new { id = newCategory.Id }, new
-            {
-                id = newCategory.Id,
-                name = newCategory.Name,
-                description = newCategory.Description,
-                fields = newCategory.Fields
-            });
-        }
+        //     return CreatedAtAction(nameof(GetDocumentCategories), new { name = newCategory.Name }, new
+        //     {
+        //         name = newCategory.Name,
+        //         description = newCategory.Description,
+        //         fields = newCategory.Fields
+        //     });
+        // }
 
         [HttpPut("{id}")]
         public IActionResult UpdateDocument(int id, [FromBody] DocumentUpdateRequest request)
@@ -409,7 +368,7 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
@@ -427,25 +386,22 @@ namespace BUILD.ING.Controllers
         }
 
         [HttpPatch("{id}")]
-        public IActionResult UpdateDocument(int id, [FromBody] DocumentMetadataPatchRequest request)
+        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
             var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
             if (document == null)
                 return NotFound();
 
-            // Handle CategoryId logic (creation removed)
-            var categories = ReadAndEnsureCategoryIds();
-            if (request.CategoryId.HasValue)
+            // Handle CategoryName logic (creation removed)
+            var categories = ReadCategories();
+            if (request.CategoryName != null)
             {
-                var category = categories.FirstOrDefault(c => c.Id.HasValue && c.Id.Value == request.CategoryId.Value);
-                if (category == null)
-                    return BadRequest($"Category with ID {request.CategoryId} not found.");
-                document.CategoryId = request.CategoryId.Value;
+                document.CategoryName = request.CategoryName;
             }
             else
             {
-                document.CategoryId = null;
+                document.CategoryName = null;
             }
 
             // Handle BuildingId logic
@@ -471,7 +427,7 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
@@ -555,76 +511,11 @@ namespace BUILD.ING.Controllers
             return File(fileBytes, contentType);
         }
 
-        //     [HttpPatch("{id}")]
-        //     public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
-        //     {
-        //         ArgumentNullException.ThrowIfNull(request);
-        //         var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
-        //         if (document == null)
-        //             return NotFound();
-
-        //         // Handle CategoryId logic (creation removed)
-        //         var categories = ReadAndEnsureCategoryIds();
-        //         if (request.CategoryId.HasValue)
-        //         {
-        //             var category = categories.FirstOrDefault(c => c.Id.HasValue && c.Id.Value == request.CategoryId.Value);
-        //             if (category != null)
-        //             {
-        //                 document.CategoryId = request.CategoryId.Value;
-        //             }
-        //             else
-        //             {
-        //                 return BadRequest($"Category with ID {request.CategoryId} not found.");
-        //             }
-        //         }
-        //         else
-        //         {
-        //             document.CategoryId = null;
-        //         }
-
-        //         // Handle BuildingId logic (same as PUT)
-        //         if (request.BuildingId.HasValue)
-        //         {
-        //             var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
-        //             if (building == null)
-        //                 return BadRequest($"Building with ID {request.BuildingId} not found.");
-        //             document.BuildingId = request.BuildingId.Value;
-        //         }
-        //         else
-        //         {
-        //             document.BuildingId = null;
-        //         }
-
-        //         _context.SaveChanges();
-
-        //         var dto = new BUILD.ING.Dto.DocumentDto
-        //         {
-        //             DocumentId = document.DocumentId,
-        //             Title = document.Title,
-        //             FilePath = document.FilePath,
-        //             FileType = document.FileType,
-        //             FileSize = document.FileSize,
-        //             CategoryId = document.CategoryId,
-        //             BuildingId = document.BuildingId,
-        //             UploadedBy = document.UploadedBy,
-        //             UploadDate = document.UploadDate,
-        //             LastModified = document.LastModified,
-        //             Version = document.Version,
-        //             Status = document.Status,
-        //             Description = document.Description,
-        //             IsPublic = document.IsPublic,
-        //             Metadata = document.Metadata,
-        //             FileName = document.FileName,
-        //             UploadedAt = document.UploadedAt,
-        //             GroupId = document.GroupId
-        //         };
-        //         return Ok(dto);
-        //     }
     }
 
     public class DocumentMetadataPatchRequest
     {
-        public int? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public int? BuildingId { get; set; }
     }
 
@@ -634,10 +525,10 @@ namespace BUILD.ING.Controllers
         public string? Description { get; set; }
     }
 
-    public class DocumentCategoryCreateRequest
-    {
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public List<Dictionary<string, string>>? Fields { get; set; }
-    }
+    // public class DocumentCategoryCreateRequest
+    // {
+    //     public string Name { get; set; } = string.Empty;
+    //     public string? Description { get; set; }
+    //     public List<Dictionary<string, string>>? Fields { get; set; }
+    // }
 }

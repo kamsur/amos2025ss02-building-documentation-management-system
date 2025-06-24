@@ -130,7 +130,7 @@ namespace Build.ING.Migrations
                     FilePath = table.Column<string>(type: "text", nullable: false),
                     FileType = table.Column<string>(type: "text", nullable: false),
                     FileSize = table.Column<int>(type: "integer", nullable: false),
-                    CategoryId = table.Column<int>(type: "integer", nullable: true),
+                    CategoryName = table.Column<string>(type: "text", nullable: true),
                     BuildingId = table.Column<int>(type: "integer", nullable: true),
                     UploadedBy = table.Column<int>(type: "integer", nullable: true),
                     UploadDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -284,10 +284,10 @@ namespace Build.ING.Migrations
                 table: "Documents",
                 column: "BuildingId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Documents_CategoryId",
-                table: "Documents",
-                column: "CategoryId");
+            // migrationBuilder.CreateIndex(
+            //     name: "IX_Documents_CategoryId",
+            //     table: "Documents",
+            //     column: "CategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_UploadedBy",
