@@ -389,7 +389,6 @@ namespace BUILD.ING.Controllers
                 return NotFound();
 
             // Handle CategoryName logic (creation removed)
-            var categories = ReadCategories();
             if (request.CategoryName != null)
             {
                 document.CategoryName = request.CategoryName;
