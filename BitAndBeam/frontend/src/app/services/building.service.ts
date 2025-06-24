@@ -50,7 +50,7 @@ export class BuildingService {
     private config: ConfigService,
     private apiFactory: ApiClientFactory,
     private session: SessionService
-    
+
 
   ) {
     this.buildingsApi = this.apiFactory.create(BuildingsApi);
@@ -155,6 +155,45 @@ export class BuildingService {
     const downloadUrl = `${this.config.apiUrl}/api/Documents/${id}/download`;
     window.open(downloadUrl, '_blank');
   }
+
+  getGroupedDocuments(): Observable<{ buildingId: number | null, buildingName: string, documents: DocumentItem[] }[]> {
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+
+    return from(
+      Promise.all([
+        buildingsApi.apiBuildingsGet(),
+        documentsApi.apiDocumentsGet()
+      ]).then(([buildingsRes, docsRes]: [AxiosResponse<any>, AxiosResponse<any>]) => {
+        const buildingsMap = new Map<number, string>();
+        buildingsRes.data.forEach((b: any) => {
+          buildingsMap.set(b.buildingId!, b.name ?? '');
+        });
+        const grouped = new Map<number | null, DocumentItem[]>();
+
+        docsRes.data.forEach((doc: any) => {
+          const buildingId = doc.buildingId ?? null;
+
+          const item: DocumentItem = {
+            id: doc.documentId!,
+            name: doc.fileName ?? 'Unnamed',
+            url: `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`,
+            metadata: []
+          };
+
+          if (!grouped.has(buildingId)) grouped.set(buildingId, []);
+          grouped.get(buildingId)!.push(item);
+        });
+
+        return Array.from(grouped.entries()).map(([buildingId, documents]) => ({
+          buildingId,
+          buildingName: buildingId !== null ? (buildingsMap.get(buildingId) ?? 'Unknown') : 'No Building Assigned',
+          documents
+        }));
+      })
+    );
+  }
+
 
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();
