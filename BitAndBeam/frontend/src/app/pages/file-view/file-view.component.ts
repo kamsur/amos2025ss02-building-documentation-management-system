@@ -37,28 +37,35 @@ export class FileViewComponent {
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
               private session: SessionService) {}
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    const id = Number(idParam);
+    // Watch for route param changes
+    this.route.paramMap.subscribe(paramMap => {
+      const idParam = paramMap.get('id');
+      const id = Number(idParam);
 
-    if (!idParam || isNaN(id)) {
-      console.error('❌ Invalid document ID in route:', idParam);
-      this.notFound = true;
-      return;
-    }
-    this.buildingService.getBuildings().subscribe(b => this.buildings = b);
-    this.categoryService.getCategories().subscribe(c => this.categories = c);
+      if (!idParam || isNaN(id)) {
+        console.error('❌ Invalid document ID in route:', idParam);
+        this.notFound = true;
+        return;
+      }
 
-    this.buildingService.getDocumentById(id).subscribe({
-      next: (doc: ApiDocument) => {
-        const token = this.session.getToken(); // ✅ Use token
-        const previewUrl = `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`;
+      this.notFound = false;
+      this.selectedFile = null;
+      this.isPdf = false;
+      this.isImage = false;
 
-        const headers = new HttpHeaders({
-          Authorization: `Bearer ${token}`
-        });
+      this.buildingService.getBuildings().subscribe(b => this.buildings = b);
+      this.categoryService.getCategories().subscribe(c => this.categories = c);
 
-        // ✅ Fetch preview as Blob
-        this.http.get(previewUrl, { headers, responseType: 'blob' }).subscribe(blob => {
+      this.buildingService.getDocumentById(id).subscribe({
+        next: (doc: ApiDocument) => {
+          const token = this.session.getToken();
+          const previewUrl = `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`;
+
+          const headers = new HttpHeaders({
+            Authorization: `Bearer ${token}`
+          });
+
+          this.http.get(previewUrl, { headers, responseType: 'blob' }).subscribe(blob => {
             const objectUrl = URL.createObjectURL(blob);
 
             this.selectedFile = {
@@ -76,23 +83,24 @@ export class FileViewComponent {
             };
 
             this.selectedBuildingId = doc.buildingId ?? null;
-        this.selectedCategoryId = doc.categoryId ?? null;
-        // Determine file type for viewer
-        const fileType = (doc.fileType ?? '').toLowerCase();
-        this.isPdf = fileType === 'pdf';
-        this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
-      },
-          error => {
-            console.error('❌ Failed to load document preview:', error);
+            this.selectedCategoryId = doc.categoryId ?? null;
+
+            const fileType = (doc.fileType ?? '').toLowerCase();
+            this.isPdf = fileType === 'pdf';
+            this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+          }, err => {
+            console.error('❌ Failed to load document preview:', err);
             this.notFound = true;
           });
-      },
-      error: (err) => {
-        console.error('❌ Failed to load document metadata:', err);
-        this.notFound = true;
-      }
+        },
+        error: (err) => {
+          console.error('❌ Failed to load document metadata:', err);
+          this.notFound = true;
+        }
+      });
     });
   }
+
   downloadFile(): void {
     if (this.selectedFile?.id) {
       this.buildingService.downloadDocument(this.selectedFile.id);
