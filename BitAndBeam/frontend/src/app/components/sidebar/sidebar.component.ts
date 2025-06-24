@@ -14,7 +14,7 @@ import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
 })
 export class SidebarComponent {
   isExplorerCollapsed = false;
-  buildings: Building[] = [];
+  groupedDocuments: { buildingId: number | null, buildingName: string, documents: DocumentItem[] }[] = [];
 
   constructor(
     public session: SessionService,
