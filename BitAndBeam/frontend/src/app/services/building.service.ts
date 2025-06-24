@@ -165,13 +165,13 @@ export class BuildingService {
         buildingsApi.apiBuildingsGet(),
         documentsApi.apiDocumentsGet()
       ]).then(([buildingsRes, docsRes]: [AxiosResponse<any>, AxiosResponse<any>]) => {
-        const buildingsMap = new Map<number, string>();
-        buildingsRes.data.forEach((b: any) => {
-          buildingsMap.set(b.buildingId!, b.name ?? '');
-        });
+        const buildings = buildingsRes.data;
+        const documents = docsRes.data;
+
         const grouped = new Map<number | null, DocumentItem[]>();
 
-        docsRes.data.forEach((doc: any) => {
+        // Group documents by building
+        documents.forEach((doc: any) => {
           const buildingId = doc.buildingId ?? null;
 
           const item: DocumentItem = {
@@ -185,14 +185,27 @@ export class BuildingService {
           grouped.get(buildingId)!.push(item);
         });
 
-        return Array.from(grouped.entries()).map(([buildingId, documents]) => ({
-          buildingId,
-          buildingName: buildingId !== null ? (buildingsMap.get(buildingId) ?? 'Unknown') : 'No Building Assigned',
-          documents
+        // Always include all buildings (even if they have no documents)
+        const result = buildings.map((b: any) => ({
+          buildingId: b.buildingId,
+          buildingName: b.name ?? 'Unnamed Building',
+          documents: grouped.get(b.buildingId) ?? []
         }));
+
+// Also include unassigned documents
+        if (grouped.has(null)) {
+          result.push({
+            buildingId: null,
+            buildingName: 'No Building Assigned',
+            documents: grouped.get(null)!
+          });
+        }
+
+        return result;
       })
     );
   }
+
 
 
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);

@@ -21,8 +21,8 @@
     <div class="buildings">
       <div *ngFor="let group of groupedDocuments">
         <div class="building-name">
-          📁 {{ group.buildingName }}
-          <button *ngIf="group.buildingId !== null" (click)="deleteBuilding(group.buildingId)" class="delete-building">🗑️</button>
+           📁 {{ group.buildingName }}
+          <button *ngIf="group.buildingId !== null" (click)="deleteBuilding(group.buildingId)">🗑️</button>
         </div>
         <div class="document" *ngFor="let doc of group.documents" (click)="viewDocument(doc)">
           📄 {{ doc.name }}
