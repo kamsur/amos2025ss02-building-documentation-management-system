@@ -60,10 +60,14 @@ export class SidebarComponent {
     if (!confirm('Are you sure you want to delete this building?')) return;
 
     this.buildingService.deleteBuilding(id).subscribe({
-      next: () => this.buildings = this.buildings.filter(b => b.id !== id),
+      next: () => {
+        // Filter out the deleted building from groupedDocuments
+        this.groupedDocuments = this.groupedDocuments.filter(g => g.buildingId !== id);
+      },
       error: (err) => console.error('Failed to delete building', err)
     });
   }
+
 
   logout() {
     this.session.logout();

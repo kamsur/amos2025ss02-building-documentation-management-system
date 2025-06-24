@@ -97,7 +97,7 @@ export class SessionService {
       this.logout();
     }
   }
-  
+
   private scheduleAutoLogout(token: string): void {
     const decoded = jwt_decode<DecodedToken>(token);
     const expiresAt = decoded.exp * 1000;
