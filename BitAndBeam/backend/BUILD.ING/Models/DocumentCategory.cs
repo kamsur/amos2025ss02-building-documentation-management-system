@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace BUILD.ING.Models
@@ -14,7 +15,7 @@ namespace BUILD.ING.Models
         public string? Description { get; set; }
 
         [JsonPropertyName("fields")]
-        public List<Dictionary<string, object>> Fields { get; set; } = [];
+        public List<Dictionary<string, object>> Fields { get; } = [];
 
     }
 }
