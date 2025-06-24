@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
 import { BuildingService , DocumentItem , Building } from '../../services/building.service';
-
+import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
 @Component({
   standalone: true,
   selector: 'app-sidebar',
@@ -19,12 +19,21 @@ export class SidebarComponent {
   constructor(
     public session: SessionService,
     private router: Router,
-    public buildingService: BuildingService
+    public buildingService: BuildingService,
+    private sidebarRefreshService: SidebarRefreshService
   ) {}
   ngOnInit(): void {
     this.buildingService.getBuildings().subscribe({
       next: (data) => this.buildings = data,
       error: (err) => console.error('Failed to load buildings', err)
+
+    });
+    this.sidebarRefreshService.refresh$.subscribe(() => {
+      console.log('📣 Sidebar refresh triggered');
+      this.buildingService.getBuildings().subscribe({
+        next: (data) => this.buildings = data,
+        error: (err) => console.error('Sidebar refresh failed to reload buildings', err)
+      });
     });
   }
 
