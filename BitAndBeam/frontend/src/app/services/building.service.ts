@@ -28,7 +28,7 @@ export interface DocumentResponse {
   fileType: string;
   uploadDate: string;
   buildingId?: number | null;
-  categoryId?: number | null;
+  categoryName?: string | null;
 }
 
 export interface Building {
