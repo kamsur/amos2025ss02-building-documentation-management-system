@@ -26,15 +26,16 @@ export class SidebarComponent {
     this.buildingService.getGroupedDocuments().subscribe({
       next: (data) => this.groupedDocuments = data,
       error: (err) => console.error('Failed to load grouped documents', err)
-    }); 
-    
+    });
+
     this.sidebarRefreshService.refresh$.subscribe(() => {
       console.log('📣 Sidebar refresh triggered');
-      this.buildingService.getBuildings().subscribe({
-        next: (data) => this.buildings = data,
-        error: (err) => console.error('Sidebar refresh failed to reload buildings', err)
+      this.buildingService.getGroupedDocuments().subscribe({
+        next: (data) => this.groupedDocuments = data,
+        error: (err) => console.error('Sidebar refresh failed', err)
       });
     });
+
   }
 
   toggleExplorer() {
