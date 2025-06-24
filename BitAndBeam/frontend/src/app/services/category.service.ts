@@ -40,7 +40,7 @@ export class CategoryService {
   }
 
   // In a real application, this would send the document category to the backend
-  assignDocumentCategory(documentId: number, categoryId: number | null, buildingId: number | null): Observable<any> {
+  assignDocumentCategory(documentId: number, categoryName: string | null, buildingId: number | null): Observable<any> {
     const token = sessionStorage.getItem('jwt_token');
 
     const headers = {
@@ -50,7 +50,7 @@ export class CategoryService {
 
     return this.http.patch<any>(
       `${this.config.apiUrl}/api/Documents/${documentId}`,
-      { categoryId, buildingId },
+      { categoryName, buildingId },
       { headers }
     );
   }

@@ -169,12 +169,12 @@ export class UploadFileComponent implements OnInit {
       this.router.navigate(['/documents', this.uploadedDocumentId]);
     }
   }
-
-  saveDocumentMetadata(metadata: {categoryId: number | null, buildingId: number | null}): void {
+  
+  saveDocumentMetadata(metadata: {categoryName: string | null, buildingId: number | null}): void {
     if (this.uploadedDocumentId) {
       this.categoryService.assignDocumentCategory(
-        this.uploadedDocumentId,
-        metadata.categoryId,
+        this.uploadedDocumentId, 
+        metadata.categoryName,
         metadata.buildingId
       ).subscribe({
         next: () => {
