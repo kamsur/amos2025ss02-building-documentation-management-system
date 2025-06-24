@@ -506,50 +506,6 @@ namespace BUILD.ING.Controllers
             return File(fileBytes, contentType);
         }
 
-        [HttpPatch("{id}")]
-        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
-        {
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
-            if (document == null)
-                return NotFound();
-
-            if (request.CategoryId.HasValue)
-            {
-                var category = _context.DocumentCategories.FirstOrDefault(c => c.CategoryId == request.CategoryId.Value);
-                if (category == null)
-                    return BadRequest($"Category with ID {request.CategoryId} not found.");
-                document.Category = category;
-                document.CategoryId = request.CategoryId.Value;
-                if (category.Documents == null)
-                    category.Documents = new List<Document>();
-                if (!category.Documents.Contains(document))
-                    category.Documents.Add(document); // Ensure the document is linked to the category
-            }
-            if (request.BuildingId.HasValue)
-            {
-                var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
-                if (building == null)
-                    return BadRequest($"Building with ID {request.BuildingId} not found.");
-                document.Building = building;
-                document.BuildingId = request.BuildingId.Value;
-
-                if (building.Documents == null)
-                    building.Documents = new List<Document>();
-                if (!building.Documents.Contains(document))
-                    building.Documents.Add(document);
-            }
-            else
-            {
-                // Explicitly clear the building assignment
-                document.Building = null;
-                document.BuildingId = null;
-            }
-
-
-            _context.SaveChanges();
-
-
-        }
 
 
         public class DocumentMetadataPatchRequest
