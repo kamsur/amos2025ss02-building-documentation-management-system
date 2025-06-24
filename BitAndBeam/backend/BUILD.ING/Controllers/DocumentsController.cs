@@ -36,6 +36,17 @@ namespace BUILD.ING.Controllers
             return "group2"; // Hardcoded for now
         }
 
+        private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
+
+        private static List<DocumentCategory> ReadCategories()
+        {
+            var json = System.IO.File.ReadAllText(CategoriesJsonPath);
+            using var doc = JsonDocument.Parse(json);
+            var categoriesElem = doc.RootElement.GetProperty("categories");
+            var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(categoriesElem.GetRawText()) ?? new();
+            return categories;
+        }
+
         [HttpPost]
         public async Task<IActionResult> UploadDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
         {
@@ -46,6 +57,7 @@ namespace BUILD.ING.Controllers
             Directory.CreateDirectory(uploadsPath);
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
+
             using (var stream = new FileStream(fullPath, FileMode.Create))
             {
                 await file.CopyToAsync(stream).ConfigureAwait(false);
@@ -74,111 +86,74 @@ namespace BUILD.ING.Controllers
 
             Dictionary<string, string>? parsedAddress = null;
             Building? matchedBuilding = null;
-            DocumentCategory? matchedCategory = null;
 
             try
             {
                 var shortText = textForOllama.Length > 3000 ? textForOllama.Substring(0, 3000) : textForOllama;
-                var allCategories = _context.DocumentCategories.ToList();
-                // string categoriesList = string.Join("\n", allCategories.Select(c => $"- {c.Name}: {c.Description}"));
-                var categoriesList = string.Join("\n", allCategories.Select(c => $"- {c.Name}: {c.Description}"));
-
-                _logger.LogInformation("🧾 Categories passed to Ollama:\n{CategoriesList}", categoriesList);
 
                 var prompt = $$"""
-                You are an intelligent document analyzer.
+                The following is the extracted text from a German document. Your task is to identify if it contains an address under the field "Adresse" or in free text.
 
-                Given the extracted text and metadata from a German document, your task is to analyze and extract the following fields in a JSON format:
+                Extract the address **only if it looks like a valid building address**, and return the result in JSON format with the following 4 fields:
 
+                - street
+                - house_number
+                - zip_code
+                - city
+
+                All values must be strings or null. DO NOT return markdown or explanation.
+
+                Example:
                 {
-                "street": "<street name or 'Couldn't identify'>",
-                "house_number": "<house number or 'Couldn't identify'>",
-                "zip_code": "<postal code or 'Couldn't identify'>",
-                "city": "<city name or 'Couldn't identify'>",
-                "category": "<exact category name from the list below or 'Couldn't identify'>"
+                    "street": "Riedener Str.",
+                    "house_number": "1a",
+                    "zip_code": "90518",
+                    "city": "Altdorf"
                 }
 
-                ⚠️ IMPORTANT INSTRUCTIONS:
-                - Return ONLY this JSON. No markdown, no explanation.
-                - If a field is missing or unclear, use "Couldn't identify".
-                - For the "category" field:
-                - Determine the category by analyzing the **Extracted Text** below.
-                - Choose EXACTLY ONE from the allowed list.
-                - DO NOT invent, modify, translate, or reword category names.
-                - If no suitable category matches, use "Couldn't identify".
-
-                List of Allowed Document Categories:
-                {{categoriesList}}
-
-                Extracted Text:
+                Text:
                 {{shortText}}
                 """;
-
-
-                _logger.LogInformation("📄 Prompt Sent to Ollama:\n{Prompt}", prompt);
 
                 var client = httpClientFactory.CreateClient();
                 var json = JsonSerializer.Serialize(new { prompt });
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
+
                 var response = await client.PostAsync("http://ollama:8000/api/Ollama/ask", content).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var ollamaResultJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollamaJson = JsonDocument.Parse(ollamaResultJson);
-                    var rawResponse = ollamaJson.RootElement.GetProperty("response").GetString();
+                    var ollamaResult = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
+                        ollamaResultJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
 
-                    if (!string.IsNullOrWhiteSpace(rawResponse))
+                    parsedAddress = JsonSerializer.Deserialize<Dictionary<string, string>>(ollamaResult?.Response ?? "{}", new JsonSerializerOptions
                     {
-                        // Remove markdown backticks and trim
-                        var cleanedJson = rawResponse
-                            .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
-                            .Replace("```", "", StringComparison.OrdinalIgnoreCase)
-                            .Trim();
+                        PropertyNameCaseInsensitive = true
+                    });
 
-                        _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
+                    if (parsedAddress != null && parsedAddress.TryGetValue("street", out var street) &&
+                        parsedAddress.TryGetValue("zip_code", out var zipCode))
+                    {
+                        parsedAddress.TryGetValue("house_number", out var houseNumber);
+                        parsedAddress.TryGetValue("city", out var city);
 
-                        var result = JsonSerializer.Deserialize<Dictionary<string, string>>(cleanedJson);
-
-                        if (result != null)
+                        var buildings = _context.Buildings.ToList();
+                        foreach (var building in buildings)
                         {
-                            parsedAddress = new Dictionary<string, string>
+                            bool matchesStreet = string.Equals(building.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
+                            bool matchesZip = string.Equals(building.PostalCode?.Trim(), zipCode?.Trim(), StringComparison.OrdinalIgnoreCase);
+                            bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) ||
+                                string.Equals(building.HouseNumber?.Trim(), houseNumber?.Trim(), StringComparison.OrdinalIgnoreCase);
+                            bool matchesCity = string.IsNullOrWhiteSpace(city) ||
+                                string.Equals(building.City?.Trim(), city?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                            if (matchesStreet && matchesZip && matchesHouse && matchesCity)
                             {
-                                { "street", result.GetValueOrDefault("street") ?? "Couldn't identify" },
-                                { "house_number", result.GetValueOrDefault("house_number") ?? "Couldn't identify" },
-                                { "zip_code", result.GetValueOrDefault("zip_code") ?? "Couldn't identify" },
-                                { "city", result.GetValueOrDefault("city") ?? "Couldn't identify" }
-                            };
-
-                            var categoryName = result.GetValueOrDefault("category");
-                            if (!string.IsNullOrWhiteSpace(categoryName))
-                            {
-                                matchedCategory = allCategories.FirstOrDefault(c =>
-                                    string.Equals(c.Name?.Trim(), categoryName.Trim(), StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (parsedAddress.TryGetValue("street", out var street) &&
-                                parsedAddress.TryGetValue("zip_code", out var zipCode))
-                            {
-                                parsedAddress.TryGetValue("house_number", out var houseNumber);
-                                parsedAddress.TryGetValue("city", out var city);
-
-                                var buildings = _context.Buildings.ToList();
-                                foreach (var building in buildings)
-                                {
-                                    bool matchesStreet = string.Equals(building.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
-                                    bool matchesZip = string.Equals(building.PostalCode?.Trim(), zipCode?.Trim(), StringComparison.OrdinalIgnoreCase);
-                                    bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) ||
-                                        string.Equals(building.HouseNumber?.Trim(), houseNumber?.Trim(), StringComparison.OrdinalIgnoreCase);
-                                    bool matchesCity = string.IsNullOrWhiteSpace(city) ||
-                                        string.Equals(building.City?.Trim(), city?.Trim(), StringComparison.OrdinalIgnoreCase);
-
-                                    if (matchesStreet && matchesZip && matchesHouse && matchesCity)
-                                    {
-                                        matchedBuilding = building;
-                                        break;
-                                    }
-                                }
+                                matchedBuilding = building;
+                                break;
                             }
                         }
                     }
@@ -199,7 +174,7 @@ namespace BUILD.ING.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int)file.Length,
+                FileSize = (int) file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -211,9 +186,6 @@ namespace BUILD.ING.Controllers
                 UploadedBy = null,
                 GroupId = GetCurrentUserGroupId(),
                 BuildingId = matchedBuilding?.BuildingId,
-                Building = matchedBuilding,
-                CategoryId = matchedCategory?.CategoryId,
-                Category = matchedCategory
             };
 
             _context.Documents.Add(document);
@@ -227,17 +199,17 @@ namespace BUILD.ING.Controllers
                 document.DocumentId,
                 FileUrl = fileUrl,
                 HasMetadata = metadata != "{}",
-                SuggestedAddress = parsedAddress ?? new Dictionary<string, string>
-                {
-                    { "street", "Couldn't identify" },
-                    { "house_number", "Couldn't identify" },
-                    { "zip_code", "Couldn't identify" },
-                    { "city", "Couldn't identify" }
-                },
+                SuggestedAddress = parsedAddress != null && parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
+                    ? parsedAddress
+                    : new Dictionary<string, string>
+                    {
+                        { "street", "Couldn't identify" },
+                        { "house_number", "Couldn't identify" },
+                        { "zip_code", "Couldn't identify" },
+                        { "city", "Couldn't identify" }
+                    },
                 BuildingId = matchedBuilding?.BuildingId,
-                BuildingName = matchedBuilding?.Name,
-                CategoryId = matchedCategory?.CategoryId,
-                CategoryName = matchedCategory?.Name
+                BuildingName = matchedBuilding?.Name
             });
         }
 
@@ -247,8 +219,6 @@ namespace BUILD.ING.Controllers
         {
             var groupId = GetCurrentUserGroupId();
             var documents = _context.Documents.Where(d => d.GroupId == groupId).ToList();
-            var categoryMap = _context.DocumentCategories.ToDictionary(c => c.CategoryId, c => c.Name);
-            var buildingMap = _context.Buildings.ToDictionary(b => b.BuildingId, b => b.Name);
             var dtos = documents.Select(document => new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
@@ -256,10 +226,8 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
-                CategoryName = document.CategoryId.HasValue && categoryMap.ContainsKey(document.CategoryId.Value) ? categoryMap[document.CategoryId.Value] : null,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
-                BuildingName = document.BuildingId.HasValue && buildingMap.ContainsKey(document.BuildingId.Value) ? buildingMap[document.BuildingId.Value] : null,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
                 LastModified = document.LastModified,
@@ -282,12 +250,6 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
             if (document == null)
                 return NotFound();
-            var categoryName = document.CategoryId.HasValue
-                ? _context.DocumentCategories.Where(c => c.CategoryId == document.CategoryId.Value).Select(c => c.Name).FirstOrDefault()
-                : null;
-            var buildingName = document.BuildingId.HasValue
-                ? _context.Buildings.Where(b => b.BuildingId == document.BuildingId.Value).Select(b => b.Name).FirstOrDefault()
-                : null;
             var dto = new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
@@ -295,10 +257,8 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
-                CategoryName = categoryName,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
-                BuildingName = buildingName,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
                 LastModified = document.LastModified,
@@ -314,54 +274,74 @@ namespace BUILD.ING.Controllers
             return Ok(dto);
         }
 
+        [HttpGet("categories")]
+        public IActionResult GetDocumentCategories()
+        {
+            if (!System.IO.File.Exists(CategoriesJsonPath))
+                return NotFound("document_categories.json not found");
+            var categories = ReadCategories();
+            var result = categories.Select(c => new
+            {
+                name = c.Name,
+                description = c.Description,
+                fields = c.Fields,
+            }).ToList();
+            return Ok(result);
+        }
+
+        // [HttpPost("categories")]
+        // public IActionResult CreateCategory([FromBody] DocumentCategoryCreateRequest request)
+        // {
+        //     if (string.IsNullOrWhiteSpace(request.Name))
+        //         return BadRequest("Category name is required.");
+
+        //     var categories = ReadCategories();
+        //     if (categories.Any(c => string.Equals(c.Name, request.Name, StringComparison.OrdinalIgnoreCase)))
+        //         return Conflict($"Category with name '{request.Name}' already exists.");
+
+        //     var newCategory = new DocumentCategory
+        //     {
+        //         Name = request.Name!,
+        //         Description = request.Description,
+        //         Fields = request.Fields ?? new List<Dictionary<string, string>>()
+        //     };
+        //     categories.Add(newCategory);
+
+        //     // Write back to JSON
+        //     var json = System.IO.File.ReadAllText(CategoriesJsonPath);
+        //     using var docJson = JsonDocument.Parse(json);
+        //     var newJsonObj = new Dictionary<string, object>();
+        //     foreach (var prop in docJson.RootElement.EnumerateObject())
+        //     {
+        //         if (prop.Name == "categories")
+        //             newJsonObj[prop.Name] = categories;
+        //         else
+        //             newJsonObj[prop.Name] = JsonSerializer.Deserialize<object>(prop.Value.GetRawText()) ?? new object();
+        //     }
+        //     var newJson = JsonSerializer.Serialize(newJsonObj, CachedJsonSerializerOptions);
+        //     System.IO.File.WriteAllText(CategoriesJsonPath, newJson);
+
+        //     return CreatedAtAction(nameof(GetDocumentCategories), new { name = newCategory.Name }, new
+        //     {
+        //         name = newCategory.Name,
+        //         description = newCategory.Description,
+        //         fields = newCategory.Fields
+        //     });
+        // }
+
         [HttpPut("{id}")]
         public IActionResult UpdateDocument(int id, [FromBody] DocumentUpdateRequest request)
         {
+            ArgumentNullException.ThrowIfNull(request);
             var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
             if (document == null)
                 return NotFound();
-
-            // Handle Category lookup or creation
-            if (!string.IsNullOrEmpty(request.Category))
-            {
-                var category = _context.DocumentCategories.FirstOrDefault(c => c.Name == request.Category);
-                if (category == null)
-                {
-                    category = new DocumentCategory { Name = request.Category };
-                    _context.DocumentCategories.Add(category);
-                    _context.SaveChanges(); // Save to get the generated CategoryId
-                }
-                document.CategoryId = category.CategoryId;
-                document.Category = category;
-                if (category.Documents == null)
-                    category.Documents = new List<Document>();
-                if (!category.Documents.Contains(document))
-                    category.Documents.Add(document); // Ensure the document is linked to the category
-            }
-
-            // Handle Building lookup
-            if (!string.IsNullOrEmpty(request.Building))
-            {
-                var building = _context.Buildings.FirstOrDefault(b => b.Name == request.Building);
-                if (building == null)
-                    return BadRequest($"Building '{request.Building}' not found.");
-                document.BuildingId = building.BuildingId;
-                document.Building = building;
-                if (building.Documents == null)
-                    building.Documents = new List<Document>();
-                if (!building.Documents.Contains(document))
-                    building.Documents.Add(document); // Ensure the document is linked to the building
-            }
 
             var requestType = request.GetType();
             var documentType = document.GetType();
             foreach (var reqProp in requestType.GetProperties())
             {
-                if (reqProp.Name == "Category" || reqProp.Name == "Building")
-                    continue; // Already handled above
                 var value = reqProp.GetValue(request);
-                if (value == null)
-                    continue; // Skip nulls to keep original value
                 var docProp = documentType.GetProperty(reqProp.Name);
                 if (docProp == null || !docProp.CanWrite)
                 {
@@ -375,9 +355,6 @@ namespace BUILD.ING.Controllers
             }
 
             _context.SaveChanges();
-            // Reload navigation properties to ensure up-to-date values
-            _context.Entry(document).Reference(d => d.Category).Load();
-            _context.Entry(document).Reference(d => d.Building).Load();
 
             var dto = new BUILD.ING.Dto.DocumentDto
             {
@@ -386,10 +363,67 @@ namespace BUILD.ING.Controllers
                 FilePath = document.FilePath,
                 FileType = document.FileType,
                 FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
-                CategoryName = document.Category?.Name,
+                CategoryName = document.CategoryName,
                 BuildingId = document.BuildingId,
-                BuildingName = document.Building?.Name,
+                UploadedBy = document.UploadedBy,
+                UploadDate = document.UploadDate,
+                LastModified = document.LastModified,
+                Version = document.Version,
+                Status = document.Status,
+                Description = document.Description,
+                IsPublic = document.IsPublic,
+                Metadata = document.Metadata,
+                FileName = document.FileName,
+                UploadedAt = document.UploadedAt,
+                GroupId = document.GroupId
+            };
+            return Ok(dto);
+        }
+
+        [HttpPatch("{id}")]
+        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            if (document == null)
+                return NotFound();
+
+            // Handle CategoryName logic (creation removed)
+            var categories = ReadCategories();
+            if (request.CategoryName != null)
+            {
+                document.CategoryName = request.CategoryName;
+            }
+            else
+            {
+                document.CategoryName = null;
+            }
+
+            // Handle BuildingId logic
+            if (request.BuildingId.HasValue)
+            {
+                var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
+                if (building == null)
+                    return BadRequest($"Building with ID {request.BuildingId} not found.");
+                document.BuildingId = request.BuildingId.Value;
+            }
+            else
+            {
+                document.BuildingId = null;
+            }
+
+            _context.SaveChanges();
+            // No longer reload navigation properties for Category or Building
+
+            var dto = new BUILD.ING.Dto.DocumentDto
+            {
+                DocumentId = document.DocumentId,
+                Title = document.Title,
+                FilePath = document.FilePath,
+                FileType = document.FileType,
+                FileSize = document.FileSize,
+                CategoryName = document.CategoryName,
+                BuildingId = document.BuildingId,
                 UploadedBy = document.UploadedBy,
                 UploadDate = document.UploadDate,
                 LastModified = document.LastModified,
@@ -471,71 +505,25 @@ namespace BUILD.ING.Controllers
 
             return File(fileBytes, contentType);
         }
-        
-        [HttpPatch("{id}")]
-        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
-        {
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
-            if (document == null)
-                return NotFound();
 
-            if (request.CategoryId.HasValue)
-            {
-                var category = _context.DocumentCategories.FirstOrDefault(c => c.CategoryId == request.CategoryId.Value);
-                if (category == null)
-                    return BadRequest($"Category with ID {request.CategoryId} not found.");
-                document.Category = category;
-                document.CategoryId = request.CategoryId.Value;
-                if (category.Documents == null)
-                    category.Documents = new List<Document>();
-                if (!category.Documents.Contains(document))
-                    category.Documents.Add(document); // Ensure the document is linked to the category
-            }
-            if (request.BuildingId.HasValue)
-            {
-                var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
-                if (building == null)
-                    return BadRequest($"Building with ID {request.BuildingId} not found.");
-                document.Building = building;
-                document.BuildingId = request.BuildingId.Value;
-                if (building.Documents == null)
-                    building.Documents = new List<Document>();
-                if (!building.Documents.Contains(document))
-                    building.Documents.Add(document); // Ensure the document is linked to the building
-            }
-
-            _context.SaveChanges();
-
-            var dto = new BUILD.ING.Dto.DocumentDto
-            {
-                DocumentId = document.DocumentId,
-                Title = document.Title,
-                FilePath = document.FilePath,
-                FileType = document.FileType,
-                FileSize = document.FileSize,
-                CategoryId = document.CategoryId,
-                CategoryName = document.Category?.Name,
-                BuildingId = document.BuildingId,
-                BuildingName = document.Building?.Name,
-                UploadedBy = document.UploadedBy,
-                UploadDate = document.UploadDate,
-                LastModified = document.LastModified,
-                Version = document.Version,
-                Status = document.Status,
-                Description = document.Description,
-                IsPublic = document.IsPublic,
-                Metadata = document.Metadata,
-                FileName = document.FileName,
-                UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
-            };
-            return Ok(dto);
-        }
-
-        public class DocumentMetadataPatchRequest
-        {
-            public int? CategoryId { get; set; }
-            public int? BuildingId { get; set; }
-        }
     }
+
+    public class DocumentMetadataPatchRequest
+    {
+        public string? CategoryName { get; set; }
+        public int? BuildingId { get; set; }
+    }
+
+    public class DocumentUpdateRequest
+    {
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+    }
+
+    // public class DocumentCategoryCreateRequest
+    // {
+    //     public string Name { get; set; } = string.Empty;
+    //     public string? Description { get; set; }
+    //     public List<Dictionary<string, string>>? Fields { get; set; }
+    // }
 }
