@@ -83,7 +83,7 @@ export class FileViewComponent {
             };
 
             this.selectedBuildingId = doc.buildingId ?? null;
-            this.selectedCategoryId = doc.categoryId ?? null;
+            this.selectedCategoryId = null;
 
             const fileType = (doc.fileType ?? '').toLowerCase();
             this.isPdf = fileType === 'pdf';
@@ -125,7 +125,7 @@ export class FileViewComponent {
 
     const patchRequest: DocumentMetadataPatchRequest = {
       buildingId: this.selectedBuildingId,
-      categoryId: this.selectedCategoryId
+      categoryName: undefined
     };
 
     const documentsApi = this.apiFactory.create(DocumentsApi);

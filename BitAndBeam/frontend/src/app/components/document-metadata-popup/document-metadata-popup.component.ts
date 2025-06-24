@@ -130,7 +130,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
   private updateDocumentMetadata(documentId: number, categoryId: number | null, buildingId: number | null): void {
     // ✅ Rewritten: use only the OpenAPI client for PATCH (removed categoryService.assignDocumentCategory)
     const patchRequest: DocumentMetadataPatchRequest = {
-      categoryId,
+      categoryName: this.isOtherCategory ? this.otherCategoryName : undefined,
       buildingId
     };
 
