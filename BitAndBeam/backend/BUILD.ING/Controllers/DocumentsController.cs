@@ -47,27 +47,22 @@ namespace BUILD.ING.Controllers
             return categories;
         }
 
-        // ---------------------------------------------------------------------
-        //  POST /api/documents          (one-prompt version)
-        // ---------------------------------------------------------------------
         [HttpPost]
         public async Task<IActionResult> UploadDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File is required");
 
-            // 1) ─── Save upload ────────────────────────────────────────────────
+            // ╭──────────────────────────── 1. save upload ───────────────────────────╮
             var uploadsPath = Path.Combine("/app/documents");
             Directory.CreateDirectory(uploadsPath);
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
-
-            using (var stream = new FileStream(fullPath, FileMode.Create))
+            await using (var fs = new FileStream(fullPath, FileMode.Create))
             {
                 await file.CopyToAsync(fs).ConfigureAwait(false);
             }
 
-            // read bytes once (Tika)
             byte[] fileBytes;
             await using (var ms = new MemoryStream())
             {
@@ -75,66 +70,55 @@ namespace BUILD.ING.Controllers
                 fileBytes = ms.ToArray();
             }
 
-            // 2) ─── Apache Tika: metadata + plain text ────────────────────────
-            string metadata      = "{}";
+            // ╭──────────────────────────── 2. Tika extract ───────────────────────────╮
+            string metadata = "{}";
             string textForOllama = string.Empty;
 
             try
             {
-                metadata      = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName)
-                                                .ConfigureAwait(false);
-                textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName)
-                                                .ConfigureAwait(false);
-                _logger.LogInformation("✅ Metadata/text extracted for {File}", file.FileName);
+                metadata      = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
+                textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
+                _logger.LogInformation("✅ Metadata & text extracted for {File}", file.FileName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
             }
 
-            var shortText = textForOllama.Length > 3_000
-                        ? textForOllama[..3_000]  // 1st 3 kB is enough for category / address
-                        : textForOllama;
+            // keep prompt small
+            var shortText = textForOllama.Length > 3_000 ? textForOllama[..3_000] : textForOllama;
 
-            // 3) ─── Build JSON context objects for Ollama ─────────────────────
-            var categoriesJson = JsonSerializer.Serialize(
-                ReadCategories().Select(c => new { name = c.Name, fields = c.Fields }));
+            // ╭──────────────── 3. build prompt (address + category) ─────────────────╮
+            var categoriesJson = JsonSerializer.Serialize(ReadCategories().Select(c => c.Name));
 
-            var buildingsJson = JsonSerializer.Serialize(
-                _context.Buildings.Select(b => new {
-                    id           = b.BuildingId,
-                    street       = b.StreetName,
-                    house_number = b.HouseNumber,
-                    zip_code     = b.PostalCode,
-                    city         = b.City
-                }).ToList());
-
-            // 4) ─── ONE prompt: ask for both address & category ───────────────
             var prompt = $$"""
-            You will receive:
-            • "text"        - plain German document content
-            • "categories"  - possible categories + key fields
-            • "buildings"   - known building addresses
+            You receive
+            • "text"       - plain German document content
+            • "categories" - array of possible document-category names
 
-            TASK A  ➜ Extract a **postal address** if one exists in the text  
-                    (compare to "buildings" for context).
+            TASK A → Extract a postal **address** if one exists  
+            TASK B → Choose the SINGLE best-matching **category** from "categories"
+                    (use null if none fits)
 
-            TASK B  ➜ Decide the SINGLE best-fitting document **category**.  
-                    If none matches, use null.
+            **Respond with one VALID, minified JSON object and nothing else.**
 
-            Return EXACTLY:
+            Schema (copy exactly):
 
             {
-            "address": {
+            "address":{
                 "street":       "<string|null>",
                 "house_number": "<string|null>",
                 "zip_code":     "<string|null>",
                 "city":         "<string|null>"
             },
-            "category": "<category-name|null>"
+            "category": "<string|null>"
             }
 
-            No markdown. No comments.
+            Rules
+            • Every value must be a JSON string or null - no XML tags, no units,
+            no comments like "(estimated)".  
+            • Do NOT output markdown, code fences, line breaks, or extra keys.  
+            • The result MUST parse with JSON.parse in JavaScript.
 
             --- categories ---
             {{categoriesJson}}
@@ -144,87 +128,61 @@ namespace BUILD.ING.Controllers
             """;
 
             Dictionary<string, string>? parsedAddress = null;
+            string? matchedCategory = null;
             Building? matchedBuilding = null;
 
+            // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
             try
             {
-                var shortText = textForOllama.Length > 3000 ? textForOllama.Substring(0, 3000) : textForOllama;
-
-                var prompt = $$"""
-                The following is the extracted text from a German document. Your task is to identify if it contains an address under the field "Adresse" or in free text.
-
-                Extract the address **only if it looks like a valid building address**, and return the result in JSON format with the following 4 fields:
-
-                - street
-                - house_number
-                - zip_code
-                - city
-
-                All values must be strings or null. DO NOT return markdown or explanation.
-
-                Example:
-                {
-                    "street": "Riedener Str.",
-                    "house_number": "1a",
-                    "zip_code": "90518",
-                    "city": "Altdorf"
-                }
-
-                Text:
-                {{shortText}}
-                """;
-
-                var client = httpClientFactory.CreateClient();
-                var json = JsonSerializer.Serialize(new { prompt });
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("http://ollama:8000/api/Ollama/ask", content).ConfigureAwait(false);
+                var client  = httpClientFactory.CreateClient();
+                var payload = JsonSerializer.Serialize(new { prompt });
+                var resp    = await client.PostAsync(
+                                "http://ollama:8000/api/Ollama/ask",
+                                new StringContent(payload, Encoding.UTF8, "application/json"))
+                                        .ConfigureAwait(false);
 
                 if (resp.IsSuccessStatusCode)
                 {
-                    var ollamaResultJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollamaResult = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                        ollamaResultJson,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
+                    var jsonStr = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var ollama  = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
+                                    jsonStr,
+                                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    parsedAddress = JsonSerializer.Deserialize<Dictionary<string, string>>(ollamaResult?.Response ?? "{}", new JsonSerializerOptions
+                    if (!string.IsNullOrWhiteSpace(ollama?.Response))
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        var root = JsonDocument.Parse(ollama.Response).RootElement;
 
-                    if (parsedAddress != null && parsedAddress.TryGetValue("street", out var street) &&
-                        parsedAddress.TryGetValue("zip_code", out var zipCode))
-                    {
-                        parsedAddress.TryGetValue("house_number", out var houseNumber);
-                        parsedAddress.TryGetValue("city", out var city);
-
-                        var buildings = _context.Buildings.ToList();
-                        foreach (var building in buildings)
+                        // address
+                        if (root.TryGetProperty("address", out var addr) && addr.ValueKind == JsonValueKind.Object)
                         {
-                            bool matchesStreet = string.Equals(building.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
-                            bool matchesZip = string.Equals(building.PostalCode?.Trim(), zipCode?.Trim(), StringComparison.OrdinalIgnoreCase);
-                            bool matchesHouse = string.IsNullOrWhiteSpace(houseNumber) ||
-                                string.Equals(building.HouseNumber?.Trim(), houseNumber?.Trim(), StringComparison.OrdinalIgnoreCase);
-                            bool matchesCity = string.IsNullOrWhiteSpace(city) ||
-                                string.Equals(building.City?.Trim(), city?.Trim(), StringComparison.OrdinalIgnoreCase);
-
-                            if (matchesStreet && matchesZip && matchesHouse && matchesCity)
+                            parsedAddress = new()
                             {
-                                matchedBuilding = building;
-                                break;
-                            }
+                                ["street"]       = addr.TryGetProperty("street",       out var v0) ? v0.GetString() ?? "" : "",
+                                ["house_number"] = addr.TryGetProperty("house_number", out var v1) ? v1.GetString() ?? "" : "",
+                                ["zip_code"]     = addr.TryGetProperty("zip_code",     out var v2) ? v2.GetString() ?? "" : "",
+                                ["city"]         = addr.TryGetProperty("city",         out var v3) ? v3.GetString() ?? "" : ""
+                            };
+                        }
+
+                        // category
+                        if (root.TryGetProperty("category", out var catElem) &&
+                            catElem.ValueKind == JsonValueKind.String)
+                        {
+                            var cat = catElem.GetString();
+                            if (!string.IsNullOrWhiteSpace(cat) &&
+                                !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
+                                matchedCategory = cat.Trim();
                         }
                     }
                 }
-                else _logger.LogWarning("⚠️ Ollama (address+category) call failed.");
+                else _logger.LogWarning("⚠️ Ollama service failed (status {Code})", resp.StatusCode);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ollama combined extraction failed");
+                _logger.LogError(ex, "❌ Ollama analysis failed");
             }
 
-            // 5) ─── Match address → building (if address present) ──────────────
+            // ╭────────────── 5. try to map address → building (unchanged) ───────────╮
             if (parsedAddress != null &&
                 parsedAddress.TryGetValue("street", out var street) &&
                 parsedAddress.TryGetValue("zip_code", out var zip))
@@ -234,16 +192,12 @@ namespace BUILD.ING.Controllers
 
                 foreach (var b in _context.Buildings.ToList())
                 {
-                    bool okStreet = string.Equals(b.StreetName?.Trim(), street?.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
-                    bool okZip    = string.Equals(b.PostalCode?.Trim(), zip?.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
+                    bool okStreet = string.Equals(b.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool okZip    = string.Equals(b.PostalCode?.Trim(), zip?.Trim(),   StringComparison.OrdinalIgnoreCase);
                     bool okHouse  = string.IsNullOrWhiteSpace(house) ||
-                                    string.Equals(b.HouseNumber?.Trim(), house?.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
-                    bool okCity   = string.IsNullOrWhiteSpace(city) ||
-                                    string.Equals(b.City?.Trim(), city?.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
+                                    string.Equals(b.HouseNumber?.Trim(), house?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool okCity   = string.IsNullOrWhiteSpace(city)  ||
+                                    string.Equals(b.City?.Trim(),       city?.Trim(),   StringComparison.OrdinalIgnoreCase);
 
                     if (okStreet && okZip && okHouse && okCity)
                     {
@@ -253,15 +207,15 @@ namespace BUILD.ING.Controllers
                 }
             }
 
-            // 6) ─── Persist document ───────────────────────────────────────────
+            // ╭──────────────────────────── 6. persist ───────────────────────────────╮
             var document = new Document
             {
-                Title = Path.GetFileNameWithoutExtension(file.FileName),
-                FileName = file.FileName,
-                FilePath = file.FileName,
-                FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
-                UploadDate = DateTime.UtcNow,
+                Title        = Path.GetFileNameWithoutExtension(file.FileName),
+                FileName     = file.FileName,
+                FilePath     = file.FileName,
+                FileType     = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
+                FileSize     = (int)file.Length,
+                UploadDate   = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version      = "1.0",
                 Status       = "draft",
@@ -272,14 +226,13 @@ namespace BUILD.ING.Controllers
                 UploadedBy   = null,
                 GroupId      = GetCurrentUserGroupId(),
                 BuildingId   = matchedBuilding?.BuildingId,
-                BuildingName = matchedBuilding?.Name,
-                CategoryName = matchedCategory
+                CategoryName = matchedCategory                      // ← 🆕
             };
 
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            // 7) ─── Build response DTO ─────────────────────────────────────────
+            // ╭──────────────────────────── 7. response ──────────────────────────────╮
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
@@ -288,19 +241,22 @@ namespace BUILD.ING.Controllers
                 document.DocumentId,
                 FileUrl     = fileUrl,
                 HasMetadata = metadata != "{}",
-                SuggestedAddress = parsedAddress != null && parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
-                    ? parsedAddress
-                    : new Dictionary<string, string>
-                    {
-                        { "street", "Couldn't identify" },
-                        { "house_number", "Couldn't identify" },
-                        { "zip_code", "Couldn't identify" },
-                        { "city", "Couldn't identify" }
-                    },
-                BuildingId = matchedBuilding?.BuildingId,
-                BuildingName = matchedBuilding?.Name
+                SuggestedAddress = parsedAddress != null &&
+                                parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
+                                ? parsedAddress
+                                : new Dictionary<string, string>
+                                    {
+                                        { "street",       "Couldn't identify" },
+                                        { "house_number", "Couldn't identify" },
+                                        { "zip_code",     "Couldn't identify" },
+                                        { "city",         "Couldn't identify" }
+                                    },
+                BuildingId   = matchedBuilding?.BuildingId,
+                BuildingName = matchedBuilding?.Name,
+                CategoryName = matchedCategory                     // ← 🆕
             });
         }
+
 
         [HttpGet]
         public IActionResult GetAllDocuments()
