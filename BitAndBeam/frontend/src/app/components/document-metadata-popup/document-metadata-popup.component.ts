@@ -19,7 +19,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
   @Input() documentName: string = '';
   @Input() documentData: DocumentResponse | null = null;
   @Output() closePopup = new EventEmitter<void>();
-  @Output() saveMetadata = new EventEmitter<{categoryId: number | null, buildingId: number | null}>();
+  @Output() saveMetadata = new EventEmitter<{categoryName: string | null, buildingId: number | null}>();
 
   buildings: Building[] = [];
   categories: Category[] = [];
@@ -58,8 +58,8 @@ export class DocumentMetadataPopupComponent implements OnInit {
     }
 
     // If documentData has a categoryId, preselect that category
-    if (this.documentData && this.documentData.categoryId !== undefined) {
-      this.selectedCategoryId = this.documentData.categoryId;
+    if (this.documentData && this.documentData.categoryName !== undefined) {
+      this.selectedCategoryId = null;
     }
   }
 
@@ -126,10 +126,10 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
 
 
-  private updateDocumentMetadata(documentId: number, categoryId: number | null, buildingId: number | null): void {
+  private updateDocumentMetadata(documentId: number, categoryName: string | null, buildingId: number | null): void {
     // ✅ Rewritten: use only the OpenAPI client for PATCH (removed categoryService.assignDocumentCategory)
     const patchRequest: DocumentMetadataPatchRequest = {
-      categoryName: this.isOtherCategory ? this.otherCategoryName : null,
+      categoryName: null,
       buildingId
     };
 
@@ -137,7 +137,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
     documentsApi.apiDocumentsIdPatch(documentId, patchRequest).then(response => {
       // ✅ Emit metadata saved event
-      this.saveMetadata.emit({ categoryId, buildingId });
+      this.saveMetadata.emit({ categoryName, buildingId });
       console.log('✅ Document metadata updated:', response.data);
 
       // ✅ Show success and auto-close
