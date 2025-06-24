@@ -186,7 +186,6 @@ namespace BUILD.ING.Controllers
                 UploadedBy = null,
                 GroupId = GetCurrentUserGroupId(),
                 BuildingId = matchedBuilding?.BuildingId,
-                Building = matchedBuilding
             };
 
             _context.Documents.Add(document);
