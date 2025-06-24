@@ -464,11 +464,19 @@ namespace BUILD.ING.Controllers
                     return BadRequest($"Building with ID {request.BuildingId} not found.");
                 document.Building = building;
                 document.BuildingId = request.BuildingId.Value;
+
                 if (building.Documents == null)
                     building.Documents = new List<Document>();
                 if (!building.Documents.Contains(document))
-                    building.Documents.Add(document); // Ensure the document is linked to the building
+                    building.Documents.Add(document);
             }
+            else
+            {
+                // Explicitly clear the building assignment
+                document.Building = null;
+                document.BuildingId = null;
+            }
+
 
             _context.SaveChanges();
 

@@ -6,12 +6,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import type { AxiosResponse } from 'axios';
-import { DocumentsApi, Building as ApiBuilding,  OllamaApi, Configuration, OllamaRequest } from '../../../api'; 
+import { DocumentsApi, Building as ApiBuilding,  OllamaApi, Configuration, OllamaRequest } from '../../../api';
 import { BuildingService } from '../../services/building.service';
 import { CategoryService } from '../../services/category.service';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
-import { ApiClientFactory } from '../../services/api-client.factory'; // ✅ NEW
+import { ApiClientFactory } from '../../services/api-client.factory';
 
 @Component({
   selector: 'app-upload-file',
@@ -27,13 +27,13 @@ export class UploadFileComponent implements OnInit {
   uploadedFile: File | null = null;
   selectedBuildingId: number | null = null;
   buildings: any[] = [];
-  
+
   // Metadata popup properties
   showMetadataPopup = false;
   uploadedDocumentId: number | null = null;
 
   // AI Chat Properties
-  showHistory: boolean = true; 
+  showHistory: boolean = true;
   userInput: string = '';
   messages: { sender: 'user' | 'ai', text: string }[] = [];
   errorMessage: string = '';
@@ -93,7 +93,7 @@ export class UploadFileComponent implements OnInit {
 
         this.uploadSuccess = true;
         this.uploadedDocumentId = documentId;
-        
+
         // Show the metadata popup instead of navigating directly
         this.showMetadataPopup = true;
       })
@@ -159,21 +159,21 @@ export class UploadFileComponent implements OnInit {
   toggleHistory() {
       this.showHistory = !this.showHistory;
   }
-  
+
   // Metadata popup handlers
   closeMetadataPopup(): void {
     this.showMetadataPopup = false;
-    
+
     // If user closes the popup without saving, navigate to the document view
     if (this.uploadedDocumentId) {
       this.router.navigate(['/documents', this.uploadedDocumentId]);
     }
   }
-  
+
   saveDocumentMetadata(metadata: {categoryId: number | null, buildingId: number | null}): void {
     if (this.uploadedDocumentId) {
       this.categoryService.assignDocumentCategory(
-        this.uploadedDocumentId, 
+        this.uploadedDocumentId,
         metadata.categoryId,
         metadata.buildingId
       ).subscribe({
