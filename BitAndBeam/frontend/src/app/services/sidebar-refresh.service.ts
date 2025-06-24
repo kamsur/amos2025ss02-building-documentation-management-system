@@ -10,3 +10,4 @@ export class SidebarRefreshService {
     this.refreshSubject.next();
   }
 }
+
