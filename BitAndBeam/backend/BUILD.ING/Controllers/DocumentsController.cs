@@ -14,8 +14,6 @@ namespace BUILD.ING.Controllers
     [Route("api/[controller]")]
     public class DocumentsController : ControllerBase
     {
-        private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
-
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly TikaService _tikaService;
