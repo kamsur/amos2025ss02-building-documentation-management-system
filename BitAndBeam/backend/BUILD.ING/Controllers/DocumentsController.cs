@@ -549,25 +549,25 @@ namespace BUILD.ING.Controllers
             _context.SaveChanges();
 
 
+        }
+
+
+        public class DocumentMetadataPatchRequest
+        {
+            public string? CategoryName { get; set; }
+            public int? BuildingId { get; set; }
+        }
+
+        public class DocumentUpdateRequest
+        {
+            public string? Title { get; set; }
+            public string? Description { get; set; }
+        }
+
+        // public class DocumentCategoryCreateRequest
+        // {
+        //     public string Name { get; set; } = string.Empty;
+        //     public string? Description { get; set; }
+        //     public List<Dictionary<string, string>>? Fields { get; set; }
+        // }
     }
-
-
-    public class DocumentMetadataPatchRequest
-    {
-        public string? CategoryName { get; set; }
-        public int? BuildingId { get; set; }
-    }
-
-    public class DocumentUpdateRequest
-    {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-    }
-
-    // public class DocumentCategoryCreateRequest
-    // {
-    //     public string Name { get; set; } = string.Empty;
-    //     public string? Description { get; set; }
-    //     public List<Dictionary<string, string>>? Fields { get; set; }
-    // }
-}
