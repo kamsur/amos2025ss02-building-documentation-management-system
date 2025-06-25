@@ -39,8 +39,8 @@ export class CreateBuildingComponent {
 
   submitForm() {
     if (!this.building.name?.trim() || !this.building.streetName?.trim() || !this.building.houseNumber?.trim() || !this.building.postalCode?.trim()
-      || !this.building.city?.trim() || !this.building.country?.trim() || !this.building.organizationId) {
-      this.errorMessage = 'Name, Address, and Organization are required.';
+      || !this.building.city?.trim() || !this.building.country?.trim() ) {
+      this.errorMessage = 'Name and Address fields are required.';
       return;
     }
 
