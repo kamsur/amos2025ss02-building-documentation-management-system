@@ -405,7 +405,17 @@ namespace BUILD.ING.Controllers
         public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
             if (document == null)
                 return NotFound();
 
@@ -462,7 +472,17 @@ namespace BUILD.ING.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteDocument(int id)
         {
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
             if (document == null)
                 return NotFound();
 
@@ -487,7 +507,17 @@ namespace BUILD.ING.Controllers
         public IActionResult DownloadDocument(int id)
         {
             var groupId = GetCurrentUserGroupId();
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
             if (document == null)
                 return NotFound();
 
@@ -503,7 +533,16 @@ namespace BUILD.ING.Controllers
         public IActionResult PreviewDocument(int id)
         {
             var groupId = GetCurrentUserGroupId();
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
 
