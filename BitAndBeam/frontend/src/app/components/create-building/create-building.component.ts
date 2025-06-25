@@ -60,7 +60,6 @@ export class CreateBuildingComponent {
       totalArea: this.building.totalArea,
       floors: this.building.floors,
       description: this.building.description,
-      organizationId: this.building.organizationId,
       buildingDocumentRelations: [],
       coordinates: coordinates
     };
