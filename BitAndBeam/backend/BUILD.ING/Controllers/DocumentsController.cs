@@ -108,6 +108,15 @@ namespace BUILD.ING.Controllers
                 "category":"<string|null>"
             }
 
+            TASK A → Extract a **postal address** if present.  
+            Look for labels like
+            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
+            "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
+            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
+
+            TASK B → Choose the SINGLE best-matching **category** from "categories"
+            (use null if none fits)
+
             **TASK A** → Extract a **address** if present.  
             Look for labels like: 
             "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
@@ -195,6 +204,10 @@ namespace BUILD.ING.Controllers
                                 ["city"] = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : ""
                             };
                         }
+                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
+                            parsedAddress = null;
+
+                        // ------ B. CATEGORY -------
                         if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
                             parsedAddress = null;
 
