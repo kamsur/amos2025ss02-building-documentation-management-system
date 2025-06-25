@@ -92,10 +92,12 @@ namespace BUILD.ING.Controllers
             var prompt = $$"""
             You are an intelligent document analyzer.
 
-            Given the extracted **text** and a list of **categories** from a German document, return exactly one minified JSON object with this schema:
-
+            Given the **extracted text** and a list of **categories** from a German document, your task is to analyze and extract the following fields in a JSON format:
+            
+            **Example output:**
             {
-                "address":{
+                "address":
+                {
                     "street":"<string|null>",
                     "house_number":"<string|null>",
                     "zip_code":"<string|null>",
@@ -104,22 +106,25 @@ namespace BUILD.ING.Controllers
                 "category":"<string|null>"
             }
 
-            TASK A → Extract a **postal address** if present.  
-            Look for labels like
+            **TASK A** → Extract a **address** if present.  
+            Look for labels like: 
             "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
             "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
             or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
 
-            TASK B → Choose the SINGLE best-matching **category** from "categories"
+            **TASK B** → Choose the SINGLE best-matching **category** from "categories"
             (use null if none fits)
 
-            Rules  
-            • Every value must be a JSON string or null – no units, no comments.  
-            • No markdown, code-fences, or extra keys.  
+            **Rules**  
+            • Every value must be a JSON string or null - no units, no comments.
+            • No markdown, code-fences, or extra keys.
             • Output must parse with `JSON.parse()`.
 
-            "categories": {{categoriesJson}}
-            "text": {{shortText}}
+            "categories":
+            {{categoriesJson}}
+
+            "Extracted Text:":
+            {{shortText}}
             """;
 
             Dictionary<string, string>? parsedAddress = null;
