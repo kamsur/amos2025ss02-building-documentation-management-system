@@ -582,6 +582,11 @@ namespace BUILD.ING.Controllers
             public string? Description { get; set; }
         }
 
+        private int GetCurrentUserOrganizationId()
+            {
+                return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+            }
+
         // public class DocumentCategoryCreateRequest
         // {
         //     public string Name { get; set; } = string.Empty;
@@ -590,10 +595,7 @@ namespace BUILD.ING.Controllers
         // }
     }
 
-    private int GetCurrentUserOrganizationId()
-    {
-        return int.Parse(User.Claims.First(c => c.Type == "org").Value);
-    }
+
 
 
 }

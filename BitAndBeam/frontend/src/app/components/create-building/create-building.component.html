@@ -60,15 +60,6 @@
 
     <label for="longitude">Longitude:</label>
     <input type="number" id="longitude" [(ngModel)]="building.longitude" name="longitude">
-
-    <label>
-      Organization*:
-      <select [(ngModel)]="building.organizationId" name="organizationId" required>
-        <option [ngValue]="null" disabled selected>Select an organization</option>
-        <option *ngFor="let org of organizations" [ngValue]="org.id">{{ org.name }}</option>
-      </select>
-    </label>
-
     <button type="submit">Create</button>
   </form>
 </div>
