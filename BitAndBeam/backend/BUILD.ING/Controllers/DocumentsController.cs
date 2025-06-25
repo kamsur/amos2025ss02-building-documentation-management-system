@@ -58,13 +58,13 @@ namespace BUILD.ING.Controllers
             Directory.CreateDirectory(uploadsPath);
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
-            await using (var fs = new FileStream(fullPath, FileMode.Create))
+            await using (var fs = new FileStream(fullPath, FileMode.Create).ConfigureAwait(false))
             {
                 await file.CopyToAsync(fs).ConfigureAwait(false);
             }
 
             byte[] fileBytes;
-            await using (var ms = new MemoryStream())
+            await using (var ms = new MemoryStream().ConfigureAwait(false))
             {
                 await file.CopyToAsync(ms).ConfigureAwait(false);
                 fileBytes = ms.ToArray();
@@ -76,7 +76,7 @@ namespace BUILD.ING.Controllers
 
             try
             {
-                metadata      = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
+                metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
                 textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
                 _logger.LogInformation("✅ Metadata & text extracted for {File}", file.FileName);
             }
@@ -134,9 +134,9 @@ namespace BUILD.ING.Controllers
             // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
             try
             {
-                var client  = httpClientFactory.CreateClient("Ollama");
+                var client = httpClientFactory.CreateClient("Ollama");
                 var payload = JsonSerializer.Serialize(new { prompt });
-                var resp    = await client.PostAsync(
+                var resp = await client.PostAsync(
                                 "http://ollama:8000/api/Ollama/ask",
                                 new StringContent(payload, Encoding.UTF8, "application/json"))
                                         .ConfigureAwait(false);
@@ -144,7 +144,7 @@ namespace BUILD.ING.Controllers
                 if (resp.IsSuccessStatusCode)
                 {
                     var jsonStr = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollama  = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
+                    var ollama = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
                                     jsonStr,
                                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -156,11 +156,11 @@ namespace BUILD.ING.Controllers
                         // ────────  Ollama JSON fence-strip  ────────────────
                         var cleanedJson = ollama.Response
                             .Replace("```json", "", StringComparison.OrdinalIgnoreCase) // remove fenced block tag
-                            .Replace("```",     "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
+                            .Replace("```", "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
                             .Trim();                                                   // trim spaces / \n etc.
 
                         int first = cleanedJson.IndexOf('{');
-                        int last  = cleanedJson.LastIndexOf('}');
+                        int last = cleanedJson.LastIndexOf('}');
                         if (first >= 0 && last > first)
                             cleanedJson = cleanedJson[first..(last + 1)];
 
@@ -175,10 +175,10 @@ namespace BUILD.ING.Controllers
                             // nested form
                             parsedAddress = new Dictionary<string, string>
                             {
-                                ["street"]       = addrObj.GetProperty("street").GetString()       ?? "",
+                                ["street"] = addrObj.GetProperty("street").GetString() ?? "",
                                 ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
-                                ["zip_code"]     = addrObj.GetProperty("zip_code").GetString()     ?? "",
-                                ["city"]         = addrObj.GetProperty("city").GetString()         ?? ""
+                                ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
+                                ["city"] = addrObj.GetProperty("city").GetString() ?? ""
                             };
                         }
                         else
@@ -186,10 +186,10 @@ namespace BUILD.ING.Controllers
                             // flat fallback
                             parsedAddress = new Dictionary<string, string>
                             {
-                                ["street"]       = root.TryGetProperty("street",       out var s ) ? s.GetString() ?? "" : "",
-                                ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString()?? "" : "",
-                                ["zip_code"]     = root.TryGetProperty("zip_code",     out var z ) ? z.GetString() ?? "" : "",
-                                ["city"]         = root.TryGetProperty("city",         out var c ) ? c.GetString() ?? "" : ""
+                                ["street"] = root.TryGetProperty("street", out var s) ? s.GetString() ?? "" : "",
+                                ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString() ?? "" : "",
+                                ["zip_code"] = root.TryGetProperty("zip_code", out var z) ? z.GetString() ?? "" : "",
+                                ["city"] = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : ""
                             };
                         }
                         if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
@@ -216,10 +216,10 @@ namespace BUILD.ING.Controllers
             // ╭────────────── 5. try to map address → building ───────────╮
             if (parsedAddress != null)
             {
-                parsedAddress.TryGetValue("street",       out var street);
-                parsedAddress.TryGetValue("zip_code",     out var zip);
+                parsedAddress.TryGetValue("street", out var street);
+                parsedAddress.TryGetValue("zip_code", out var zip);
                 parsedAddress.TryGetValue("house_number", out var house);
-                parsedAddress.TryGetValue("city",         out var city);
+                parsedAddress.TryGetValue("city", out var city);
 
                 foreach (var b in _context.Buildings.ToList())
                 {
@@ -227,15 +227,15 @@ namespace BUILD.ING.Controllers
                                     string.Equals(b.StreetName?.Trim(), street.Trim(),
                                                 StringComparison.OrdinalIgnoreCase);
 
-                    bool okZip    = string.IsNullOrWhiteSpace(zip)   ||
+                    bool okZip = string.IsNullOrWhiteSpace(zip) ||
                                     string.Equals(b.PostalCode?.Trim(), zip.Trim(),
                                                 StringComparison.OrdinalIgnoreCase);
 
-                    bool okHouse  = string.IsNullOrWhiteSpace(house) ||
+                    bool okHouse = string.IsNullOrWhiteSpace(house) ||
                                     string.Equals(b.HouseNumber?.Trim(), house.Trim(),
                                                 StringComparison.OrdinalIgnoreCase);
 
-                    bool okCity   = string.IsNullOrWhiteSpace(city)  ||
+                    bool okCity = string.IsNullOrWhiteSpace(city) ||
                                     string.Equals(b.City?.Trim(), city.Trim(),
                                                 StringComparison.OrdinalIgnoreCase);
 
@@ -251,22 +251,22 @@ namespace BUILD.ING.Controllers
             // ╭──────────────────────────── 6. persist ───────────────────────────────╮
             var document = new Document
             {
-                Title        = Path.GetFileNameWithoutExtension(file.FileName),
-                FileName     = file.FileName,
-                FilePath     = file.FileName,
-                FileType     = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize     = (int)file.Length,
-                UploadDate   = DateTime.UtcNow,
+                Title = Path.GetFileNameWithoutExtension(file.FileName),
+                FileName = file.FileName,
+                FilePath = file.FileName,
+                FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
+                FileSize = (int) file.Length,
+                UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
-                Version      = "1.0",
-                Status       = "draft",
-                IsPublic     = false,
-                Description  = "No description provided",
-                Metadata     = metadata,
-                UploadedAt   = DateTime.UtcNow,
-                UploadedBy   = null,
-                GroupId      = GetCurrentUserGroupId(),
-                BuildingId   = matchedBuilding?.BuildingId,
+                Version = "1.0",
+                Status = "draft",
+                IsPublic = false,
+                Description = "No description provided",
+                Metadata = metadata,
+                UploadedAt = DateTime.UtcNow,
+                UploadedBy = null,
+                GroupId = GetCurrentUserGroupId(),
+                BuildingId = matchedBuilding?.BuildingId,
                 CategoryName = matchedCategory
             };
 
@@ -280,7 +280,7 @@ namespace BUILD.ING.Controllers
             return Ok(new
             {
                 document.DocumentId,
-                FileUrl     = fileUrl,
+                FileUrl = fileUrl,
                 HasMetadata = metadata != "{}",
                 SuggestedAddress = parsedAddress != null &&
                                 parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
@@ -292,7 +292,7 @@ namespace BUILD.ING.Controllers
                                         { "zip_code",     "Couldn't identify" },
                                         { "city",         "Couldn't identify" }
                                     },
-                BuildingId   = matchedBuilding?.BuildingId,
+                BuildingId = matchedBuilding?.BuildingId,
                 BuildingName = matchedBuilding?.Name,
                 CategoryName = matchedCategory
             });
@@ -604,10 +604,11 @@ namespace BUILD.ING.Controllers
             public string? Description { get; set; }
         }
 
-    // public class DocumentCategoryCreateRequest
-    // {
-    //     public string Name { get; set; } = string.Empty;
-    //     public string? Description { get; set; }
-    //     public List<Dictionary<string, string>>? Fields { get; set; }
-    // }
+        // public class DocumentCategoryCreateRequest
+        // {
+        //     public string Name { get; set; } = string.Empty;
+        //     public string? Description { get; set; }
+        //     public List<Dictionary<string, string>>? Fields { get; set; }
+        // }
+    }
 }
