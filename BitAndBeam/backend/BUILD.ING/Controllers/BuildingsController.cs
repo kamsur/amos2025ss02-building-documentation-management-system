@@ -79,7 +79,8 @@ namespace BUILD.ING.Controllers
         {
             _logger.LogInformation("GetBuildings called at {Time}", DateTime.UtcNow);
 
-            var buildings = await _context.Buildings.ToListAsync().ConfigureAwait(false);
+            int orgId = GetCurrentUserOrganizationId();
+            var buildings = await _context.Buildings.Where(b => b.OrganizationId == orgId).ToListAsync().ConfigureAwait(false);
             var buildingIds = buildings.Select(b => b.BuildingId).ToList();
             var documents = _context.Documents
                 .Where(d => d.BuildingId.HasValue && buildingIds.Contains(d.BuildingId.Value))
@@ -117,8 +118,8 @@ namespace BUILD.ING.Controllers
         public async Task<ActionResult<BuildingDto>> GetBuilding(int id)
         {
             _logger.LogInformation("GetBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
-
-            var building = await _context.Buildings.FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
+            var orgId = GetCurrentUserOrganizationId();
+            var building = await _context.Buildings.FirstOrDefaultAsync(b => b.BuildingId == id && b.OrganizationId == orgId).ConfigureAwait(false);
             if (building == null)
             {
                 _logger.LogWarning("GetBuilding did not find building with ID {BuildingId}", id);
