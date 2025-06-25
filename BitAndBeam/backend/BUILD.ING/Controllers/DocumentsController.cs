@@ -34,6 +34,11 @@ namespace BUILD.ING.Controllers
 
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
 
+        private int GetCurrentUserOrganizationId()
+          {
+             return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+          }
+
         private static List<DocumentCategory> ReadCategories()
         {
             var json = System.IO.File.ReadAllText(CategoriesJsonPath);
@@ -183,7 +188,7 @@ namespace BUILD.ING.Controllers
                 Metadata = metadata,
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
-                GroupId = GetCurrentUserGroupId(),
+                OrganizationId = GetCurrentUserOrganizationId(),
                 BuildingId = matchedBuilding?.BuildingId,
             };
 
@@ -244,7 +249,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             }).ToList();
             return Ok(dtos);
         }
@@ -283,7 +288,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             };
             return Ok(dto);
         }
@@ -399,7 +404,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             };
             return Ok(dto);
         }
@@ -467,7 +472,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             };
             return Ok(dto);
         }
@@ -509,7 +514,6 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}/download")]
         public IActionResult DownloadDocument(int id)
         {
-            var groupId = GetCurrentUserGroupId();
             var orgId = GetCurrentUserOrganizationId();
             var buildingIds = _context.Buildings
                 .Where(b => b.OrganizationId == orgId)
@@ -535,7 +539,6 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}/preview")]
         public IActionResult PreviewDocument(int id)
         {
-            var groupId = GetCurrentUserGroupId();
             var orgId = GetCurrentUserOrganizationId();
             var buildingIds = _context.Buildings
                 .Where(b => b.OrganizationId == orgId)
@@ -582,10 +585,7 @@ namespace BUILD.ING.Controllers
             public string? Description { get; set; }
         }
 
-        private int GetCurrentUserOrganizationId()
-            {
-                return int.Parse(User.Claims.First(c => c.Type == "org").Value);
-            }
+
 
         // public class DocumentCategoryCreateRequest
         // {

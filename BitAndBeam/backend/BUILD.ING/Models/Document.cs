@@ -22,7 +22,7 @@ namespace BUILD.ING.Models
         public string Metadata { get; set; }
         public string FileName { get; set; }
         public DateTime UploadedAt { get; set; }
-        public string GroupId { get; set; }
+        public int OrganizationId { get; set; }
         public User Uploader { get; set; }
         public ICollection<DocumentTagRelation> DocumentTagRelations { get; set; }
         public ICollection<DocumentPermission> DocumentPermissions { get; set; }

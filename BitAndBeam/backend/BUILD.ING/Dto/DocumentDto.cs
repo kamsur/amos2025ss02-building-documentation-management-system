@@ -19,6 +19,7 @@ namespace BUILD.ING.Dto
         public string Metadata { get; set; }
         public string FileName { get; set; }
         public DateTime UploadedAt { get; set; }
-        public string GroupId { get; set; }
+        public int OrganizationId { get; set; }
+
     }
 }

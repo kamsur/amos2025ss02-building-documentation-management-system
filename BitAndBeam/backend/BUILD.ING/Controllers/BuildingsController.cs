@@ -25,6 +25,11 @@ namespace BUILD.ING.Controllers
             _logger = logger;
         }
 
+        private int GetCurrentUserOrganizationId()
+        {
+             return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+        }
+
         // POST: api/Buildings
         // Creates a new building and returns its ID
         [HttpPost]
@@ -276,11 +281,6 @@ namespace BUILD.ING.Controllers
 
             return NoContent();
         }
-
-        private int GetCurrentUserOrganizationId()
-            {
-                return int.Parse(User.Claims.First(c => c.Type == "org").Value);
-            }
     }
 
 

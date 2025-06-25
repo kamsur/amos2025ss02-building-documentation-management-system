@@ -16,7 +16,7 @@ namespace BUILD.ING.Dto
         public decimal? TotalArea { get; set; }
         public int? Floors { get; set; }
         public string Description { get; set; }
-        public string? Coordinates { get; set; } // You may want to format NpgsqlPoint as string or object
+        public  string? Coordinates { get; set; } // You may want to format NpgsqlPoint as string or object
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public int OrganizationId { get; set; }
