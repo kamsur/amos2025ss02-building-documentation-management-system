@@ -49,7 +49,7 @@ namespace BUILD.ING.Controllers
                 TotalArea = dto.TotalArea,
                 Floors = dto.Floors,
                 Description = dto.Description,
-                OrganizationId = dto.OrganizationId,
+                OrganizationId = GetCurrentUserOrganizationId(),
                 Coordinates = coordinates,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
