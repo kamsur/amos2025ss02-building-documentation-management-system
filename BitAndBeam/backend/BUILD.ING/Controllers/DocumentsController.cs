@@ -31,11 +31,7 @@ namespace BUILD.ING.Controllers
             _logger = logger;
         }
 
-        private string GetCurrentUserGroupId()
-        {
-            return "group2"; // Hardcoded for now
-        }
-
+     
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
 
         private static List<DocumentCategory> ReadCategories()
