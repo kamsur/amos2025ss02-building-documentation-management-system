@@ -27,7 +27,7 @@ namespace BUILD.ING.Controllers
 
         private int GetCurrentUserOrganizationId()
         {
-             return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+            return int.Parse(User.Claims.First(c => c.Type == "org").Value);
         }
 
         // POST: api/Buildings
@@ -181,7 +181,7 @@ namespace BUILD.ING.Controllers
 
             // Ignore what the client sent, and instead always set the org based on the logged-in user
             //if (updatedBuilding.OrganizationId == 0)
-                existingBuilding.OrganizationId = orgId;
+            existingBuilding.OrganizationId = orgId;
 
             //Could accidentally overwrite something you're protecting (e.g., OrganizationId, relations)
             //_context.Entry(existingBuilding).CurrentValues.SetValues(updatedBuilding);

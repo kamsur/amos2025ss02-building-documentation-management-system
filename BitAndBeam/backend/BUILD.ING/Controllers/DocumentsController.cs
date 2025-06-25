@@ -35,9 +35,9 @@ namespace BUILD.ING.Controllers
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
 
         private int GetCurrentUserOrganizationId()
-          {
-             return int.Parse(User.Claims.First(c => c.Type == "org").Value);
-          }
+        {
+            return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+        }
 
         private static List<DocumentCategory> ReadCategories()
         {
