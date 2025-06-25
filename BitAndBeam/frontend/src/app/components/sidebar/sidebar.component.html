@@ -19,16 +19,12 @@
   <div class="sidebar-middle">
     <button class="add-btn" (click)="addBuilding()">+ Add Building</button>
     <div class="buildings">
-      <div *ngFor="let building of buildings">
+      <div *ngFor="let group of groupedDocuments">
         <div class="building-name">
-          📁 {{ building.name }}
-          <button (click)="deleteBuilding(building.id)" class="delete-building">🗑️</button>
+           📁 {{ group.buildingName }}
+          <button *ngIf="group.buildingId !== null" (click)="deleteBuilding(group.buildingId)">🗑️</button>
         </div>
-
-        <div
-          class="document"
-          *ngFor="let doc of building.documents"
-          (click)="viewDocument(doc)">
+        <div class="document" *ngFor="let doc of group.documents" (click)="viewDocument(doc)">
           📄 {{ doc.name }}
         </div>
       </div>

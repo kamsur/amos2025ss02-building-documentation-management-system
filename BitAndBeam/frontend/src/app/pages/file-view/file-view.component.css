@@ -100,3 +100,36 @@
   object-fit: contain;
   border-radius: 8px;
 }
+
+/* ✅ Metadata dropdown styles */
+.metadata-item select {
+  width: 100%;
+  padding: 0.45rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+/* ✅ Save button style */
+.save-btn {
+  background-color: #0077cc;
+  color: white;
+  margin-top: 0.75rem;
+}
+
+/* ✅ Toast Notification */
+.toast-message {
+  position: fixed;
+  bottom: 20px;
+  right: 30px;
+  background-color: #323232;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  font-size: 0.95rem;
+  z-index: 9999;
+  opacity: 0.95;
+}
+

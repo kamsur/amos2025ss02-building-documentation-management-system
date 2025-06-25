@@ -5,7 +5,7 @@ import { BuildingService, Building, DocumentResponse } from '../../services/buil
 import { CategoryService, Category } from '../../services/category.service';
 import { DocumentsApi, DocumentMetadataPatchRequest } from '../../../api/api';
 import { ApiClientFactory } from '../../services/api-client.factory';
-
+import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
 
 @Component({
   selector: 'app-document-metadata-popup',
@@ -38,7 +38,8 @@ export class DocumentMetadataPopupComponent implements OnInit {
   constructor(
     private buildingService: BuildingService,
     private categoryService: CategoryService,
-    private apiFactory: ApiClientFactory
+    private apiFactory: ApiClientFactory,
+    private sidebarRefreshService: SidebarRefreshService
 ) {
   }
 
@@ -138,6 +139,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
     documentsApi.apiDocumentsIdPatch(documentId, patchRequest).then(response => {
       // ✅ Emit metadata saved event
       this.saveMetadata.emit({ categoryName, buildingId });
+      this.sidebarRefreshService.triggerRefresh(); // ✅ Refresh sidebar
       console.log('✅ Document metadata updated:', response.data);
 
       // ✅ Show success and auto-close
