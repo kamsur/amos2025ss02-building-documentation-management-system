@@ -30,9 +30,12 @@ RUN dos2unix wait-for-it.sh && chmod +x wait-for-it.sh
 
 # Copy build artifacts from previous stage
 COPY --from=build /app/BUILD.ING/out ./
+# Copy resources directory for document_categories.json
+COPY ./resources ./resources
 
 # Expose port
 EXPOSE 5000
+#EXPOSE 5001
 
 # Wait for PostgreSQL then start app
 ENTRYPOINT ["./wait-for-it.sh", "postgres:5432", "--", "dotnet", "Build.ING.dll"]

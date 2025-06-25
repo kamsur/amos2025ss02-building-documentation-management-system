@@ -12,7 +12,6 @@
       <!-- Main File Content -->
       <div class="file-main-content" *ngIf="selectedFile">
 
-        <!-- Image viewer for images -->
         <section class="image-viewer" *ngIf="isImage">
           <img
             [src]="selectedFile.url"
@@ -20,7 +19,7 @@
             style="display: block; max-width: 100%; max-height: 100%; margin: auto; object-fit: contain;">
         </section>
 
-        <!-- PDF viewer for PDFs -->
+        <!-- ✅ PDF viewer -->
         <section class="pdf-viewer" *ngIf="isPdf">
           <pdf-viewer
             [src]="selectedFile.url"
@@ -29,20 +28,40 @@
           </pdf-viewer>
         </section>
         <!-- Metadata Panel-->
+        <!-- ✅ Editable Metadata Panel -->
         <aside class="metadata-panel">
-          <h3>Metadata</h3>
+          <h3>Edit Metadata</h3>
 
-          <div class="metadata-item" *ngFor="let meta of selectedFile.metadata">
-            <strong>{{ meta.label }}:</strong> {{ meta.value }}
+          <div class="metadata-item">
+            <label for="building-select"><strong>Building:</strong></label>
+            <select id="building-select" [(ngModel)]="selectedBuildingId">
+              <option [ngValue]="null">No Building</option>
+              <option *ngFor="let b of buildings" [ngValue]="b.id">{{ b.name }}</option>
+            </select>
+          </div>
+
+          <div class="metadata-item">
+            <label for="category-select"><strong>Category:</strong></label>
+            <select id="category-select" [(ngModel)]="selectedCategoryId">
+              <option [ngValue]="null">No Category</option>
+              <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+            </select>
           </div>
 
           <div class="meta-actions">
+            <button class="save-btn" (click)="saveMetadataChanges()" [disabled]="loading">
+              {{ loading ? 'Saving...' : 'Save Changes' }}
+            </button>
             <button class="download-btn" (click)="downloadFile()">Download</button>
             <button class="delete-btn" (click)="deleteFile()">Delete</button>
           </div>
         </aside>
 
+        <!-- ✅ Toast Notification -->
+        <div *ngIf="toastMessage" class="toast-message">
+          {{ toastMessage }}
         </div>
       </div>
     </div>
   </div>
+</div>

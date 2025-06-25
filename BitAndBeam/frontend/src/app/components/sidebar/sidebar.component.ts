@@ -1,10 +1,10 @@
 import { Component, EventEmitter,Output  } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth.service';
+import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
 import { BuildingService , DocumentItem , Building } from '../../services/building.service';
-
+import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
 @Component({
   standalone: true,
   selector: 'app-sidebar',
@@ -14,19 +14,33 @@ import { BuildingService , DocumentItem , Building } from '../../services/buildi
 })
 export class SidebarComponent {
   isExplorerCollapsed = false;
-  buildings: Building[] = [];
+  groupedDocuments: {
+    buildingId: number | null;
+    buildingName: string;
+    documents: DocumentItem[];
+  }[] = [];
+
 
   constructor(
-    public authService: AuthService,
+    public session: SessionService,
     private router: Router,
-    public buildingService: BuildingService
-
+    public buildingService: BuildingService,
+    private sidebarRefreshService: SidebarRefreshService
   ) {}
   ngOnInit(): void {
-    this.buildingService.getBuildings().subscribe({
-      next: (data) => this.buildings = data,
-      error: (err) => console.error('Failed to load buildings', err)
+    this.buildingService.getGroupedDocuments().subscribe({
+      next: (data) => this.groupedDocuments = data,
+      error: (err) => console.error('Failed to load grouped documents', err)
     });
+
+    this.sidebarRefreshService.refresh$.subscribe(() => {
+      console.log('📣 Sidebar refresh triggered');
+      this.buildingService.getGroupedDocuments().subscribe({
+        next: (data) => this.groupedDocuments = data,
+        error: (err) => console.error('Sidebar refresh failed', err)
+      });
+    });
+
   }
 
   toggleExplorer() {
@@ -51,15 +65,20 @@ export class SidebarComponent {
     if (!confirm('Are you sure you want to delete this building?')) return;
 
     this.buildingService.deleteBuilding(id).subscribe({
-      next: () => this.buildings = this.buildings.filter(b => b.id !== id),
+      next: () => {
+        // Filter out the deleted building from groupedDocuments
+        this.groupedDocuments = this.groupedDocuments.filter(g => g.buildingId !== id);
+      },
       error: (err) => console.error('Failed to delete building', err)
     });
   }
 
+
   logout() {
-    this.authService.logout();
-    this.router.navigate(['/']); // redirect to home/landing
+    this.session.logout();
+    this.router.navigate(['/']);
   }
+
 
 
 

@@ -1,10 +1,16 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, switchMap, map, Observable , from} from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, switchMap, map, Observable, from } from 'rxjs';
 import { ConfigService } from '../config.service';
 import { AxiosResponse } from 'axios';
-import { Configuration, DocumentsApi, Document as ApiDocument, BuildingsApi,
-  Building as ApiBuilding } from '../../api';
+import {
+  Configuration,
+  DocumentsApi,
+  Document as ApiDocument,
+  BuildingsApi,
+  Building as ApiBuilding
+} from '../../api';
+import { ApiClientFactory } from './api-client.factory';
+import { SessionService } from './session.service';
 
 export interface DocumentItem {
   id: number;
@@ -14,13 +20,15 @@ export interface DocumentItem {
 }
 
 export interface DocumentResponse {
-  documentId: number; // 👈 add this
+  documentId: number;
   title: string;
   fileName: string;
   filePath?: string;
   fileSize: number;
   fileType: string;
   uploadDate: string;
+  buildingId?: number | null;
+  categoryName?: string | null;
 }
 
 export interface Building {
@@ -31,36 +39,47 @@ export interface Building {
 
 @Injectable({ providedIn: 'root' })
 export class BuildingService {
-  private documentsApi: DocumentsApi;
-  private buildingsApi: BuildingsApi;
   private buildingsSubject = new BehaviorSubject<ApiBuilding[]>([]);
   buildings$ = this.buildingsSubject.asObservable();
+  private buildingsApi: BuildingsApi;
+  private documentsApi: DocumentsApi;
 
-  constructor(private config: ConfigService) {
-    const configuration = new Configuration({ basePath: this.config.apiUrl });
-    this.documentsApi = new DocumentsApi(configuration);
-    this.buildingsApi = new BuildingsApi(configuration);
+
+
+  constructor(
+    private config: ConfigService,
+    private apiFactory: ApiClientFactory,
+    private session: SessionService
+
+
+  ) {
+    this.buildingsApi = this.apiFactory.create(BuildingsApi);
+    this.documentsApi = this.apiFactory.create(DocumentsApi);
   }
-  //Buildings
+
+  // Buildings
   getBuildings(): Observable<Building[]> {
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
+
     return from(
-        this.buildingsApi.apiBuildingsGet().then(res =>
-            res.data.map(apiB => ({
-              id: apiB.buildingId!,
-              name: apiB.name ?? '',
-              documents: [] // you can map documents if needed
-            }))
-        )
+      buildingsApi.apiBuildingsGet().then(res =>
+        res.data.map(apiB => ({
+          id: apiB.buildingId!,
+          name: apiB.name ?? '',
+          documents: []
+        }))
+      )
     );
   }
 
   addBuilding(building: Partial<ApiBuilding>): Observable<Building> {
-    return from(this.buildingsApi.apiBuildingsPost(building)).pipe(
-      switchMap((res) => {
-        const createdId = (res.data as unknown as { id: number }).id;
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
 
-        return from(this.buildingsApi.apiBuildingsIdGet(createdId)).pipe(
-          map((b) => {
+    return from(buildingsApi.apiBuildingsPost(building)).pipe(
+      switchMap(res => {
+        const createdId = (res.data as unknown as { id: number }).id;
+        return from(buildingsApi.apiBuildingsIdGet(createdId)).pipe(
+          map(b => {
             const fetchedBuilding = b.data as ApiBuilding;
             return {
               id: fetchedBuilding.buildingId!,
@@ -73,28 +92,121 @@ export class BuildingService {
     );
   }
 
+  createBuilding(building: { name: string, [key: string]: any }, sourceId?: number): Observable<Building> {
+    // Create API building object
+    const apiBuilding: Partial<ApiBuilding> = {
+      name: building.name,
+      // Add any other properties needed
+    };
 
+    // If sourceId is provided, we're cloning from an existing building
+    if (sourceId) {
+      return from(this.buildingsApi.apiBuildingsIdGet(sourceId)).pipe(
+        switchMap(sourceResponse => {
+          const sourceBuilding = sourceResponse.data as ApiBuilding;
+          // Copy relevant properties from source building
+          // (e.g., floor plans, metadata, etc. - adjust as needed)
 
+          return from(this.buildingsApi.apiBuildingsPost(apiBuilding));
+        }),
+        switchMap(response => {
+          const createdId = (response.data as unknown as { id: number }).id;
+          return from(this.buildingsApi.apiBuildingsIdGet(createdId));
+        }),
+        map(response => {
+          const fetchedBuilding = response.data as ApiBuilding;
+          return {
+            id: fetchedBuilding.buildingId!,
+            name: fetchedBuilding.name ?? '',
+            documents: []
+          } as Building;
+        })
+      );
+    } else {
+      // If no sourceId, just create a new building
+      return this.addBuilding(apiBuilding);
+    }
+  }
 
   deleteBuilding(id: number): Observable<void> {
-    return from(this.buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
+
+    return from(buildingsApi.apiBuildingsIdDelete(id).then(() => {}));
   }
 
-  //Docs
+  // Documents
   getDocumentById(id: number): Observable<ApiDocument> {
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+
     return from(
-        this.documentsApi.apiDocumentsIdGet(id)
-            .then(res => (res as unknown as AxiosResponse<ApiDocument>).data)
+      documentsApi.apiDocumentsIdGet(id).then(res =>
+        (res as unknown as AxiosResponse<ApiDocument>).data
+      )
     );
   }
+
   deleteDocument(id: number): Observable<void> {
-    return from(this.documentsApi.apiDocumentsIdDelete(id).then(() => {}));
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+
+    return from(documentsApi.apiDocumentsIdDelete(id).then(() => {}));
   }
 
   downloadDocument(id: number): void {
     const downloadUrl = `${this.config.apiUrl}/api/Documents/${id}/download`;
     window.open(downloadUrl, '_blank');
   }
+
+  getGroupedDocuments(): Observable<{ buildingId: number | null, buildingName: string, documents: DocumentItem[] }[]> {
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+
+    return from(
+      Promise.all([
+        buildingsApi.apiBuildingsGet(),
+        documentsApi.apiDocumentsGet()
+      ]).then(([buildingsRes, docsRes]: [AxiosResponse<any>, AxiosResponse<any>]) => {
+        const buildings = buildingsRes.data;
+        const documents = docsRes.data;
+
+        const grouped = new Map<number | null, DocumentItem[]>();
+
+        // Group documents by building
+        documents.forEach((doc: any) => {
+          const buildingId = doc.buildingId ?? null;
+
+          const item: DocumentItem = {
+            id: doc.documentId!,
+            name: doc.fileName ?? 'Unnamed',
+            url: `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`,
+            metadata: []
+          };
+
+          if (!grouped.has(buildingId)) grouped.set(buildingId, []);
+          grouped.get(buildingId)!.push(item);
+        });
+
+        // Always include all buildings (even if they have no documents)
+        const result = buildings.map((b: any) => ({
+          buildingId: b.buildingId,
+          buildingName: b.name ?? 'Unnamed Building',
+          documents: grouped.get(b.buildingId) ?? []
+        }));
+
+// Also include unassigned documents
+        if (grouped.has(null)) {
+          result.push({
+            buildingId: null,
+            buildingName: 'No Building Assigned',
+            documents: grouped.get(null)!
+          });
+        }
+
+        return result;
+      })
+    );
+  }
+
+
 
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();
