@@ -213,8 +213,15 @@ namespace BUILD.ING.Controllers
         [HttpGet]
         public IActionResult GetAllDocuments()
         {
-            var groupId = GetCurrentUserGroupId();
-            var documents = _context.Documents.Where(d => d.GroupId == groupId).ToList();
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var documents = _context.Documents
+                .Where(d => !d.BuildingId.HasValue || buildingIds.Contains(d.BuildingId.Value))
+                .ToList();
             var dtos = documents.Select(document => new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
