@@ -164,10 +164,11 @@ namespace BUILD.ING.Controllers
                 return BadRequest("Mismatched Building ID");
 
             //var existingBuilding = await _context.Buildings.FindAsync(id).ConfigureAwait(false);
+            var orgId = GetCurrentUserOrganizationId();
             var existingBuilding = await _context.Buildings
-                //.Include(b => b.Documents)
                 .Include(b => b.BuildingDocumentRelations)
-                .FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
+                .FirstOrDefaultAsync(b => b.BuildingId == id && b.OrganizationId == orgId).ConfigureAwait(false);
+
 
 
             if (existingBuilding == null)
@@ -246,9 +247,11 @@ namespace BUILD.ING.Controllers
         {
             _logger.LogInformation("DeleteBuilding called for ID {BuildingId} at {Time}", id, DateTime.UtcNow);
 
+            var orgId = GetCurrentUserOrganizationId();
             var building = await _context.Buildings
                 .Include(b => b.BuildingDocumentRelations)
-                .FirstOrDefaultAsync(b => b.BuildingId == id).ConfigureAwait(false);
+                .FirstOrDefaultAsync(b => b.BuildingId == id && b.OrganizationId == orgId).ConfigureAwait(false);
+
 
             if (building == null)
             {
