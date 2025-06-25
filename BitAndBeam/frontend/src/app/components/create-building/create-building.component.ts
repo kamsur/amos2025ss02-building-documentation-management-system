@@ -14,10 +14,7 @@ import { Building as ApiBuilding } from '../../../api';
 })
 export class CreateBuildingComponent {
   // Hardcoded organizations for now
-  organizations = [
-    {id: 1, name: 'Organization Alpha'},
-    {id: 2, name: 'Organization Beta'}
-  ];
+
 
   // Initialize the building object
   building: Partial<ApiBuilding> & { latitude?: number; longitude?: number } = {
@@ -44,7 +41,7 @@ export class CreateBuildingComponent {
   }
 
   submitForm() {
-    if (!this.building.name?.trim() || !this.building.streetName?.trim() || !this.building.houseNumber?.trim() || !this.building.postalCode?.trim() 
+    if (!this.building.name?.trim() || !this.building.streetName?.trim() || !this.building.houseNumber?.trim() || !this.building.postalCode?.trim()
       || !this.building.city?.trim() || !this.building.country?.trim() || !this.building.organizationId) {
       this.errorMessage = 'Name, Address, and Organization are required.';
       return;
