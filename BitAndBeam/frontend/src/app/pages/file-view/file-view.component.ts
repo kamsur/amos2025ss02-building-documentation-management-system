@@ -5,14 +5,20 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { ConfigService } from '../../config.service';
 import { SidebarComponent} from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
-import { Configuration, DocumentsApi, Document as ApiDocument } from '../../../api';
+import { Configuration, DocumentsApi, Document as ApiDocument, DocumentMetadataPatchRequest } from '../../../api';
+import { CategoryService, Category } from '../../services/category.service';
+import { ApiClientFactory } from '../../services/api-client.factory';
+import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
+import { FormsModule } from '@angular/forms';
+import { HttpClient , HttpHeaders} from '@angular/common/http';
+import { SessionService } from '../../services/session.service'; //
 
 @Component({
   standalone: true,
   selector: 'app-file-view',
   templateUrl: './file-view.component.html',
   styleUrls: ['./file-view.component.css'],
-  imports: [CommonModule, PdfViewerModule, SidebarComponent]
+  imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule]
 })
 export class FileViewComponent {
 
@@ -20,47 +26,81 @@ export class FileViewComponent {
   notFound = false;
   isPdf = false;
   isImage = false;
+  buildings: any[] = [];
+  categories: Category[] = [];
+  selectedBuildingId: number | null = null;
+  selectedCategoryId: number | null = null;
+  loading = false;
+  toastMessage = '';
 
-  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService) {}
+  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
+  private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
+              private session: SessionService) {}
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    const id = Number(idParam);
+    // Watch for route param changes
+    this.route.paramMap.subscribe(paramMap => {
+      const idParam = paramMap.get('id');
+      const id = Number(idParam);
 
-    if (!idParam || isNaN(id)) {
-      console.error('❌ Invalid document ID in route:', idParam);
-      this.notFound = true;
-      return;
-    }
-
-    this.buildingService.getDocumentById(id).subscribe({
-      next: (doc: ApiDocument) => {
-        console.log('📄 Loaded document:', doc);
-        console.log('🔧 Config API URL:', this.config.apiUrl);
-
-        this.selectedFile = {
-          id: doc.documentId!,
-          name: doc.fileName ?? '',
-          url: `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`,
-          metadata: [
-            { label: 'Uploaded', value: doc.uploadDate ?? '' },
-            {
-              label: 'Size',
-              value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
-            },
-            { label: 'Type', value: doc.fileType ?? 'unknown' },
-          ],
-        };
-        // Determine file type for viewer
-        const fileType = (doc.fileType ?? '').toLowerCase();
-        this.isPdf = fileType === 'pdf';
-        this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
-      },
-      error: (err) => {
-        console.error('❌ Failed to load document:', err);
+      if (!idParam || isNaN(id)) {
+        console.error('❌ Invalid document ID in route:', idParam);
         this.notFound = true;
-      },
+        return;
+      }
+
+      this.notFound = false;
+      this.selectedFile = null;
+      this.isPdf = false;
+      this.isImage = false;
+
+      this.buildingService.getBuildings().subscribe(b => this.buildings = b);
+      this.categoryService.getCategories().subscribe(c => this.categories = c);
+
+      this.buildingService.getDocumentById(id).subscribe({
+        next: (doc: ApiDocument) => {
+          const token = this.session.getToken();
+          const previewUrl = `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`;
+
+          const headers = new HttpHeaders({
+            Authorization: `Bearer ${token}`
+          });
+
+          this.http.get(previewUrl, { headers, responseType: 'blob' }).subscribe(blob => {
+            const objectUrl = URL.createObjectURL(blob);
+
+            this.selectedFile = {
+              id: doc.documentId!,
+              name: doc.fileName ?? '',
+              url: objectUrl,
+              metadata: [
+                { label: 'Uploaded', value: doc.uploadDate ?? '' },
+                {
+                  label: 'Size',
+                  value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
+                },
+                { label: 'Type', value: doc.fileType ?? 'unknown' },
+              ]
+            };
+
+            this.selectedBuildingId = doc.buildingId ?? null;
+            this.selectedCategoryId = null;
+
+            const fileType = (doc.fileType ?? '').toLowerCase();
+            this.isPdf = fileType === 'pdf';
+            this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+          }, err => {
+            console.error('❌ Failed to load document preview:', err);
+            this.notFound = true;
+          });
+        },
+        error: (err) => {
+          console.error('❌ Failed to load document metadata:', err);
+          this.notFound = true;
+        }
+      });
     });
   }
+
   downloadFile(): void {
     if (this.selectedFile?.id) {
       this.buildingService.downloadDocument(this.selectedFile.id);
@@ -75,4 +115,32 @@ export class FileViewComponent {
       error: (err) => console.error('Delete failed:', err)
     });
   }
+
+  // ✅ New method: update building/category
+  saveMetadataChanges(): void {
+    if (!this.selectedFile?.id) return;
+
+    this.loading = true;
+    this.toastMessage = '';
+
+    const patchRequest: DocumentMetadataPatchRequest = {
+      buildingId: this.selectedBuildingId,
+      categoryName: undefined
+    };
+
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
+      .then(() => {
+        this.toastMessage = '✅ Metadata updated successfully.';
+        this.sidebarRefreshService.triggerRefresh();
+        setTimeout(() => this.toastMessage = '', 4000);
+      })
+      .catch(() => {
+        this.toastMessage = '❌ Failed to update metadata.';
+      })
+      .finally(() => {
+        this.loading = false;
+      });
+  }
+
 }

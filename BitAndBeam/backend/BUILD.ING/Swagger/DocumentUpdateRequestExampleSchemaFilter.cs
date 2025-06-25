@@ -1,7 +1,7 @@
-using BUILD.ING.Controllers; // For DocumentUpdateRequest
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using static BUILD.ING.Controllers.DocumentsController;
 
 namespace BUILD.ING.Swagger
 {

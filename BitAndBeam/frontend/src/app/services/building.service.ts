@@ -50,7 +50,7 @@ export class BuildingService {
     private config: ConfigService,
     private apiFactory: ApiClientFactory,
     private session: SessionService
-    
+
 
   ) {
     this.buildingsApi = this.apiFactory.create(BuildingsApi);
@@ -155,6 +155,58 @@ export class BuildingService {
     const downloadUrl = `${this.config.apiUrl}/api/Documents/${id}/download`;
     window.open(downloadUrl, '_blank');
   }
+
+  getGroupedDocuments(): Observable<{ buildingId: number | null, buildingName: string, documents: DocumentItem[] }[]> {
+    const buildingsApi = this.apiFactory.create(BuildingsApi);
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+
+    return from(
+      Promise.all([
+        buildingsApi.apiBuildingsGet(),
+        documentsApi.apiDocumentsGet()
+      ]).then(([buildingsRes, docsRes]: [AxiosResponse<any>, AxiosResponse<any>]) => {
+        const buildings = buildingsRes.data;
+        const documents = docsRes.data;
+
+        const grouped = new Map<number | null, DocumentItem[]>();
+
+        // Group documents by building
+        documents.forEach((doc: any) => {
+          const buildingId = doc.buildingId ?? null;
+
+          const item: DocumentItem = {
+            id: doc.documentId!,
+            name: doc.fileName ?? 'Unnamed',
+            url: `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`,
+            metadata: []
+          };
+
+          if (!grouped.has(buildingId)) grouped.set(buildingId, []);
+          grouped.get(buildingId)!.push(item);
+        });
+
+        // Always include all buildings (even if they have no documents)
+        const result = buildings.map((b: any) => ({
+          buildingId: b.buildingId,
+          buildingName: b.name ?? 'Unnamed Building',
+          documents: grouped.get(b.buildingId) ?? []
+        }));
+
+// Also include unassigned documents
+        if (grouped.has(null)) {
+          result.push({
+            buildingId: null,
+            buildingName: 'No Building Assigned',
+            documents: grouped.get(null)!
+          });
+        }
+
+        return result;
+      })
+    );
+  }
+
+
 
   private selectedFileSubject = new BehaviorSubject<DocumentItem | null>(null);
   selectedFile$ = this.selectedFileSubject.asObservable();

@@ -474,7 +474,6 @@ namespace BUILD.ING.Controllers
                 return NotFound();
 
             // Handle CategoryName logic (creation removed)
-            var categories = ReadCategories();
             if (request.CategoryName != null)
             {
                 document.CategoryName = request.CategoryName;
@@ -591,19 +590,19 @@ namespace BUILD.ING.Controllers
             return File(fileBytes, contentType);
         }
 
-    }
 
-    public class DocumentMetadataPatchRequest
-    {
-        public string? CategoryName { get; set; }
-        public int? BuildingId { get; set; }
-    }
 
-    public class DocumentUpdateRequest
-    {
-        public string? Title { get; set; }
-        public string? Description { get; set; }
-    }
+        public class DocumentMetadataPatchRequest
+        {
+            public string? CategoryName { get; set; }
+            public int? BuildingId { get; set; }
+        }
+
+        public class DocumentUpdateRequest
+        {
+            public string? Title { get; set; }
+            public string? Description { get; set; }
+        }
 
     // public class DocumentCategoryCreateRequest
     // {

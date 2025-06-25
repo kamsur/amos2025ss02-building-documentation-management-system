@@ -15,7 +15,9 @@ namespace BUILD.ING.Models
         public string? Description { get; set; }
 
         [JsonPropertyName("fields")]
+
         public List<Dictionary<string, object>> Fields { get; } = [];
+
 
     }
 }
