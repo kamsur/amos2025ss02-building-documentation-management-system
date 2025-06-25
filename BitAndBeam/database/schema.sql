@@ -57,7 +57,8 @@ CREATE TABLE "documents" (
     "status" VARCHAR(20) CHECK (status IN ('draft', 'review', 'approved', 'archived')) DEFAULT 'draft',
     "description" TEXT,
     "is_public" BOOLEAN DEFAULT FALSE,
-    "metadata" JSONB -- Flexible metadata storage
+    "metadata" JSONB, -- Flexible metadata storage
+    "key_information" JSONB -- Stores extracted key information in JSON format
 );
 
 -- Document Tags Table
@@ -98,6 +99,7 @@ CREATE INDEX idx_documents_building_id ON documents(building_id);
 CREATE INDEX idx_documents_category_id ON documents(category_id);
 CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
 CREATE INDEX idx_document_tags_name ON document_tags(name);
+CREATE INDEX idx_documents_key_information ON documents USING GIN (key_information);
 
 -- Add trigger to update last_modified timestamp
 CREATE OR REPLACE FUNCTION update_modified_column()
