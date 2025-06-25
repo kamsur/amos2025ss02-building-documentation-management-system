@@ -136,7 +136,10 @@ namespace BUILD.ING.Controllers
                         parsedAddress.TryGetValue("house_number", out var houseNumber);
                         parsedAddress.TryGetValue("city", out var city);
 
-                        var buildings = _context.Buildings.ToList();
+                        var orgId = GetCurrentUserOrganizationId();
+                        var buildings = _context.Buildings
+                            .Where(b => b.OrganizationId == orgId)
+                            .ToList();
                         foreach (var building in buildings)
                         {
                             bool matchesStreet = string.Equals(building.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
