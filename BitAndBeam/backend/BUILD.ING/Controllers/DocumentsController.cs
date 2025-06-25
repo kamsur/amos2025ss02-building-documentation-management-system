@@ -364,7 +364,9 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents
                 .FirstOrDefault(d =>
                     d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
 
             if (document == null)
                 return NotFound();
@@ -425,7 +427,9 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents
                 .FirstOrDefault(d =>
                     d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
 
             if (document == null)
                 return NotFound();
@@ -492,8 +496,8 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents
                 .FirstOrDefault(d =>
                     d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
-
             if (document == null)
                 return NotFound();
 
@@ -526,7 +530,9 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents
                 .FirstOrDefault(d =>
                     d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
 
             if (document == null)
                 return NotFound();
@@ -551,6 +557,7 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents
                 .FirstOrDefault(d =>
                     d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
