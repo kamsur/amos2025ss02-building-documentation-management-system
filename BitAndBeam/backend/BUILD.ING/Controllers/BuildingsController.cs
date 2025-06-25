@@ -276,11 +276,13 @@ namespace BUILD.ING.Controllers
 
             return NoContent();
         }
+
+        private int GetCurrentUserOrganizationId()
+            {
+                return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+            }
     }
 
-    private int GetCurrentUserOrganizationId()
-    {
-        return int.Parse(User.Claims.First(c => c.Type == "org").Value);
-    }
+
 
 }
