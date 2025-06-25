@@ -228,8 +228,10 @@ namespace BUILD.ING.Controllers
                 .ToList();
 
             var documents = _context.Documents
-                .Where(d => !d.BuildingId.HasValue || buildingIds.Contains(d.BuildingId.Value))
+                .Where(d => d.OrganizationId == orgId &&
+                            (!d.BuildingId.HasValue || buildingIds.Contains(d.BuildingId.Value)))
                 .ToList();
+
             var dtos = documents.Select(document => new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
@@ -266,6 +268,7 @@ namespace BUILD.ING.Controllers
             var document = _context.Documents
                 .FirstOrDefault(d =>
                     d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
