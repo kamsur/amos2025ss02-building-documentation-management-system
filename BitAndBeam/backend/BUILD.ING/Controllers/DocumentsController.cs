@@ -85,46 +85,41 @@ namespace BUILD.ING.Controllers
                 _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
             }
 
-            // keep prompt small
-            var shortText = textForOllama.Length > 3_000 ? textForOllama[..3_000] : textForOllama;
-
             // ╭──────────────── 3. build prompt (address + category) ─────────────────╮
+            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             var categoriesJson = JsonSerializer.Serialize(ReadCategories().Select(c => c.Name));
 
             var prompt = $$"""
-            You receive
-            • "text"       - plain German document content
-            • "categories" - array of possible document-category names
+            You are an intelligent document analyzer.
 
-            TASK A → Extract a postal **address** if one exists  
-            TASK B → Choose the SINGLE best-matching **category** from "categories"
-                    (use null if none fits)
-
-            **Respond with one VALID, minified JSON object and nothing else.**
-
-            Schema (copy exactly):
+            Given the extracted **text** and a list of **categories** from a German document, return exactly one minified JSON object with this schema:
 
             {
-            "address":{
-                "street":       "<string|null>",
-                "house_number": "<string|null>",
-                "zip_code":     "<string|null>",
-                "city":         "<string|null>"
-            },
-            "category": "<string|null>"
+                "address":{
+                    "street":"<string|null>",
+                    "house_number":"<string|null>",
+                    "zip_code":"<string|null>",
+                    "city":"<string|null>"
+                },
+                "category":"<string|null>"
             }
 
-            Rules
-            • Every value must be a JSON string or null - no XML tags, no units,
-            no comments like "(estimated)".  
-            • Do NOT output markdown, code fences, line breaks, or extra keys.  
-            • The result MUST parse with JSON.parse in JavaScript.
+            TASK A → Extract a **postal address** if present.  
+            Look for labels like
+            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
+            "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
+            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
 
-            --- categories ---
-            {{categoriesJson}}
+            TASK B → Choose the SINGLE best-matching **category** from "categories"
+            (use null if none fits)
 
-            --- text ---
-            {{shortText}}
+            Rules  
+            • Every value must be a JSON string or null – no units, no comments.  
+            • No markdown, code-fences, or extra keys.  
+            • Output must parse with `JSON.parse()`.
+
+            "categories": {{categoriesJson}}
+            "text": {{shortText}}
             """;
 
             Dictionary<string, string>? parsedAddress = null;
@@ -148,35 +143,54 @@ namespace BUILD.ING.Controllers
                                     jsonStr,
                                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
+                    _logger.LogInformation("OLLAMA response field:\n{0}", ollama?.Response);
+
+
                     if (!string.IsNullOrWhiteSpace(ollama?.Response))
                     {
-                        // ‼️ 1-liner fence‐stripper
-                        string clean = ollama.Response
-                                            .Trim()                                   // remove spaces / \n
-                                            .Trim('`')                                // remove ``` or `
-                                            .Trim();                                  // second pass
+                        // ────────  Ollama JSON fence-strip  ────────────────
+                        var cleanedJson = ollama.Response
+                            .Replace("```json", "", StringComparison.OrdinalIgnoreCase) // remove fenced block tag
+                            .Replace("```",     "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
+                            .Trim();                                                   // trim spaces / \n etc.
 
-                        // optional: keep only the first {...} block (guards against trailing text)
-                        var firstBrace = clean.IndexOf('{');
-                        var lastBrace  = clean.LastIndexOf('}');
-                        if (firstBrace >= 0 && lastBrace > firstBrace)
-                            clean = clean[firstBrace..(lastBrace + 1)];
+                        int first = cleanedJson.IndexOf('{');
+                        int last  = cleanedJson.LastIndexOf('}');
+                        if (first >= 0 && last > first)
+                            cleanedJson = cleanedJson[first..(last + 1)];
 
-                        var root = JsonDocument.Parse(clean).RootElement;
+                        _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
 
-                        // address
-                        if (root.TryGetProperty("address", out var addr) && addr.ValueKind == JsonValueKind.Object)
+                        var root = JsonDocument.Parse(cleanedJson).RootElement;
+
+                        // ------ A. ADDRESS -------
+                        if (root.TryGetProperty("address", out var addrObj) &&
+                            addrObj.ValueKind == JsonValueKind.Object)
                         {
-                            parsedAddress = new()
+                            // nested form
+                            parsedAddress = new Dictionary<string, string>
                             {
-                                ["street"]       = addr.TryGetProperty("street",       out var v0) ? v0.GetString() ?? "" : "",
-                                ["house_number"] = addr.TryGetProperty("house_number", out var v1) ? v1.GetString() ?? "" : "",
-                                ["zip_code"]     = addr.TryGetProperty("zip_code",     out var v2) ? v2.GetString() ?? "" : "",
-                                ["city"]         = addr.TryGetProperty("city",         out var v3) ? v3.GetString() ?? "" : ""
+                                ["street"]       = addrObj.GetProperty("street").GetString()       ?? "",
+                                ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
+                                ["zip_code"]     = addrObj.GetProperty("zip_code").GetString()     ?? "",
+                                ["city"]         = addrObj.GetProperty("city").GetString()         ?? ""
                             };
                         }
+                        else
+                        {
+                            // flat fallback
+                            parsedAddress = new Dictionary<string, string>
+                            {
+                                ["street"]       = root.TryGetProperty("street",       out var s ) ? s.GetString() ?? "" : "",
+                                ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString()?? "" : "",
+                                ["zip_code"]     = root.TryGetProperty("zip_code",     out var z ) ? z.GetString() ?? "" : "",
+                                ["city"]         = root.TryGetProperty("city",         out var c ) ? c.GetString() ?? "" : ""
+                            };
+                        }
+                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
+                            parsedAddress = null;
 
-                        // category
+                        // ------ B. CATEGORY -------
                         if (root.TryGetProperty("category", out var catElem) &&
                             catElem.ValueKind == JsonValueKind.String)
                         {
@@ -195,21 +209,30 @@ namespace BUILD.ING.Controllers
             }
 
             // ╭────────────── 5. try to map address → building ───────────╮
-            if (parsedAddress != null &&
-                parsedAddress.TryGetValue("street", out var street) &&
-                parsedAddress.TryGetValue("zip_code", out var zip))
+            if (parsedAddress != null)
             {
+                parsedAddress.TryGetValue("street",       out var street);
+                parsedAddress.TryGetValue("zip_code",     out var zip);
                 parsedAddress.TryGetValue("house_number", out var house);
                 parsedAddress.TryGetValue("city",         out var city);
 
                 foreach (var b in _context.Buildings.ToList())
                 {
-                    bool okStreet = string.Equals(b.StreetName?.Trim(), street?.Trim(), StringComparison.OrdinalIgnoreCase);
-                    bool okZip    = string.Equals(b.PostalCode?.Trim(), zip?.Trim(),   StringComparison.OrdinalIgnoreCase);
+                    bool okStreet = string.IsNullOrWhiteSpace(street) ||
+                                    string.Equals(b.StreetName?.Trim(), street.Trim(),
+                                                StringComparison.OrdinalIgnoreCase);
+
+                    bool okZip    = string.IsNullOrWhiteSpace(zip)   ||
+                                    string.Equals(b.PostalCode?.Trim(), zip.Trim(),
+                                                StringComparison.OrdinalIgnoreCase);
+
                     bool okHouse  = string.IsNullOrWhiteSpace(house) ||
-                                    string.Equals(b.HouseNumber?.Trim(), house?.Trim(), StringComparison.OrdinalIgnoreCase);
+                                    string.Equals(b.HouseNumber?.Trim(), house.Trim(),
+                                                StringComparison.OrdinalIgnoreCase);
+
                     bool okCity   = string.IsNullOrWhiteSpace(city)  ||
-                                    string.Equals(b.City?.Trim(),       city?.Trim(),   StringComparison.OrdinalIgnoreCase);
+                                    string.Equals(b.City?.Trim(), city.Trim(),
+                                                StringComparison.OrdinalIgnoreCase);
 
                     if (okStreet && okZip && okHouse && okCity)
                     {
@@ -218,6 +241,7 @@ namespace BUILD.ING.Controllers
                     }
                 }
             }
+
 
             // ╭──────────────────────────── 6. persist ───────────────────────────────╮
             var document = new Document
