@@ -108,6 +108,11 @@ namespace BUILD.ING.Data
                 .WithMany(c => c.Documents)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+                
+            // Configure JSONB columns for Document
+            modelBuilder.Entity<Document>()
+                .Property(d => d.KeyInformation)
+                .HasColumnType("jsonb");
 
             modelBuilder.Entity<Building>().ToTable("Buildings");
         }
