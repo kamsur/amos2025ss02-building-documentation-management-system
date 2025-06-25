@@ -58,15 +58,17 @@ namespace BUILD.ING.Controllers
             Directory.CreateDirectory(uploadsPath);
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
-            await using (var fs = new FileStream(fullPath, FileMode.Create).ConfigureAwait(false))
+            using (var fs = new FileStream(fullPath, FileMode.Create))
             {
                 await file.CopyToAsync(fs).ConfigureAwait(false);
             }
 
+            // Reset the file stream position to zero before re-reading
             byte[] fileBytes;
-            await using (var ms = new MemoryStream().ConfigureAwait(false))
+            using (var ms = new MemoryStream())
+            using (var fileStream = file.OpenReadStream())
             {
-                await file.CopyToAsync(ms).ConfigureAwait(false);
+                await fileStream.CopyToAsync(ms).ConfigureAwait(false);
                 fileBytes = ms.ToArray();
             }
 
