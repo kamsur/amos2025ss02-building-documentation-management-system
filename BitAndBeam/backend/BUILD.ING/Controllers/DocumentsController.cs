@@ -31,7 +31,7 @@ namespace BUILD.ING.Controllers
             _logger = logger;
         }
 
-     
+
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
 
         private static List<DocumentCategory> ReadCategories()
@@ -249,8 +249,16 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}")]
         public IActionResult GetDocumentById(int id)
         {
-            var groupId = GetCurrentUserGroupId();
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
             var dto = new BUILD.ING.Dto.DocumentDto
