@@ -134,7 +134,7 @@ namespace BUILD.ING.Controllers
             // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
             try
             {
-                var client  = httpClientFactory.CreateClient();
+                var client  = httpClientFactory.CreateClient("Ollama");
                 var payload = JsonSerializer.Serialize(new { prompt });
                 var resp    = await client.PostAsync(
                                 "http://ollama:8000/api/Ollama/ask",
@@ -150,7 +150,19 @@ namespace BUILD.ING.Controllers
 
                     if (!string.IsNullOrWhiteSpace(ollama?.Response))
                     {
-                        var root = JsonDocument.Parse(ollama.Response).RootElement;
+                        // ‼️ 1-liner fence‐stripper
+                        string clean = ollama.Response
+                                            .Trim()                                   // remove spaces / \n
+                                            .Trim('`')                                // remove ``` or `
+                                            .Trim();                                  // second pass
+
+                        // optional: keep only the first {...} block (guards against trailing text)
+                        var firstBrace = clean.IndexOf('{');
+                        var lastBrace  = clean.LastIndexOf('}');
+                        if (firstBrace >= 0 && lastBrace > firstBrace)
+                            clean = clean[firstBrace..(lastBrace + 1)];
+
+                        var root = JsonDocument.Parse(clean).RootElement;
 
                         // address
                         if (root.TryGetProperty("address", out var addr) && addr.ValueKind == JsonValueKind.Object)
@@ -182,7 +194,7 @@ namespace BUILD.ING.Controllers
                 _logger.LogError(ex, "❌ Ollama analysis failed");
             }
 
-            // ╭────────────── 5. try to map address → building (unchanged) ───────────╮
+            // ╭────────────── 5. try to map address → building ───────────╮
             if (parsedAddress != null &&
                 parsedAddress.TryGetValue("street", out var street) &&
                 parsedAddress.TryGetValue("zip_code", out var zip))
@@ -226,7 +238,7 @@ namespace BUILD.ING.Controllers
                 UploadedBy   = null,
                 GroupId      = GetCurrentUserGroupId(),
                 BuildingId   = matchedBuilding?.BuildingId,
-                CategoryName = matchedCategory                      // ← 🆕
+                CategoryName = matchedCategory
             };
 
             _context.Documents.Add(document);
@@ -253,7 +265,7 @@ namespace BUILD.ING.Controllers
                                     },
                 BuildingId   = matchedBuilding?.BuildingId,
                 BuildingName = matchedBuilding?.Name,
-                CategoryName = matchedCategory                     // ← 🆕
+                CategoryName = matchedCategory
             });
         }
 
