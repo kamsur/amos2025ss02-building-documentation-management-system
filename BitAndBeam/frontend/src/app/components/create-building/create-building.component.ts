@@ -13,8 +13,6 @@ import { Building as ApiBuilding } from '../../../api';
   styleUrls: ['./create-building.component.css']
 })
 export class CreateBuildingComponent {
-  // Hardcoded organizations for now
-
 
   // Initialize the building object
   building: Partial<ApiBuilding> & { latitude?: number; longitude?: number } = {
@@ -28,7 +26,6 @@ export class CreateBuildingComponent {
     totalArea: null,
     floors: null,
     description: '',
-    organizationId: undefined,
     latitude: undefined,
     longitude: undefined
   };
