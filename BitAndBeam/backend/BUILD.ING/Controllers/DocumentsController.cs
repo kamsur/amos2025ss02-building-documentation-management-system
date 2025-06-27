@@ -254,8 +254,18 @@ namespace BUILD.ING.Controllers
                 }
             }
 
+            // ╭────────────── 6. Try to map matchedCategory (string) to actual category object ───────────╮
+            var allCategories = ReadCategories();
+            var categoryMatch = allCategories.FirstOrDefault(c =>
+                string.Equals(c.Name?.Trim(), matchedCategory, StringComparison.OrdinalIgnoreCase));
+            string? matchedCategoryName = categoryMatch?.Name;
+            if (categoryMatch == null)
+            {
+                matchedCategoryName = null;
+            }
 
-            // ╭──────────────────────────── 6. persist ───────────────────────────────╮
+
+            // ╭──────────────────────────── 7. persist ───────────────────────────────╮
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
@@ -274,13 +284,13 @@ namespace BUILD.ING.Controllers
                 UploadedBy = null,
                 OrganizationId = GetCurrentUserOrganizationId(),
                 BuildingId = matchedBuilding?.BuildingId,
-                CategoryName = matchedCategory
+                CategoryName = matchedCategoryName
             };
 
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            // ╭──────────────────────────── 7. response ──────────────────────────────╮
+            // ╭──────────────────────────── 8. response ──────────────────────────────╮
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
@@ -301,10 +311,9 @@ namespace BUILD.ING.Controllers
                                     },
                 BuildingId = matchedBuilding?.BuildingId,
                 BuildingName = matchedBuilding?.Name,
-                CategoryName = matchedCategory
+                CategoryName = matchedCategoryName
             });
         }
-
 
 
         [HttpGet]
