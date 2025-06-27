@@ -31,12 +31,13 @@ namespace BUILD.ING.Controllers
             _logger = logger;
         }
 
-        private string GetCurrentUserGroupId()
-        {
-            return "group2"; // Hardcoded for now
-        }
 
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
+
+        private int GetCurrentUserOrganizationId()
+        {
+            return int.Parse(User.Claims.First(c => c.Type == "org").Value);
+        }
 
         private static List<DocumentCategory> ReadCategories()
         {
@@ -223,7 +224,11 @@ namespace BUILD.ING.Controllers
                 parsedAddress.TryGetValue("house_number", out var house);
                 parsedAddress.TryGetValue("city", out var city);
 
-                foreach (var b in _context.Buildings.ToList())
+                var orgId = GetCurrentUserOrganizationId();
+                var buildings = _context.Buildings
+                    .Where(b => b.OrganizationId == orgId)
+                    .ToList();
+                foreach (var b in buildings)
                 {
                     bool okStreet = string.IsNullOrWhiteSpace(street) ||
                                     string.Equals(b.StreetName?.Trim(), street.Trim(),
@@ -257,7 +262,7 @@ namespace BUILD.ING.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int)file.Length,
+                FileSize = (int) file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -267,7 +272,7 @@ namespace BUILD.ING.Controllers
                 Metadata = metadata,
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
-                GroupId = GetCurrentUserGroupId(),
+                OrganizationId = GetCurrentUserOrganizationId(),
                 BuildingId = matchedBuilding?.BuildingId,
                 CategoryName = matchedCategory
             };
@@ -301,11 +306,21 @@ namespace BUILD.ING.Controllers
         }
 
 
+
         [HttpGet]
         public IActionResult GetAllDocuments()
         {
-            var groupId = GetCurrentUserGroupId();
-            var documents = _context.Documents.Where(d => d.GroupId == groupId).ToList();
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var documents = _context.Documents
+                .Where(d => d.OrganizationId == orgId &&
+                            (!d.BuildingId.HasValue || buildingIds.Contains(d.BuildingId.Value)))
+                .ToList();
+
             var dtos = documents.Select(document => new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
@@ -325,7 +340,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             }).ToList();
             return Ok(dtos);
         }
@@ -333,8 +348,17 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}")]
         public IActionResult GetDocumentById(int id)
         {
-            var groupId = GetCurrentUserGroupId();
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
             var dto = new BUILD.ING.Dto.DocumentDto
@@ -356,7 +380,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             };
             return Ok(dto);
         }
@@ -420,7 +444,19 @@ namespace BUILD.ING.Controllers
         public IActionResult UpdateDocument(int id, [FromBody] DocumentUpdateRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
+
             if (document == null)
                 return NotFound();
 
@@ -462,7 +498,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             };
             return Ok(dto);
         }
@@ -471,7 +507,19 @@ namespace BUILD.ING.Controllers
         public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
+
             if (document == null)
                 return NotFound();
 
@@ -520,7 +568,7 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                GroupId = document.GroupId
+                OrganizationId = document.OrganizationId
             };
             return Ok(dto);
         }
@@ -528,7 +576,17 @@ namespace BUILD.ING.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteDocument(int id)
         {
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == GetCurrentUserGroupId());
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
 
@@ -552,8 +610,19 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}/download")]
         public IActionResult DownloadDocument(int id)
         {
-            var groupId = GetCurrentUserGroupId();
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
+
+
             if (document == null)
                 return NotFound();
 
@@ -568,8 +637,17 @@ namespace BUILD.ING.Controllers
         [HttpGet("{id}/preview")]
         public IActionResult PreviewDocument(int id)
         {
-            var groupId = GetCurrentUserGroupId();
-            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == id && d.GroupId == groupId);
+            var orgId = GetCurrentUserOrganizationId();
+            var buildingIds = _context.Buildings
+                .Where(b => b.OrganizationId == orgId)
+                .Select(b => b.BuildingId)
+                .ToList();
+
+            var document = _context.Documents
+                .FirstOrDefault(d =>
+                    d.DocumentId == id &&
+                    d.OrganizationId == orgId &&
+                    (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
 
@@ -592,8 +670,6 @@ namespace BUILD.ING.Controllers
             return File(fileBytes, contentType);
         }
 
-
-
         public class DocumentMetadataPatchRequest
         {
             public string? CategoryName { get; set; }
@@ -606,6 +682,8 @@ namespace BUILD.ING.Controllers
             public string? Description { get; set; }
         }
 
+
+
         // public class DocumentCategoryCreateRequest
         // {
         //     public string Name { get; set; } = string.Empty;
@@ -613,4 +691,5 @@ namespace BUILD.ING.Controllers
         //     public List<Dictionary<string, string>>? Fields { get; set; }
         // }
     }
+
 }
