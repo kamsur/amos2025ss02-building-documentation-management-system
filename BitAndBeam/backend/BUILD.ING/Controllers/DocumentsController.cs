@@ -117,15 +117,6 @@ namespace BUILD.ING.Controllers
             **TASK B** → Choose the SINGLE best-matching **category** from "categories"
             (use null if none fits)
 
-            **TASK A** → Extract a **address** if present.  
-            Look for labels like: 
-            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
-            "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
-            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
-
-            **TASK B** → Choose the SINGLE best-matching **category** from "categories"
-            (use null if none fits)
-
             **Rules**  
             • Every value must be a JSON string or null - no units, no comments.
             • No markdown, code-fences, or extra keys.
@@ -141,7 +132,6 @@ namespace BUILD.ING.Controllers
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
             Building? matchedBuilding = null;
-            DocumentCategory? matchedCategory = null;
 
             // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
             try
@@ -208,10 +198,6 @@ namespace BUILD.ING.Controllers
                             parsedAddress = null;
 
                         // ------ B. CATEGORY -------
-                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
-                            parsedAddress = null;
-
-                        // ------ B. CATEGORY -------
                         if (root.TryGetProperty("category", out var catElem) &&
                             catElem.ValueKind == JsonValueKind.String)
                         {
@@ -237,11 +223,7 @@ namespace BUILD.ING.Controllers
                 parsedAddress.TryGetValue("house_number", out var house);
                 parsedAddress.TryGetValue("city", out var city);
 
-                var orgId = GetCurrentUserOrganizationId();
-                var buildings = _context.Buildings
-                    .Where(b => b.OrganizationId == orgId)
-                    .ToList();
-                foreach (var b in buildings)
+                foreach (var b in _context.Buildings.ToList())
                 {
                     bool okStreet = string.IsNullOrWhiteSpace(street) ||
                                     string.Equals(b.StreetName?.Trim(), street.Trim(),
