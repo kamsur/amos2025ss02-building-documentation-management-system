@@ -13,36 +13,39 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <!-- Drag & Drop Upload Box -->
+    <!-- Enhanced Upload Card -->
     <div
-      class="upload-dropzone"
+      class="upload-card"
       (drop)="onDrop($event)"
       (dragover)="onDragOver($event)"
+      tabindex="0"
+      aria-label="File upload area. Drag and drop or click to select a file."
     >
-      <label for="fileInput">📤 Upload Your Document</label><br />
+      <img src="assets/upload-illustration.svg" alt="Upload Illustration" class="upload-illustration" />
+      <h2 class="upload-title">Upload Your Document</h2>
+      <p class="upload-instructions">Drag & drop your file here, or</p>
       <input
         id="fileInput"
         type="file"
-        accept=".pdf,.docx,.txt, .png, .jpg, .jpeg"
+        accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
         (change)="onFileSelected($event)"
         hidden
         #fileInput
       />
+      <button class="choose-file" (click)="fileInput.click()">Choose File</button>
+
       <div *ngIf="uploading" class="upload-status">⏳ Uploading...</div>
       <div *ngIf="uploadSuccess" class="upload-status success">✅ Upload successful!</div>
       <div *ngIf="uploadError" class="upload-status error">{{ uploadError }}</div>
-
-      <button class="choose-file" (click)="fileInput.click()">Choose File</button>
 
       <div *ngIf="uploadedFile" class="file-preview">
         📎 {{ uploadedFile.name }}
       </div>
 
-      <!-- Upload status display -->
       <div *ngIf="uploadedFile && !showMetadataPopup" class="file-upload-status">
         <p>📄 <strong>{{ uploadedFile.name }}</strong> uploaded successfully!</p>
       </div>
-      </div>
+    </div>
 
 
       <!-- AI Assistant Section -->

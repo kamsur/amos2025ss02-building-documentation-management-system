@@ -147,6 +147,113 @@ hhtml, body {
 }
 
 /* Drag & Drop Upload Area */
+.upload-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(69, 195, 184, 0.10), 0 1.5px 8px rgba(27, 60, 88, 0.08);
+  padding: 2.5rem 2rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+  max-width: 410px;
+  margin: 2.5rem auto 2rem auto;
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+  border: 2.5px dashed #45c3b8;
+  outline: none;
+}
+.upload-card:focus, .upload-card:active {
+  border-color: #369995;
+  box-shadow: 0 0 0 2px #45c3b833;
+}
+.upload-card.dragover {
+  background: #f4f8fb;
+  border-color: #369995;
+}
+.upload-illustration {
+  width: 110px;
+  height: 80px;
+  margin-bottom: 1.1rem;
+  user-select: none;
+}
+.upload-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1b3c58;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.01em;
+}
+.upload-instructions {
+  font-size: 1.05rem;
+  color: #369995;
+  margin-bottom: 1.2rem;
+}
+.choose-file {
+  background: #45c3b8;
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 7px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 1.2rem;
+  margin-top: 0.3rem;
+  box-shadow: 0 2px 8px rgba(69,195,184,0.06);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.choose-file:hover, .choose-file:focus {
+  background: #369995;
+  box-shadow: 0 4px 16px rgba(69,195,184,0.10);
+}
+.file-preview {
+  margin-bottom: 0.7rem;
+  color: #1b3c58;
+  font-size: 1rem;
+  background: #f4f8fb;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.file-upload-status {
+  color: #45c3b8;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  margin-top: 0.2rem;
+}
+.upload-status {
+  margin-bottom: 0.7rem;
+  font-size: 1rem;
+}
+.upload-status.success {
+  color: #21a87a;
+}
+.upload-status.error {
+  color: #e74c3c;
+}
+@media (max-width: 600px) {
+  .upload-card {
+    max-width: 98vw;
+    padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+    min-height: 220px;
+  }
+  .upload-illustration {
+    width: 80px;
+    height: 60px;
+  }
+  .upload-title {
+    font-size: 1.1rem;
+  }
+  .choose-file {
+    width: 100%;
+    padding: 0.7rem 0;
+  }
+}
+
+/* Old style kept for reference
 .upload-dropzone {
   border: 2px dashed #ccc;
   padding: 3rem 2rem;
