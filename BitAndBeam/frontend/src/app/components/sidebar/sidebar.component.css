@@ -321,6 +321,12 @@ html, body {
   max-width: 160px;
   display: block;
   color: var(--text-primary);
+  font-weight: 500;
+}
+
+body.dark-mode .profile-name {
+  color: #ffffff; /* Ensure high contrast in dark mode */
+  opacity: 0.95;
 }
 
 .dropdown-arrow {
