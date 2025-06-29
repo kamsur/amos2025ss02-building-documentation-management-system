@@ -128,7 +128,7 @@ input:checked + .slider:before {
 }
 
 .form-subtitle {
-  color: #6c7a89;
+  color: var(--color-muted);
   font-size: 1rem;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
@@ -140,7 +140,7 @@ input:checked + .slider:before {
 }
 
 .form-section--optional {
-  background: #f8fafb;
+  background: var(--bg-secondary);
   border-radius: 10px;
   padding: 1.2rem 1rem 0.5rem 1rem;
   margin-bottom: 1.5rem;
@@ -149,14 +149,14 @@ input:checked + .slider:before {
 .create-building-form h2 {
   margin-bottom: 0.25rem;
   font-weight: 700;
-  color: #1b3c58;
+  color: var(--color-primary);
 }
 
 .create-building-form label {
   display: block;
   margin-bottom: 1.1rem;
   font-weight: 500;
-  color: #2d3e50;
+  color: var(--color-secondary);
 }
 
 .create-building-form input,
@@ -165,30 +165,31 @@ input:checked + .slider:before {
   width: 100%;
   padding: 0.65rem 0.85rem;
   border-radius: 6px;
-  border: 1.5px solid #dbe4ea;
+  border: 1.5px solid var(--border-color);
   font-size: 1rem;
   margin-top: 0.3rem;
-  background: #fafdff;
-  transition: border-color 0.2s;
+  background: var(--input-bg);
+  color: var(--color-primary);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
   box-sizing: border-box;
 }
 .create-building-form input:focus,
 .create-building-form textarea:focus {
   border-color: #45c3b8;
   outline: none;
-  background: #f6fcfb;
+  background: var(--input-focus-bg);
 }
 
 .helper-text {
   display: inline-block;
   font-size: 0.88rem;
-  color: #9ca3af;
+  color: var(--color-muted);
   margin-left: 0.5rem;
 }
 
 .submit-btn {
   margin-top: 1.3rem;
-  background: linear-gradient(90deg, #45c3b8 0%, #369995 100%);
+  background: var(--btn-gradient);
   color: white;
   border: none;
   padding: 0.75rem 1.7rem;
@@ -196,13 +197,13 @@ input:checked + .slider:before {
   font-size: 1.08rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(69,195,184,0.08);
+  box-shadow: 0 2px 8px var(--shadow-color);
   transition: background 0.2s, box-shadow 0.2s;
   letter-spacing: 0.01em;
 }
 .submit-btn:hover {
-  background: linear-gradient(90deg, #369995 0%, #45c3b8 100%);
-  box-shadow: 0 4px 16px rgba(69,195,184,0.13);
+  background: var(--btn-gradient-hover);
+  box-shadow: 0 4px 16px var(--shadow-color-intense);
 }
 
 .error-message {
@@ -210,12 +211,26 @@ input:checked + .slider:before {
   margin-bottom: 1rem;
   font-weight: 600;
   text-align: center;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: rgba(231, 76, 60, 0.1);
 }
 .success-message {
   color: #27ae60;
   margin-bottom: 1rem;
   font-weight: 600;
   text-align: center;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: rgba(39, 174, 96, 0.1);
+}
+
+.dark-mode .error-message {
+  background-color: rgba(231, 76, 60, 0.15);
+}
+
+.dark-mode .success-message {
+  background-color: rgba(39, 174, 96, 0.15);
 }
 
 @media (max-width: 600px) {
