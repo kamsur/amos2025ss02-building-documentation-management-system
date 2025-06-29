@@ -373,6 +373,14 @@ namespace BUILD.ING.Controllers
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
             if (document == null)
                 return NotFound();
+            
+            var parsedAddress = new Dictionary<string, string>{
+                { "street",       "Couldn't identify" },
+                { "house_number", "Couldn't identify" },
+                { "zip_code",     "Couldn't identify" },
+                { "city",         "Couldn't identify" }
+            };
+            
             var dto = new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
