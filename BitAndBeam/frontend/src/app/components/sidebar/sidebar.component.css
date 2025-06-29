@@ -135,27 +135,123 @@ html, body {
   background-color: var(--menu-hover-bg);
 }
 
-/* Buildings list */
-.buildings {
+/* Tree View Styling */
+.tree-view {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  overflow-y: visible;
+  gap: 4px;
 }
 
-.building-name {
+.tree-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-parent {
   display: flex;
   align-items: center;
-  font-weight: 500;
-  padding: 6px 16px;
+  gap: 6px;
   font-size: 14px;
-  margin-top: 6px;
-  color: var(--text-primary);
-  background-color: var(--bg-secondary);
-  justify-content: space-between;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background-color: var(--sidebar-item-bg);
+  color: var(--sidebar-color);
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
 }
 
+.tree-parent:hover {
+  background-color: var(--sidebar-item-hover-bg);
+}
+
+.tree-parent.expanded {
+  background-color: var(--sidebar-item-active-bg, var(--sidebar-item-hover-bg));
+}
+
+.expand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.folder-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-color);
+}
+
+.building-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Children Documents Styling */
+.tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 14px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 1000px; opacity: 1; }
+}
+
+.tree-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 6px 8px 6px 16px;
+  border-radius: 4px;
+  background-color: var(--sidebar-item-bg);
+  color: var(--sidebar-color);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-left: 10px;
+  border-left: 1px solid var(--sidebar-border);
+}
+
+.tree-child:hover {
+  background-color: var(--sidebar-item-hover-bg);
+}
+
+.doc-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.85;
+  color: var(--text-primary);
+}
+
+.doc-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empty state */
+.empty-docs {
+  padding: 6px 8px 6px 26px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: italic;
+  margin-left: 10px;
+}
+
+/* Delete Button Styling */
 .delete-btn {
   background: transparent;
   border: none;
@@ -163,28 +259,13 @@ html, body {
   cursor: pointer;
   padding: 2px;
   border-radius: 4px;
+  margin-left: 4px;
+  transition: color 0.15s ease;
 }
 
 .delete-btn:hover {
   color: #ef4444;
 }
-
-.document {
-  display: flex;
-  align-items: center;
-  padding: 6px 12px 6px 24px;
-  font-size: 14px;
-  color: var(--text-primary);
-  cursor: pointer;
-  border-radius: 4px;
-  margin-top: 1px;
-}
-
-.document:hover {
-  background-color: var(--menu-hover-bg);
-}
-
-
 
 /* Profile Section */
 .chat-profile-section {

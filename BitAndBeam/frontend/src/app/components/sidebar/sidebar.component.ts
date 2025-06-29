@@ -112,7 +112,11 @@ export class SidebarComponent {
     }
     // Load documents
     this.buildingService.getGroupedDocuments().subscribe({
-      next: (data) => this.groupedDocuments = data,
+      next: (data) => {
+        this.groupedDocuments = data;
+        // Apply expansion state to loaded documents
+        this.updateDocumentExpansionState();
+      },
       error: (err) => console.error('Failed to load grouped documents', err)
     });
 
