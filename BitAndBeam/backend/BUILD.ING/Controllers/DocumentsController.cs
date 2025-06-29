@@ -349,7 +349,10 @@ namespace BUILD.ING.Controllers
                 Metadata = document.Metadata,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
-                OrganizationId = document.OrganizationId
+                OrganizationId = document.OrganizationId,
+
+                //key information
+                SuggestedAddress = TryParseSuggestedAddress(document.Metadata)
             }).ToList();
             return Ok(dtos);
         }
