@@ -93,12 +93,12 @@ namespace BUILD.ING.Data
                 .HasForeignKey(d => d.UploadedBy)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Document - Category (optional)
+
+
             modelBuilder.Entity<Document>()
-                .HasOne(d => d.Category)
-                .WithMany(c => c.Documents)
-                .HasForeignKey(d => d.CategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .Property(d => d.Category);
+
+            
                 
             // Configure JSONB columns for Document
             modelBuilder.Entity<Document>()
