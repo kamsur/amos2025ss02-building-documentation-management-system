@@ -19,31 +19,21 @@ html, body {
 /* ChatGPT Style Sidebar */
 .sidebar {
   width: 260px;
-  background-color: #f7f7f8;
-  color: #333;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-color);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100vh;
   padding: 0;
   transition: all 0.3s ease;
-  border-right: 1px solid #e5e5e5;
-}
-
-body.dark-mode .sidebar {
-  background-color: #202123;
-  color: #ececf1;
-  border-right-color: #343541;
+  border-right: 1px solid var(--sidebar-border);
 }
 
 .sidebar-top {
   padding: 16px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--sidebar-border);
   margin-bottom: 0;
-}
-
-body.dark-mode .sidebar-top {
-  border-bottom-color: #343541;
 }
 
 .logo-section {
@@ -158,18 +148,14 @@ body.dark-mode .building-name {
   align-items: center;
   padding: 6px 12px 6px 24px;
   font-size: 14px;
-  color: #353740;
+  color: var(--text-primary);
   cursor: pointer;
   border-radius: 4px;
   margin-top: 1px;
 }
 
 .document:hover {
-  background-color: #ececf1;
-}
-
-body.dark-mode .document {
-  color: #ececf1;
+  background-color: var(--menu-hover-bg);
 }
 
 body.dark-mode .document:hover {
@@ -196,21 +182,18 @@ body.dark-mode .document:hover {
 }
 
 .profile-button:hover {
-  background-color: #ececf1;
-}
-
-body.dark-mode .profile-button:hover {
-  background-color: #343541;
+  background-color: var(--menu-hover-bg);
 }
 
 .profile-avatar {
   width: 32px;
   height: 32px;
-  background-color: #10a37f;
   border-radius: 50%;
+  background-color: var(--accent-color);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  color: white;
 }
 
 .profile-icon {
@@ -238,11 +221,7 @@ body.dark-mode .profile-button:hover {
   width: 16px;
   height: 16px;
   transition: transform 0.2s ease;
-  color: #6e6e80;
-}
-
-body.dark-mode .dropdown-arrow {
-  color: #ececf1;
+  color: var(--text-muted);
 }
 
 /* Profile Dropdown */
@@ -252,54 +231,35 @@ body.dark-mode .dropdown-arrow {
   left: 0;
   right: 0;
   margin-bottom: 8px;
-  background-color: white;
-  border: 1px solid #e5e5e5;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
   overflow: hidden;
   z-index: 10;
 }
 
-body.dark-mode .profile-dropdown {
-  background-color: #202123;
-  border-color: #343541;
-}
-
 .theme-selector {
   padding: 12px;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-body.dark-mode .theme-selector {
-  border-bottom-color: #343541;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .theme-label {
   display: block;
   font-size: 12px;
-  color: #6e6e80;
+  color: var(--text-muted);
   margin-bottom: 6px;
-}
-
-body.dark-mode .theme-label {
-  color: #acacbe;
 }
 
 .theme-select {
   width: 100%;
   padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid #d9d9e3;
-  background-color: #f7f7f8;
-  color: #353740;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
-}
-
-body.dark-mode .theme-select {
-  border-color: #565869;
-  background-color: #343541;
-  color: #ececf1;
 }
 
 .dropdown-item {
@@ -311,21 +271,14 @@ body.dark-mode .theme-select {
   background: transparent;
   text-align: left;
   font-size: 14px;
-  color: #202123;
+  color: var(--text-primary);
   cursor: pointer;
+  transition: background-color 0.2s;
   gap: 8px;
 }
 
 .dropdown-item:hover {
-  background-color: #f7f7f8;
-}
-
-body.dark-mode .dropdown-item {
-  color: #ececf1;
-}
-
-body.dark-mode .dropdown-item:hover {
-  background-color: #343541;
+  background-color: var(--bg-secondary);
 }
 
 .item-icon {
