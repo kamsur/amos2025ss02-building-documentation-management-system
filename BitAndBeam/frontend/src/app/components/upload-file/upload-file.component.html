@@ -44,15 +44,15 @@
       />
       <button class="choose-file" (click)="fileInput.click()">Choose File</button>
 
-      <div *ngIf="uploading" class="upload-status">⏳ Uploading...</div>
-      <div *ngIf="uploadSuccess" class="upload-status success">✅ Upload successful!</div>
+      <div *ngIf="uploading && !showSpinner" class="upload-status">⏳ Uploading...</div>
+      <div *ngIf="uploadSuccess && !showSpinner" class="upload-status success">✅ Upload successful!</div>
       <div *ngIf="uploadError" class="upload-status error">{{ uploadError }}</div>
 
-      <div *ngIf="uploadedFile" class="file-preview">
+      <div *ngIf="uploadedFile && !showSpinner" class="file-preview">
         📎 {{ uploadedFile.name }}
       </div>
 
-      <div *ngIf="uploadedFile && !showMetadataPopup" class="file-upload-status">
+      <div *ngIf="uploadedFile && !showMetadataPopup && !showSpinner" class="file-upload-status">
         <p>📄 <strong>{{ uploadedFile.name }}</strong> uploaded successfully!</p>
       </div>
     </div>
