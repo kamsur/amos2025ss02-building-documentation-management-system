@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,7 +12,26 @@ import { Building as ApiBuilding } from '../../../api';
   templateUrl: './create-building.component.html',
   styleUrls: ['./create-building.component.css']
 })
-export class CreateBuildingComponent {
+export class CreateBuildingComponent implements OnInit {
+  darkMode = false;
+  
+  ngOnInit() {
+    // Check if user has a saved preference
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode) {
+      this.darkMode = savedDarkMode === 'true';
+    } else {
+      // Default to system preference if available
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        this.darkMode = true;
+      }
+    }
+  }
+  
+  toggleDarkMode() {
+    // Save preference to localStorage
+    localStorage.setItem('darkMode', this.darkMode.toString());
+  }
 
   // Initialize the building object
   building: Partial<ApiBuilding> & { latitude?: number; longitude?: number } = {

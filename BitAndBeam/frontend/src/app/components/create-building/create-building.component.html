@@ -1,65 +1,91 @@
-<div class="create-building-form">
-  <h2>Create New Building</h2>
+<div class="create-building-form" [class.dark-mode]="darkMode">
+  <div class="theme-toggle">
+    <label class="switch">
+      <input type="checkbox" [(ngModel)]="darkMode" name="darkModeToggle" (change)="toggleDarkMode()">
+      <span class="slider round"></span>
+    </label>
+    <span class="toggle-label">{{ darkMode ? 'Dark' : 'Light' }} Mode</span>
+  </div>
+  <div class="form-header">
+    <img src="assets/Building.png" alt="Building Icon" class="form-icon" />
+    <h2>Create New Building</h2>
+    <p class="form-subtitle">Fill out the details below to add a new building to your records.</p>
+  </div>
 
   <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
 
   <form (ngSubmit)="submitForm()">
-    <label>
-      Name*:
-      <input [(ngModel)]="building.name" name="name" required />
-    </label>
+    <div class="form-section">
+      <label>
+        Name*:
+        <input [(ngModel)]="building.name" name="name" required placeholder="Building name" />
+      </label>
 
-    <label>
-      Street Name*:
-      <input [(ngModel)]="building.streetName" name="streetName" required />
-    </label>
+      <label>
+        Street Name*:
+        <input [(ngModel)]="building.streetName" name="streetName" required placeholder="e.g. Main Street" />
+      </label>
 
-    <label>
-      House Number*:
-      <input [(ngModel)]="building.houseNumber" name="houseNumber" required />
-    </label>
+      <label>
+        House Number*:
+        <input [(ngModel)]="building.houseNumber" name="houseNumber" required placeholder="e.g. 42A" />
+      </label>
 
-    <label>
-      Postal Code*:
-      <input [(ngModel)]="building.postalCode" name="postalCode" required />
-    </label>
+      <label>
+        Postal Code*:
+        <input [(ngModel)]="building.postalCode" name="postalCode" required placeholder="e.g. 12345" />
+      </label>
 
-    <label>
-      City*:
-      <input [(ngModel)]="building.city" name="city" required />
-    </label>
+      <label>
+        City*:
+        <input [(ngModel)]="building.city" name="city" required placeholder="e.g. Berlin" />
+      </label>
 
-    <label>
-      Country*:
-      <input [(ngModel)]="building.country" name="country" required />
-    </label>
+      <label>
+        Country*:
+        <input [(ngModel)]="building.country" name="country" required placeholder="e.g. Germany" />
+      </label>
+    </div>
 
+    <div class="form-section form-section--optional">
+      <label>
+        Construction Year:
+        <input type="number" [(ngModel)]="building.constructionYear" name="constructionYear" placeholder="e.g. 1990" />
+        <span class="helper-text">Optional</span>
+      </label>
 
-    <label>
-      Construction Year:
-      <input type="number" [(ngModel)]="building.constructionYear" name="constructionYear" />
-    </label>
+      <label>
+        Total Area (m²):
+        <input type="number" [(ngModel)]="building.totalArea" name="totalArea" placeholder="e.g. 250" />
+        <span class="helper-text">Optional</span>
+      </label>
 
-    <label>
-      Total Area (m²):
-      <input type="number" [(ngModel)]="building.totalArea" name="totalArea" />
-    </label>
+      <label>
+        Floors:
+        <input type="number" [(ngModel)]="building.floors" name="floors" placeholder="e.g. 5" />
+        <span class="helper-text">Optional</span>
+      </label>
 
-    <label>
-      Floors:
-      <input type="number" [(ngModel)]="building.floors" name="floors" />
-    </label>
+      <label>
+        Description:
+        <textarea [(ngModel)]="building.description" name="description" placeholder="Describe the building..."></textarea>
+        <span class="helper-text">Optional</span>
+      </label>
 
-    <label>
-      Description:
-      <textarea [(ngModel)]="building.description" name="description"></textarea>
-    </label>
-    <label for="latitude">Latitude:</label>
-    <input type="number" id="latitude" [(ngModel)]="building.latitude" name="latitude">
+      <label>
+        Latitude:
+        <input type="number" id="latitude" [(ngModel)]="building.latitude" name="latitude" placeholder="e.g. 52.5200" />
+        <span class="helper-text">Optional</span>
+      </label>
 
-    <label for="longitude">Longitude:</label>
-    <input type="number" id="longitude" [(ngModel)]="building.longitude" name="longitude">
-    <button type="submit">Create</button>
+      <label>
+        Longitude:
+        <input type="number" id="longitude" [(ngModel)]="building.longitude" name="longitude" placeholder="e.g. 13.4050" />
+        <span class="helper-text">Optional</span>
+      </label>
+    </div>
+
+    <button type="submit" class="submit-btn">Create Building</button>
   </form>
 </div>
