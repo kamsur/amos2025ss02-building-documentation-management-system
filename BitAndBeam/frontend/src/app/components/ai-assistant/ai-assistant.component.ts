@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { environment } from '../../../environments/environment';
+import { ThemeService } from '../../services/theme.service';
+import { Subscription } from 'rxjs';
 
 interface ChatMessage {
   text: string;
@@ -19,16 +21,30 @@ interface ChatMessage {
   templateUrl: './ai-assistant.component.html',
   styleUrls: ['./ai-assistant.component.css']
 })
-export class AiAssistantComponent implements OnInit {
+export class AiAssistantComponent implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   userInput = '';
   errorMessage = '';
   showHistory = false;
   isProcessing = false;
+  isDarkMode = false;
+  
+  private themeSubscription: Subscription | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private themeService: ThemeService
+  ) {}
 
   ngOnInit(): void {
+    // Subscribe to theme changes
+    this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
+      this.isDarkMode = isDark;
+    });
+    
+    // Initialize with current theme state
+    this.isDarkMode = this.themeService.isDarkMode();
+    
     // Load chat history from local storage if available
     const savedHistory = localStorage.getItem('chatHistory');
     if (savedHistory) {
@@ -37,6 +53,13 @@ export class AiAssistantComponent implements OnInit {
       } catch (e) {
         console.error('Error loading chat history:', e);
       }
+    }
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up subscription
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 
