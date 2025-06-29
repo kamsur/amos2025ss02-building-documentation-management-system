@@ -1,10 +1,10 @@
 .ai-assistant {
   position: fixed;
   bottom: 0;
-  left: 0;
+  left: 260px; /* Match sidebar width */
   right: 0;
-  width: calc(100% - 260px); /* Adjust based on sidebar width */
-  margin-left: 260px; /* Match sidebar width */
+  width: auto; /* Let it be sized by left and right */
+  max-width: calc(100% - 260px); /* Prevent overflow */
   border: 1px solid var(--border-color);
   border-radius: 12px 12px 0 0;
   padding: 16px;
