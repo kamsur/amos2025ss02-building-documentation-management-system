@@ -6,18 +6,31 @@ import { FormsModule } from '@angular/forms';
 import { BuildingService, DocumentItem, Building } from '../../services/building.service';
 import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
 import { ThemeService, ThemeMode } from '../../services/theme.service';
+import { trigger, transition, style, animate, state } from '@angular/animations';
 
 @Component({
   standalone: true,
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css'],
-  imports: [CommonModule,FormsModule]
+  imports: [CommonModule, FormsModule],
+  animations: [
+    trigger('dropdownAnimation', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(10px)' }),
+        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('150ms ease-in', style({ opacity: 0, transform: 'translateY(10px)' }))
+      ])
+    ])
+  ]
 })
-export class SidebarComponent {  
+export class SidebarComponent {
   isDarkMode = false;
   themeMode: ThemeMode = 'device';
   isExplorerCollapsed = false;
+  profileMenuOpen = false;
   groupedDocuments: {
     buildingId: number | null;
     buildingName: string;
@@ -98,6 +111,15 @@ export class SidebarComponent {
   onThemeModeChange(event: Event) {
     const value = (event.target as HTMLSelectElement).value as ThemeMode;
     this.themeService.setMode(value);
+  }
+
+  toggleProfileMenu() {
+    this.profileMenuOpen = !this.profileMenuOpen;
+  }
+
+  openSettings() {
+    // Placeholder for settings modal/page
+    alert('Settings coming soon!');
   }
 
   logout() {
