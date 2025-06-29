@@ -53,7 +53,7 @@ export class UploadFileComponent implements OnInit {
     public buildingService: BuildingService,
     private categoryService: CategoryService
   ) {
-    this.documentsApi = this.apiFactory.createDocumentsApi();
+    this.documentsApi = this.apiFactory.create<DocumentsApi>(DocumentsApi);
   }
 
   ngOnInit() {
