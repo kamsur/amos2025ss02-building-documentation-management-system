@@ -1,4 +1,5 @@
-<aside class="sidebar">
+<aside class="sidebar" [style.width.px]="sidebarWidth">
+  <div class="resize-handle" (mousedown)="startResizing($event)"></div>
   <!-- Top: Logo -->
   <div class="sidebar-top">
     <div class="logo-section">

@@ -18,16 +18,33 @@ html, body {
 
 /* ChatGPT Style Sidebar */
 .sidebar {
-  width: 260px;
+  min-width: 200px;
+  max-width: 400px;
   background-color: var(--sidebar-bg);
   color: var(--sidebar-color);
   display: flex;
   flex-direction: column;
   height: 100vh;
   padding: 0;
-  transition: all 0.3s ease;
   border-right: 1px solid var(--sidebar-border);
   position: relative;
+  transition: width 0.1s ease;
+}
+
+/* Resize handle */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 100;
+}
+
+.resize-handle:hover, .resize-handle:active {
+  background-color: var(--accent-color);
+  opacity: 0.5;
 }
 
 .sidebar-top {
