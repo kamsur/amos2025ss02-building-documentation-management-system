@@ -13,9 +13,6 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient , HttpHeaders} from '@angular/common/http';
 import { SessionService } from '../../services/session.service'; //
 
-keyInfo: any = null;
-loadingKeyInfo = false;
-
 @Component({
   standalone: true,
   selector: 'app-file-view',
@@ -35,6 +32,10 @@ export class FileViewComponent {
   selectedCategoryId: number | null = null;
   loading = false;
   toastMessage = '';
+
+  // ✅ New variables for key info
+  keyInfo: any = null;
+  loadingKeyInfo = false;
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
