@@ -29,7 +29,7 @@ export class FileViewComponent {
   buildings: any[] = [];
   categories: Category[] = [];
   selectedBuildingId: number | null = null;
-  selectedCategoryId: number | null = null;
+  selectedCategoryName: string | null = null;
   loading = false;
   toastMessage = '';
 
@@ -82,8 +82,13 @@ export class FileViewComponent {
               ]
             };
 
-            this.selectedBuildingId = doc.buildingId ?? null;
-            this.selectedCategoryId = null;
+              this.selectedBuildingId = doc.buildingId ?? null;
+              this.selectedCategoryName = doc.categoryName ?? null;
+
+              // ✅ Add document's category to the list if it doesn't exist
+              if (doc.categoryName && !this.categories.some(c => c.name === doc.categoryName)) {
+                this.categories.push({ name: doc.categoryName } as Category);
+              }
 
             const fileType = (doc.fileType ?? '').toLowerCase();
             this.isPdf = fileType === 'pdf';
@@ -125,7 +130,7 @@ export class FileViewComponent {
 
     const patchRequest: DocumentMetadataPatchRequest = {
       buildingId: this.selectedBuildingId,
-      categoryName: undefined
+      categoryName: this.selectedCategoryName
     };
 
     const documentsApi = this.apiFactory.create(DocumentsApi);
