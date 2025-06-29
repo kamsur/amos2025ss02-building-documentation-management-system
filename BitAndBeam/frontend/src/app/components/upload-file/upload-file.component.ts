@@ -22,6 +22,7 @@ import { ApiClientFactory } from '../../services/api-client.factory';
 })
 export class UploadFileComponent implements OnInit {
   showSpinner = false;
+  uploadProgress: number = 0;
   uploading = false;
   uploadSuccess = false;
   uploadError = '';
@@ -83,8 +84,16 @@ export class UploadFileComponent implements OnInit {
   }
 
   uploadDocumentToServer(file: File): void {
-  this.showSpinner = true;
-    this.documentsApi.apiDocumentsPost(file)
+    this.showSpinner = true;
+    this.uploadProgress = 0;
+    const onUploadProgress = (progressEvent: any) => {
+      // AxiosProgressEvent: loaded & total may be undefined
+      if (progressEvent && progressEvent.total) {
+        this.uploadProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      }
+    };
+
+    this.documentsApi.apiDocumentsPost(file, { onUploadProgress })
       .then((axiosResponse: AxiosResponse<any>) => {
         const documentId = axiosResponse.data?.documentId;
 

@@ -23,6 +23,11 @@
     >
       <div *ngIf="showSpinner" class="upload-spinner-overlay">
         <div class="spinner"></div>
+        <div *ngIf="uploadProgress > 0 && uploadProgress < 100" class="progress-bar-container">
+          <div class="progress-bar" [style.width]="uploadProgress + '%'">
+            {{ uploadProgress }}%
+          </div>
+        </div>
       </div>
       <div class="illustration-wrapper">
         <img src="assets/upload.png" alt="Upload Illustration" class="upload-illustration" width="110" height="80" loading="eager" />
