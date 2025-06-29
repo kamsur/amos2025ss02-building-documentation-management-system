@@ -3,8 +3,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  width: calc(100% - 220px); /* Adjust based on sidebar width */
-  margin-left: 220px; /* Match sidebar width */
+  width: calc(100% - 260px); /* Adjust based on sidebar width */
+  margin-left: 260px; /* Match sidebar width */
   border: 1px solid var(--border-color);
   border-radius: 12px 12px 0 0;
   padding: 16px;
