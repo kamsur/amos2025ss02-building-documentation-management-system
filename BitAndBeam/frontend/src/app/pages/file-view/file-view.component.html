@@ -48,6 +48,14 @@
             </select>
           </div>
 
+          <div *ngIf="metadataRaw">
+            <h3>📜 Document Metadata</h3>
+            <pre style="background-color: #f2f2f2; padding: 10px; border-radius: 4px;">
+              {{ metadataRaw }}
+            </pre>
+          </div>
+
+
           <div class="meta-actions">
             <button class="save-btn" (click)="saveMetadataChanges()" [disabled]="loading">
               {{ loading ? 'Saving...' : 'Save Changes' }}
