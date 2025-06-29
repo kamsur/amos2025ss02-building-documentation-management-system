@@ -23,11 +23,11 @@ html, body {
   color: var(--sidebar-color);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   height: 100vh;
   padding: 0;
   transition: all 0.3s ease;
   border-right: 1px solid var(--sidebar-border);
+  position: relative;
 }
 
 .sidebar-top {
@@ -61,6 +61,28 @@ html, body {
   flex-grow: 1;
   overflow-y: auto;
   gap: 8px;
+  height: calc(100vh - 120px); /* Adjust based on header/footer height */
+  scrollbar-width: thin;
+}
+
+/* Custom scrollbar styling */
+.sidebar-middle::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-middle::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-middle::-webkit-scrollbar-thumb {
+  background-color: var(--text-muted);
+  opacity: 0.5;
+  border-radius: 20px;
+}
+
+.sidebar-middle::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-primary);
+  opacity: 0.7;
 }
 
 .sidebar-bottom {
@@ -102,6 +124,7 @@ html, body {
   flex-direction: column;
   gap: 2px;
   width: 100%;
+  overflow-y: visible;
 }
 
 .building-name {
