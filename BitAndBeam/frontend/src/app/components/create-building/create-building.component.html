@@ -1,12 +1,5 @@
 <div class="create-building-form">
-  <div class="theme-toggle">
-    <label for="theme-mode-select" class="toggle-label">Theme:</label>
-    <select id="theme-mode-select" [(ngModel)]="themeMode" (change)="onThemeModeChange($event)" class="theme-mode-select">
-      <option value="device">Device Mode</option>
-      <option value="light">Light</option>
-      <option value="dark">Dark</option>
-    </select>
-  </div>
+  <!-- Theme is now managed globally via the sidebar -->
   <div class="form-header">
     <img src="assets/Building.png" alt="Building Icon" class="form-icon" />
     <h2>Create New Building</h2>

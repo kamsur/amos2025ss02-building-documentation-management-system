@@ -14,20 +14,11 @@ import { Building as ApiBuilding } from '../../../api';
   styleUrls: ['./create-building.component.css']
 })
 export class CreateBuildingComponent implements OnInit {
-  themeMode: ThemeMode = 'device';
-  
   ngOnInit() {
-    // Subscribe to theme service
-    this.themeMode = this.themeService.getMode();
-    this.themeService.mode$.subscribe(mode => {
-      this.themeMode = mode;
-    });
+    // No need to manage theme here as it's handled by the sidebar
   }
 
-  onThemeModeChange(event: Event) {
-    const value = (event.target as HTMLSelectElement).value as ThemeMode;
-    this.themeService.setMode(value);
-  }
+  // Theme management removed - now handled globally by the sidebar
 
   // Initialize the building object
   building: Partial<ApiBuilding> & { latitude?: number; longitude?: number } = {
