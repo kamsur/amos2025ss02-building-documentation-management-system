@@ -48,13 +48,10 @@ html, body {
 }
 
 .logo-text {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 16px;
-  color: #202123;
-}
-
-body.dark-mode .logo-text {
-  color: #ececf1;
+  margin-left: 8px;
+  color: var(--text-primary);
 }
 
 .sidebar-middle {
@@ -68,12 +65,8 @@ body.dark-mode .logo-text {
 
 .sidebar-bottom {
   width: 100%;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--sidebar-border);
   padding: 8px;
-}
-
-body.dark-mode .sidebar-bottom {
-  border-top-color: #343541;
 }
 
 /* Add Building Button */
@@ -82,27 +75,18 @@ body.dark-mode .sidebar-bottom {
   align-items: center;
   width: 100%;
   padding: 12px;
-  border: 1px solid #d9d9e3;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   background: transparent;
   font-size: 14px;
-  color: #202123;
+  color: var(--text-primary);
   cursor: pointer;
   transition: background-color 0.2s;
   margin-bottom: 8px;
 }
 
 .add-btn:hover {
-  background-color: #ececf1;
-}
-
-body.dark-mode .add-btn {
-  border-color: #565869;
-  color: #ececf1;
-}
-
-body.dark-mode .add-btn:hover {
-  background-color: #343541;
+  background-color: var(--menu-hover-bg);
 }
 
 /* Buildings list */
@@ -116,24 +100,19 @@ body.dark-mode .add-btn:hover {
 .building-name {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
   font-weight: 500;
-  color: #202123;
-  background-color: #e5e5e5;
+  padding: 6px 16px;
+  font-size: 14px;
+  margin-top: 6px;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
   justify-content: space-between;
-}
-
-body.dark-mode .building-name {
-  background-color: #343541;
-  color: #ececf1;
 }
 
 .delete-btn {
   background: transparent;
   border: none;
-  color: #8e8ea0;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 2px;
   border-radius: 4px;
@@ -158,9 +137,7 @@ body.dark-mode .building-name {
   background-color: var(--menu-hover-bg);
 }
 
-body.dark-mode .document:hover {
-  background-color: #343541;
-}
+
 
 /* Profile Section */
 .chat-profile-section {
@@ -215,6 +192,7 @@ body.dark-mode .document:hover {
   text-overflow: ellipsis;
   max-width: 160px;
   display: block;
+  color: var(--text-primary);
 }
 
 .dropdown-arrow {
