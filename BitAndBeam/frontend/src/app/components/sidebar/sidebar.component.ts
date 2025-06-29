@@ -99,6 +99,17 @@ export class SidebarComponent {
     if (savedWidth) {
       this.sidebarWidth = parseInt(savedWidth, 10);
     }
+    
+    // Load expanded buildings state from localStorage
+    try {
+      const savedExpanded = localStorage.getItem('expandedBuildings');
+      if (savedExpanded) {
+        const expandedIds = JSON.parse(savedExpanded);
+        this.expandedBuildings = new Set(expandedIds);
+      }
+    } catch (e) {
+      console.error('Error loading expanded buildings state', e);
+    }
     // Load documents
     this.buildingService.getGroupedDocuments().subscribe({
       next: (data) => this.groupedDocuments = data,
