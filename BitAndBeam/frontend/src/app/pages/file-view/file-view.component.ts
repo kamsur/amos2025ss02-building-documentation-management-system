@@ -36,6 +36,8 @@ export class FileViewComponent {
   // ✅ New variables for key info
   keyInfo: any = null;
   loadingKeyInfo = false;
+  metadataRaw: string = '';
+
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
@@ -86,6 +88,7 @@ export class FileViewComponent {
               ]
             };
 
+            this.metadataRaw = doc.metadata ?? '';
             this.selectedBuildingId = doc.buildingId ?? null;
             this.selectedCategoryId = null;
 
