@@ -92,6 +92,10 @@ export class FileViewComponent {
             const fileType = (doc.fileType ?? '').toLowerCase();
             this.isPdf = fileType === 'pdf';
             this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+            
+            // ✅ Fetch key info
+            this.fetchKeyInfo(id);
+
           }, err => {
             console.error('❌ Failed to load document preview:', err);
             this.notFound = true;
@@ -102,6 +106,31 @@ export class FileViewComponent {
           this.notFound = true;
         }
       });
+    });
+  }
+
+  // ✅ New method: fetch key information
+  fetchKeyInfo(id: number) {
+    this.loadingKeyInfo = true;
+    const token = this.session.getToken();
+    const url = `${this.config.apiUrl}/api/Documents/${id}`;
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    this.http.get<any>(url, { headers }).subscribe({
+      next: (data) => {
+        this.keyInfo = {
+          hasMetadata: data.hasMetadata,
+          suggestedAddress: data.suggestedAddress,
+          rawMetadata: data.metadata,
+        };
+        this.loadingKeyInfo = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load key info:', err);
+        this.loadingKeyInfo = false;
+      }
     });
   }
 
