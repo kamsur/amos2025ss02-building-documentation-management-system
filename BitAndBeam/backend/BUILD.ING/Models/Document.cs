@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace BUILD.ING.Models
 {
@@ -10,6 +11,7 @@ namespace BUILD.ING.Models
         public string FilePath { get; set; }
         public string FileType { get; set; }
         public int FileSize { get; set; }
+        
         public string? CategoryName { get; set; }
         public int? BuildingId { get; set; }
         public int? UploadedBy { get; set; }
@@ -20,7 +22,7 @@ namespace BUILD.ING.Models
         public string Description { get; set; }
         public bool IsPublic { get; set; } = false;
         public string Metadata { get; set; }
-        public string? KeyInformation { get; set; }
+        public JsonDocument? KeyInformation { get; set; }
         public string FileName { get; set; }
         public DateTime UploadedAt { get; set; }
         public string GroupId { get; set; }
