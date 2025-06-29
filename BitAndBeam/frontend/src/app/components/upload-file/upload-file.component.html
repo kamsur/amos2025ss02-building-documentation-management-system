@@ -21,6 +21,9 @@
       tabindex="0"
       aria-label="File upload area. Drag and drop or click to select a file."
     >
+      <div *ngIf="showSpinner" class="upload-spinner-overlay">
+        <div class="spinner"></div>
+      </div>
       <div class="illustration-wrapper">
         <img src="assets/upload.png" alt="Upload Illustration" class="upload-illustration" width="110" height="80" loading="eager" />
       </div>

@@ -21,6 +21,7 @@ import { ApiClientFactory } from '../../services/api-client.factory';
   styleUrls: ['./upload-file.component.css'],
 })
 export class UploadFileComponent implements OnInit {
+  showSpinner = false;
   uploading = false;
   uploadSuccess = false;
   uploadError = '';
@@ -82,6 +83,7 @@ export class UploadFileComponent implements OnInit {
   }
 
   uploadDocumentToServer(file: File): void {
+  this.showSpinner = true;
     this.documentsApi.apiDocumentsPost(file)
       .then((axiosResponse: AxiosResponse<any>) => {
         const documentId = axiosResponse.data?.documentId;
@@ -93,13 +95,14 @@ export class UploadFileComponent implements OnInit {
 
         this.uploadSuccess = true;
         this.uploadedDocumentId = documentId;
-
+        this.showSpinner = false;
         // Show the metadata popup instead of navigating directly
         this.showMetadataPopup = true;
       })
       .catch(error => {
         this.uploading = false;
         this.uploadError = 'Upload failed: ' + error.message;
+        this.showSpinner = false;
       });
   }
 
