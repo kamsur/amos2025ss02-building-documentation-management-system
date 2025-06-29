@@ -29,7 +29,7 @@ export class FileViewComponent {
   buildings: any[] = [];
   categories: Category[] = [];
   selectedBuildingId: number | null = null;
-  selectedCategoryId: number | null = null;
+  selectedCategoryName: string | null = null;
   loading = false;
   toastMessage = '';
 
@@ -90,6 +90,7 @@ export class FileViewComponent {
                 { label: 'Modified Date', value: metadataObject['dcterms:modified']?.split('T')[0] || 'N/A' },
                 { label: 'Page Count', value: metadataObject['pdf:ocrPageCount'] || metadataObject['xmpTPg:NPages'] || 'N/A' },
                 { label: 'File Type', value: metadataObject['Content-Type'] || 'N/A' },
+                { label: 'Category', value: doc.categoryName || 'N/A' },
               ];
             } catch (e) {
                 console.error('❌ Failed to parse metadata', e);
@@ -120,7 +121,7 @@ export class FileViewComponent {
               ]
             };
             this.selectedBuildingId = doc.buildingId ?? null;
-            this.selectedCategoryId = null;
+            this.selectedCategoryName = doc.categoryName ?? null;
 
             const fileType = (doc.fileType ?? '').toLowerCase();
             this.isPdf = fileType === 'pdf';
@@ -191,7 +192,7 @@ export class FileViewComponent {
 
     const patchRequest: DocumentMetadataPatchRequest = {
       buildingId: this.selectedBuildingId,
-      categoryName: undefined
+      categoryName: this.selectedCategoryName ?? undefined
     };
 
     const documentsApi = this.apiFactory.create(DocumentsApi);
