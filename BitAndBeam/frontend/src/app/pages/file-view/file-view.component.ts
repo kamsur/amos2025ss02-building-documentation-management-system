@@ -70,7 +70,12 @@ export class FileViewComponent {
             try {
               const entries = doc.metadata
                 .split(/[\r\n]+/)
-                .map(line => line.split(/[:,=]/).map(s => s.trim()))
+                .map(line => {
+                  const separator = line.includes('=') ? '=' : line.includes(',') ? ',' : ':';
+                  const [key, ...rest] = line.split(separator).map(s => s.trim());
+                  const value = rest.join(separator);
+                  return [key, value];
+                })
                 .filter(arr => arr.length >= 2);
 
               const metadataObject: { [key: string]: string } = {};
