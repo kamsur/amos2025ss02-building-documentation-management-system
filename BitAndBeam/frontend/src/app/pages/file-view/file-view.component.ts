@@ -37,6 +37,7 @@ export class FileViewComponent {
   keyInfo: any = null;
   loadingKeyInfo = false;
   metadataRaw: string = '';
+  parsedMetadata: { label: string; value: string }[] = [];
 
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
