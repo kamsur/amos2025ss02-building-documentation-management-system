@@ -6,17 +6,27 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import type { AxiosResponse } from 'axios';
-import { DocumentsApi, Building as ApiBuilding,  OllamaApi, Configuration, OllamaRequest } from '../../../api';
+import { DocumentsApi, Building as ApiBuilding } from '../../../api';
 import { BuildingService } from '../../services/building.service';
 import { CategoryService } from '../../services/category.service';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
 import { ApiClientFactory } from '../../services/api-client.factory';
+import { AiAssistantComponent } from '../ai-assistant/ai-assistant.component';
 
 @Component({
   selector: 'app-upload-file',
   standalone: true,
-  imports: [CommonModule, RouterModule, SidebarComponent, FormsModule, HttpClientModule, MarkdownBoldPipe, DocumentMetadataPopupComponent],
+  imports: [
+    CommonModule, 
+    RouterModule, 
+    SidebarComponent, 
+    FormsModule, 
+    HttpClientModule, 
+    MarkdownBoldPipe, 
+    DocumentMetadataPopupComponent,
+    AiAssistantComponent
+  ],
   templateUrl: './upload-file.component.html',
   styleUrls: ['./upload-file.component.css'],
 })
@@ -34,15 +44,7 @@ export class UploadFileComponent implements OnInit {
   showMetadataPopup = false;
   uploadedDocumentId: number | null = null;
 
-  // AI Chat Properties
-  showHistory: boolean = true;
-  userInput: string = '';
-  messages: { sender: 'user' | 'ai', text: string }[] = [];
-  errorMessage: string = '';
-
   private documentsApi: DocumentsApi;
-  private ollamaApi: OllamaApi;
-
 
   constructor(
     private apiFactory: ApiClientFactory, // ✅ centralized factory
@@ -51,8 +53,7 @@ export class UploadFileComponent implements OnInit {
     public buildingService: BuildingService,
     private categoryService: CategoryService
   ) {
-    this.documentsApi = this.apiFactory.create(DocumentsApi);
-    this.ollamaApi = this.apiFactory.create(OllamaApi);
+    this.documentsApi = this.apiFactory.createDocumentsApi();
   }
 
   ngOnInit() {
@@ -135,44 +136,6 @@ export class UploadFileComponent implements OnInit {
     });
   }
 
-
-  // ✅ AI Chat Message Sender
-  sendMessage() {
-    const prompt = this.userInput.trim();
-    if (!prompt) return;
-
-    // Add user's message to history
-    this.messages.push({ sender: 'user', text: prompt });
-    this.userInput = '';
-    this.errorMessage = '';
-
-    // Full conversation context after current push
-    const context = this.messages
-      .map(msg => (msg.sender === 'user' ? 'User: ' : 'AI: ') + msg.text)
-      .join('\n');
-
-      const requestPayload: OllamaRequest = {
-        prompt: prompt,
-        context: context
-      };
-
-      this.ollamaApi.apiOllamaAskPost(requestPayload)
-        .then((res) => {
-          const responseText = (res.data as any)?.response || 'No response received.';
-          this.messages.push({ sender: 'ai', text: responseText });
-        })
-        .catch((err: any) => {
-          console.error('Error from AI API:', err);
-          this.errorMessage = '⚠️ AI Assistant is not responding. Please try again later.';
-        });
-
-  }
-
-  toggleHistory() {
-      this.showHistory = !this.showHistory;
-  }
-
-  // Metadata popup handlers
   closeMetadataPopup(): void {
     this.showMetadataPopup = false;
 

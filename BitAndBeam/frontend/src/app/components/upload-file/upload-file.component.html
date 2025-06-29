@@ -1,5 +1,5 @@
 <div class="container">
-  <!-- ✅ Inject the sidebar -->
+  <!-- Inject the sidebar -->
   <app-sidebar></app-sidebar>
 
   <!-- Document Metadata Popup -->
@@ -44,45 +44,20 @@
       />
       <button class="choose-file" (click)="fileInput.click()">Choose File</button>
 
-      <div *ngIf="uploading && !showSpinner" class="upload-status">⏳ Uploading...</div>
-      <div *ngIf="uploadSuccess && !showSpinner" class="upload-status success">✅ Upload successful!</div>
+      <div *ngIf="uploading && !showSpinner" class="upload-status"> Uploading...</div>
+      <div *ngIf="uploadSuccess && !showSpinner" class="upload-status success"> Upload successful!</div>
       <div *ngIf="uploadError" class="upload-status error">{{ uploadError }}</div>
 
       <div *ngIf="uploadedFile && !showSpinner" class="file-preview">
-        📎 {{ uploadedFile.name }}
+        {{ uploadedFile.name }}
       </div>
 
       <div *ngIf="uploadedFile && !showMetadataPopup && !showSpinner" class="file-upload-status">
-        <p>📄 <strong>{{ uploadedFile.name }}</strong> uploaded successfully!</p>
+        <p> <strong>{{ uploadedFile.name }}</strong> uploaded successfully!</p>
       </div>
     </div>
 
-
-      <!-- AI Assistant Section -->
-      <div class="chat-box">
-      <h3>AI Assistant</h3>
-
-      <button class="toggle-history-btn" (click)="toggleHistory()">
-        {{ showHistory ? 'Hide History' : 'Show History' }}
-      </button>
-
-      <div class="chat-history" *ngIf="showHistory">
-        <div *ngFor="let msg of messages" [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'">
-          <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
-          <span [innerHTML]="msg.text | markdownBold"></span>
-        </div>
-      </div>
-
-      <!-- Error message -->
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
-
-      <!-- Input box -->
-      <div class="chat-input">
-        <input [(ngModel)]="userInput" type="text" placeholder="Type a message..." (keyup.enter)="sendMessage()" />
-        <button class="send-btn" (click)="sendMessage()">➤</button>
-      </div>
-    </div>
+    <!-- AI Assistant Component -->
+    <app-ai-assistant></app-ai-assistant>
   </main>
 </div>

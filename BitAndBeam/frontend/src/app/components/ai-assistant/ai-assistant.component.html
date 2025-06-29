@@ -1,0 +1,35 @@
+<div class="ai-assistant">
+  <div class="assistant-header">
+    <h3>AI Assistant</h3>
+    <button class="toggle-history-btn" (click)="toggleHistory()">
+      {{ showHistory ? 'Hide History' : 'Show History' }}
+    </button>
+  </div>
+
+  <div class="chat-history" *ngIf="showHistory">
+    <div *ngFor="let msg of messages" [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'">
+      <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
+      <span [innerHTML]="msg.text | markdownBold"></span>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Input box -->
+  <div class="chat-input">
+    <input [(ngModel)]="userInput" 
+           type="text" 
+           placeholder="Type a message..." 
+           (keyup.enter)="sendMessage()" 
+           [disabled]="isProcessing" />
+    <button class="send-btn" 
+            (click)="sendMessage()" 
+            [disabled]="isProcessing || !userInput.trim()">
+      <span *ngIf="!isProcessing">➤</span>
+      <span *ngIf="isProcessing" class="processing-indicator"></span>
+    </button>
+  </div>
+</div>
