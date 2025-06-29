@@ -142,6 +142,46 @@ export class SidebarComponent {
     console.log('Explorer collapsed:', this.isExplorerCollapsed);
   }
 
+  toggleBuildingExpansion(buildingId: number | null, event?: MouseEvent): void {
+    // Stop propagation if event is provided to prevent navigation
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    if (this.expandedBuildings.has(buildingId)) {
+      this.expandedBuildings.delete(buildingId);
+    } else {
+      this.expandedBuildings.add(buildingId);
+    }
+    
+    // Save expanded state to localStorage
+    this.saveExpandedState();
+    
+    // Update the groupedDocuments with expansion state
+    this.updateDocumentExpansionState();
+  }
+  
+  isBuildingExpanded(buildingId: number | null): boolean {
+    return this.expandedBuildings.has(buildingId);
+  }
+  
+  private saveExpandedState(): void {
+    try {
+      const expandedArray = Array.from(this.expandedBuildings);
+      localStorage.setItem('expandedBuildings', JSON.stringify(expandedArray));
+    } catch (e) {
+      console.error('Error saving expanded buildings state', e);
+    }
+  }
+  
+  private updateDocumentExpansionState(): void {
+    this.groupedDocuments = this.groupedDocuments.map(group => ({
+      ...group,
+      isExpanded: this.expandedBuildings.has(group.buildingId)
+    }));
+  }
+
   viewDocument(doc: DocumentItem): void {
     if (!doc.id) {
       console.error('Document has no ID');
