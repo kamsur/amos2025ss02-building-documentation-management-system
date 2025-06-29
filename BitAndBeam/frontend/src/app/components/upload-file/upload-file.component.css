@@ -141,9 +141,10 @@ hhtml, body {
 
 /* Main content */
 .main-content {
-  flex-grow: 1;
-  padding: 2rem;
+  flex: 1;
+  padding: 20px;
   overflow-y: auto;
+  padding-bottom: 450px;
 }
 
 /* Drag & Drop Upload Area */
