@@ -13,6 +13,9 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient , HttpHeaders} from '@angular/common/http';
 import { SessionService } from '../../services/session.service'; //
 
+keyInfo: any = null;
+loadingKeyInfo = false;
+
 @Component({
   standalone: true,
   selector: 'app-file-view',
