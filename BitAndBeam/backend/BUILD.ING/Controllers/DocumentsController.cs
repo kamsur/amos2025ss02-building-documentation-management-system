@@ -350,9 +350,6 @@ namespace BUILD.ING.Controllers
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
                 OrganizationId = document.OrganizationId,
-
-                //key information
-                SuggestedAddress = TryParseSuggestedAddress(document.Metadata)
             }).ToList();
             return Ok(dtos);
         }
@@ -380,7 +377,7 @@ namespace BUILD.ING.Controllers
                 { "zip_code",     "Couldn't identify" },
                 { "city",         "Couldn't identify" }
             };
-            
+
             var dto = new BUILD.ING.Dto.DocumentDto
             {
                 DocumentId = document.DocumentId,
