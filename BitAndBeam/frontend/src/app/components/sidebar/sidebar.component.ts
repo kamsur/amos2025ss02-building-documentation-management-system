@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SessionService } from '../../services/session.service';
@@ -27,6 +27,7 @@ import { trigger, transition, style, animate, state } from '@angular/animations'
   ]
 })
 export class SidebarComponent {
+  @Input() currentRoute: string = '';
   isDarkMode = false;
   themeMode: ThemeMode = 'device';
   isExplorerCollapsed = false;
