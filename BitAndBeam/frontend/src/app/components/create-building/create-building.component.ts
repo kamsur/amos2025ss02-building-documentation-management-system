@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ThemeService } from '../../services/theme.service';
+import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { BuildingService } from '../../services/building.service';
 import { Building as ApiBuilding } from '../../../api';
 
@@ -14,19 +14,19 @@ import { Building as ApiBuilding } from '../../../api';
   styleUrls: ['./create-building.component.css']
 })
 export class CreateBuildingComponent implements OnInit {
-  darkMode = false;
+  themeMode: ThemeMode = 'device';
   
   ngOnInit() {
     // Subscribe to theme service
-    this.darkMode = this.themeService.isDarkMode();
-    this.themeService.darkMode$.subscribe(isDark => {
-      this.darkMode = isDark;
+    this.themeMode = this.themeService.getMode();
+    this.themeService.mode$.subscribe(mode => {
+      this.themeMode = mode;
     });
   }
-  
-  toggleDarkMode() {
-    // Toggle theme via the theme service
-    this.themeService.toggleDarkMode();
+
+  onThemeModeChange(event: Event) {
+    const value = (event.target as HTMLSelectElement).value as ThemeMode;
+    this.themeService.setMode(value);
   }
 
   // Initialize the building object

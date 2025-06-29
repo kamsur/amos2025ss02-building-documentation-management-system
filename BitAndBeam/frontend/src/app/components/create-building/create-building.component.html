@@ -1,10 +1,11 @@
-<div class="create-building-form" [class.dark-mode]="darkMode">
+<div class="create-building-form">
   <div class="theme-toggle">
-    <label class="switch">
-      <input type="checkbox" [(ngModel)]="darkMode" name="darkModeToggle" (change)="toggleDarkMode()">
-      <span class="slider round"></span>
-    </label>
-    <span class="toggle-label">{{ darkMode ? 'Dark' : 'Light' }} Mode</span>
+    <label for="theme-mode-select" class="toggle-label">Theme:</label>
+    <select id="theme-mode-select" [(ngModel)]="themeMode" (change)="onThemeModeChange($event)" class="theme-mode-select">
+      <option value="device">Device Mode</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
   </div>
   <div class="form-header">
     <img src="assets/Building.png" alt="Building Icon" class="form-icon" />
