@@ -40,8 +40,17 @@
         <div class="username">{{ session.currentUser()?.email }}</div>
       </div>
     </div>
-    <button class="logout-btn" (click)="logout()" *ngIf="session.isAuthenticated()">Logout</button>
-
+    <div class="sidebar-actions">
+      <!-- Theme toggle switch -->
+      <div class="theme-toggle">
+        <label class="switch">
+          <input type="checkbox" [checked]="isDarkMode" (change)="toggleTheme()">
+          <span class="slider round"></span>
+        </label>
+        <span class="toggle-label">{{ isDarkMode ? 'Dark' : 'Light' }}</span>
+      </div>
+      <button class="logout-btn" (click)="logout()" *ngIf="session.isAuthenticated()">Logout</button>
+    </div>
   </div>
 
 </aside>

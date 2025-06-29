@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ThemeService } from '../../services/theme.service';
 import { BuildingService } from '../../services/building.service';
 import { Building as ApiBuilding } from '../../../api';
 
@@ -16,21 +17,16 @@ export class CreateBuildingComponent implements OnInit {
   darkMode = false;
   
   ngOnInit() {
-    // Check if user has a saved preference
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode) {
-      this.darkMode = savedDarkMode === 'true';
-    } else {
-      // Default to system preference if available
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        this.darkMode = true;
-      }
-    }
+    // Subscribe to theme service
+    this.darkMode = this.themeService.isDarkMode();
+    this.themeService.darkMode$.subscribe(isDark => {
+      this.darkMode = isDark;
+    });
   }
   
   toggleDarkMode() {
-    // Save preference to localStorage
-    localStorage.setItem('darkMode', this.darkMode.toString());
+    // Toggle theme via the theme service
+    this.themeService.toggleDarkMode();
   }
 
   // Initialize the building object
@@ -53,8 +49,11 @@ export class CreateBuildingComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  constructor(private buildingService: BuildingService, private router: Router) {
-  }
+  constructor(
+    private buildingService: BuildingService, 
+    private router: Router,
+    private themeService: ThemeService
+  ) {}
 
   submitForm() {
     if (!this.building.name?.trim() || !this.building.streetName?.trim() || !this.building.houseNumber?.trim() || !this.building.postalCode?.trim()

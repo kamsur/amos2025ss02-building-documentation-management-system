@@ -1,10 +1,11 @@
-import { Component, EventEmitter,Output  } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
-import { BuildingService , DocumentItem , Building } from '../../services/building.service';
-import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
+import { BuildingService, DocumentItem, Building } from '../../services/building.service';
+import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
+import { ThemeService } from '../../services/theme.service';
 @Component({
   standalone: true,
   selector: 'app-sidebar',
@@ -12,7 +13,8 @@ import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
   styleUrls: ['./sidebar.component.css'],
   imports: [CommonModule,FormsModule]
 })
-export class SidebarComponent {
+export class SidebarComponent {  
+  isDarkMode = false;
   isExplorerCollapsed = false;
   groupedDocuments: {
     buildingId: number | null;
@@ -25,14 +27,18 @@ export class SidebarComponent {
     public session: SessionService,
     private router: Router,
     public buildingService: BuildingService,
-    private sidebarRefreshService: SidebarRefreshService
+    private sidebarRefreshService: SidebarRefreshService,
+    private themeService: ThemeService
   ) {}
+  
   ngOnInit(): void {
+    // Load documents
     this.buildingService.getGroupedDocuments().subscribe({
       next: (data) => this.groupedDocuments = data,
       error: (err) => console.error('Failed to load grouped documents', err)
     });
 
+    // Subscribe to sidebar refresh
     this.sidebarRefreshService.refresh$.subscribe(() => {
       console.log('📣 Sidebar refresh triggered');
       this.buildingService.getGroupedDocuments().subscribe({
@@ -40,7 +46,12 @@ export class SidebarComponent {
         error: (err) => console.error('Sidebar refresh failed', err)
       });
     });
-
+    
+    // Subscribe to theme changes
+    this.isDarkMode = this.themeService.isDarkMode();
+    this.themeService.darkMode$.subscribe(isDark => {
+      this.isDarkMode = isDark;
+    });
   }
 
   toggleExplorer() {
@@ -61,25 +72,30 @@ export class SidebarComponent {
   }
 
 
-  deleteBuilding(id: number): void {
-    if (!confirm('Are you sure you want to delete this building?')) return;
-
-    this.buildingService.deleteBuilding(id).subscribe({
-      next: () => {
-        // Filter out the deleted building from groupedDocuments
-        this.groupedDocuments = this.groupedDocuments.filter(g => g.buildingId !== id);
-      },
-      error: (err) => console.error('Failed to delete building', err)
-    });
+  deleteBuilding(buildingId: number) {
+    if (confirm('Are you sure you want to delete this building?')) {
+      this.buildingService.deleteBuilding(buildingId).subscribe({
+        next: () => {
+          console.log('Building deleted');
+          // Refresh data after deletion
+          this.buildingService.getGroupedDocuments().subscribe({
+            next: (data) => this.groupedDocuments = data,
+            error: (err) => console.error('Failed to reload grouped documents', err)
+          });
+        },
+        error: (err) => console.error('Failed to delete building', err)
+      });
+    }
   }
-
+  
+  toggleTheme() {
+    this.themeService.toggleDarkMode();
+  }
 
   logout() {
     this.session.logout();
     this.router.navigate(['/']);
   }
-
-
 
 
 
