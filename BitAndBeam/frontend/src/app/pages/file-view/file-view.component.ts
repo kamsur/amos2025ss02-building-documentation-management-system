@@ -90,6 +90,31 @@ export class FileViewComponent {
             };
 
             this.metadataRaw = doc.metadata ?? '';
+            if (doc.metadata) {
+              try {
+                const entries = doc.metadata
+                  .split(/[\r\n]+/)
+                  .map(line => line.split(/[:,=]/).map(s => s.trim()))
+                  .filter(arr => arr.length >= 2);
+
+                const metadataObject: { [key: string]: string } = {};
+                entries.forEach(([key, value]) => {
+                  metadataObject[key] = value;
+                });
+
+                this.parsedMetadata = [
+                  { label: 'Title', value: metadataObject['resourceName'] || 'N/A' },
+                  { label: 'Author', value: metadataObject['dc:creator'] || metadataObject['pdf:docinfo:creator'] || 'N/A' },
+                  { label: 'Created Date', value: metadataObject['dcterms:created']?.split('T')[0] || 'N/A' },
+                  { label: 'Modified Date', value: metadataObject['dcterms:modified']?.split('T')[0] || 'N/A' },
+                  { label: 'Page Count', value: metadataObject['pdf:ocrPageCount'] || metadataObject['xmpTPg:NPages'] || 'N/A' },
+                  { label: 'File Type', value: metadataObject['Content-Type'] || 'N/A' },
+                ];
+              } catch (e) {
+                console.error('❌ Failed to parse metadata', e);
+                this.parsedMetadata = [];
+              }
+            }
             this.selectedBuildingId = doc.buildingId ?? null;
             this.selectedCategoryId = null;
 
