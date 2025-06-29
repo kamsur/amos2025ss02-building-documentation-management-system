@@ -7,6 +7,11 @@ import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { environment } from '../../../environments/environment';
 import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
+import { DocumentsApi } from '../../../api';
+import { OllamaApi, OllamaRequest } from '../../../api';
+import { ApiClientFactory } from '../../services/api-client.factory';
+import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
+import type { AxiosProgressEvent, AxiosResponse } from 'axios';
 
 interface ChatMessage {
   text: string;
@@ -30,11 +35,14 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   isDarkMode = false;
   
   private themeSubscription: Subscription | null = null;
+  private ollamaApi: OllamaApi;
 
   constructor(
-    private http: HttpClient,
-    private themeService: ThemeService
-  ) {}
+    private themeService: ThemeService,
+    private apiFactory: ApiClientFactory
+  ) {
+    this.ollamaApi = this.apiFactory.create<OllamaApi>(OllamaApi);
+  }
 
   ngOnInit(): void {
     // Subscribe to theme changes
@@ -87,27 +95,37 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     // Save history to local storage
     this.saveHistory();
 
-    // Send to backend
-    this.http.post<any>(`${environment.apiUrl}/api/chat`, { message: userMessage })
-      .subscribe({
-        next: (response) => {
-          if (response && response.message) {
-            this.messages.push({
-              text: response.message,
-              sender: 'assistant',
-              timestamp: new Date()
-            });
-          } else {
-            this.handleError('Received an empty response from the AI');
-          }
-          this.isProcessing = false;
-          this.saveHistory();
-        },
-        error: (error) => {
-          console.error('Error calling AI assistant:', error);
-          this.handleError('Failed to get a response from the AI assistant');
-          this.isProcessing = false;
+    // Prepare the previous messages for context if needed
+    const previousMessages = this.messages
+      .slice(-10) // Get last 10 messages for context
+      .map(msg => ({ role: msg.sender, content: msg.text }));
+
+    // Create Ollama request
+    const ollamaRequest: OllamaRequest = {
+      prompt: userMessage
+    };
+
+    // Send to Ollama API
+    this.ollamaApi.apiOllamaAskPost(ollamaRequest)
+      .then(response => {
+        console.log('Ollama response:', response);
+        const responseData = response as any;
+        if (responseData && responseData.data && responseData.data.response) {
+          this.messages.push({
+            text: responseData.data.response,
+            sender: 'assistant',
+            timestamp: new Date()
+          });
+        } else {
+          this.handleError('Received an empty response from the AI');
         }
+        this.isProcessing = false;
+        this.saveHistory();
+      })
+      .catch(error => {
+        console.error('Error calling Ollama API:', error);
+        this.handleError('Failed to get a response from the AI assistant');
+        this.isProcessing = false;
       });
   }
 
