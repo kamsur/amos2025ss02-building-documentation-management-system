@@ -33,10 +33,13 @@ export class SidebarComponent {
   profileMenuOpen = false;
   sidebarWidth = 260; // Default width
   isResizing = false;
+  expandedBuildings: Set<number | null> = new Set();
+  
   groupedDocuments: {
     buildingId: number | null;
     buildingName: string;
     documents: DocumentItem[];
+    isExpanded?: boolean;
   }[] = [];
   
   // Store the initial width and mouse position
