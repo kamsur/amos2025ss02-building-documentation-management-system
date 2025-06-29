@@ -73,16 +73,23 @@ html, body {
 .add-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   width: 100%;
-  padding: 12px;
+  padding: 6px 8px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
   transition: background-color 0.2s;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+.add-btn svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
 }
 
 .add-btn:hover {
