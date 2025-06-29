@@ -11,7 +11,7 @@ namespace BUILD.ING.Models
         public string FilePath { get; set; }
         public string FileType { get; set; }
         public int FileSize { get; set; }
-        
+        public string? Category { get; set; }
         public string? CategoryName { get; set; }
         public int? BuildingId { get; set; }
         public int? UploadedBy { get; set; }
