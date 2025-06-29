@@ -545,9 +545,8 @@ namespace BUILD.ING.Controllers
             // Handle BuildingId logic
             if (request.BuildingId.HasValue)
             {
-                var building = _context.Buildings.FirstOrDefault(b => b.BuildingId == request.BuildingId.Value);
-                if (building == null)
-                    return BadRequest($"Building with ID {request.BuildingId} not found.");
+                if (!buildingIds.Contains(request.BuildingId.Value))
+                    return BadRequest($"Building with ID {request.BuildingId} not found in current organization.");
                 document.BuildingId = request.BuildingId.Value;
             }
             else
