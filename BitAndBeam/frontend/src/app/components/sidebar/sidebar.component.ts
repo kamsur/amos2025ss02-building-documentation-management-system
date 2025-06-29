@@ -5,7 +5,8 @@ import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
 import { BuildingService, DocumentItem, Building } from '../../services/building.service';
 import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
-import { ThemeService } from '../../services/theme.service';
+import { ThemeService, ThemeMode } from '../../services/theme.service';
+
 @Component({
   standalone: true,
   selector: 'app-sidebar',
@@ -15,6 +16,7 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class SidebarComponent {  
   isDarkMode = false;
+  themeMode: ThemeMode = 'device';
   isExplorerCollapsed = false;
   groupedDocuments: {
     buildingId: number | null;
@@ -52,6 +54,11 @@ export class SidebarComponent {
     this.themeService.darkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
     });
+    // Subscribe to mode changes
+    this.themeMode = this.themeService.getMode();
+    this.themeService.mode$.subscribe(mode => {
+      this.themeMode = mode;
+    });
   }
 
   toggleExplorer() {
@@ -88,8 +95,9 @@ export class SidebarComponent {
     }
   }
   
-  toggleTheme() {
-    this.themeService.toggleDarkMode();
+  onThemeModeChange(event: Event) {
+    const value = (event.target as HTMLSelectElement).value as ThemeMode;
+    this.themeService.setMode(value);
   }
 
   logout() {

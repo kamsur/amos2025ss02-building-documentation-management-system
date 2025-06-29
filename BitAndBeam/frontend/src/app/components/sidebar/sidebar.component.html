@@ -43,11 +43,12 @@
     <div class="sidebar-actions">
       <!-- Theme toggle switch -->
       <div class="theme-toggle">
-        <label class="switch">
-          <input type="checkbox" [checked]="isDarkMode" (change)="toggleTheme()">
-          <span class="slider round"></span>
-        </label>
-        <span class="toggle-label">{{ isDarkMode ? 'Dark' : 'Light' }}</span>
+        <label for="theme-mode-select" class="toggle-label">Theme:</label>
+        <select id="theme-mode-select" [(ngModel)]="themeMode" (change)="onThemeModeChange($event)" class="theme-mode-select">
+          <option value="device">Device Mode</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
       </div>
       <button class="logout-btn" (click)="logout()" *ngIf="session.isAuthenticated()">Logout</button>
     </div>
