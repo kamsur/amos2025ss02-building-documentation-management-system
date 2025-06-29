@@ -25,6 +25,16 @@
   box-shadow: var(--card-shadow-dark, 0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
+/* Drag and drop styling */
+.ai-assistant.drag-over {
+  background-color: var(--bg-highlight, #f0f7ff);
+  border-color: var(--accent-color);
+}
+
+.ai-assistant.dark-mode.drag-over {
+  background-color: var(--bg-highlight-dark, #1e293b);
+}
+
 .assistant-header {
   display: flex;
   justify-content: space-between;
@@ -70,6 +80,16 @@
   max-height: 250px;
   overflow-y: auto;
   scrollbar-width: thin;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
+  max-height: 0;
+}
+
+.chat-history.show {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 250px;
 }
 
 .chat-history::-webkit-scrollbar {
@@ -119,10 +139,91 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* File upload message specific styling */
+.file-message {
+  padding-bottom: 5px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.ai-message .file-info {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .ai-message .file-info {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.file-icon {
+  font-size: 1.5rem;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-details {
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.file-status {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
 /* Dark mode specific message styling */
 .dark-mode .ai-message {
   background-color: var(--bg-tertiary, #2a2a2a);
   border: 1px solid var(--border-color-dark, #454545);
+}
+
+/* Upload progress bar */
+.upload-progress {
+  margin: 10px 0;
+  text-align: center;
+}
+
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(69, 195, 184, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 8px;
+}
+
+.progress-bar-container {
+  height: 6px;
+  background-color: var(--border-color);
+  border-radius: 3px;
+  margin: 10px auto;
+  width: 80%;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: 3px;
+  text-align: center;
+  color: white;
+  font-size: 0.6rem;
+  line-height: 6px;
+  transition: width 0.3s ease;
 }
 
 .error-message {
@@ -163,6 +264,35 @@
   box-shadow: 0 0 0 2px rgba(69, 195, 184, 0.2);
 }
 
+.upload-btn {
+  background-color: transparent;
+  border: none;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.upload-btn:hover {
+  background-color: var(--bg-tertiary, #f0f0f0);
+  color: var(--accent-color);
+}
+
+.dark-mode .upload-btn:hover {
+  background-color: var(--bg-tertiary, #2a2a2a);
+}
+
+.upload-btn:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .send-btn {
   background-color: var(--accent-color);
   border: none;
@@ -201,6 +331,61 @@
   border-radius: 50%;
   border-top-color: white;
   animation: spin 0.8s linear infinite;
+}
+
+/* Upload hint shown when dragging a file over the chat */
+.upload-hint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.dark-mode .upload-hint {
+  background-color: rgba(30, 30, 30, 0.9);
+}
+
+.upload-hint-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-icon {
+  font-size: 3rem;
+}
+
+/* Metadata popup styling */
+.metadata-popup-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.metadata-placeholder {
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 80%;
+  max-width: 500px;
+  text-align: center;
 }
 
 @keyframes spin {

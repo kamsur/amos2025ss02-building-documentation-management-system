@@ -1,4 +1,10 @@
-<div class="ai-assistant" [class.dark-mode]="isDarkMode">
+<div class="ai-assistant" 
+     [class.dark-mode]="isDarkMode"
+     [class.drag-over]="isDragOver"
+     (dragover)="onDragOver($event)" 
+     (dragleave)="onDragLeave($event)"
+     (drop)="onDrop($event)">
+  
   <div class="assistant-header">
     <h3>AI Assistant</h3>
     <button class="toggle-history-btn" (click)="toggleHistory()">
@@ -6,10 +12,41 @@
     </button>
   </div>
 
-  <div class="chat-history" *ngIf="showHistory">
-    <div *ngFor="let msg of messages" [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'">
+  <!-- Chat history -->
+  <div class="chat-history" [class.show]="showHistory">
+    <div *ngFor="let msg of messages" 
+         [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
+         [class.file-message]="msg.isFileUpload">
       <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
       <span [innerHTML]="msg.text | markdownBold"></span>
+      
+      <!-- File upload info if this message is a file upload -->
+      <div class="file-info" *ngIf="msg.isFileUpload && msg.fileInfo">
+        <div class="file-icon">📄</div>
+        <div class="file-details">
+          <div class="file-name">{{ msg.fileInfo.name }}</div>
+          <div class="file-status">{{ msg.fileInfo.status }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Metadata Popup -->
+  <app-document-metadata-popup 
+    *ngIf="showMetadataPopup && uploadedDocumentId" 
+    [documentId]="uploadedDocumentId" 
+    [documentName]="uploadedFile?.name || ''" 
+    (closePopup)="closeMetadataPopup()" 
+    (saveMetadata)="saveDocumentMetadata($event)">
+  </app-document-metadata-popup>
+
+  <!-- Upload spinner and progress -->
+  <div *ngIf="uploading" class="upload-progress">
+    <div class="spinner"></div>
+    <div *ngIf="uploadProgress > 0 && uploadProgress < 100" class="progress-bar-container">
+      <div class="progress-bar" [style.width]="uploadProgress + '%'">
+        {{ uploadProgress }}%
+      </div>
     </div>
   </div>
 
@@ -18,18 +55,45 @@
     {{ errorMessage }}
   </div>
 
-  <!-- Input box -->
+  <!-- Input box with file upload option -->
   <div class="chat-input">
+    <!-- Hidden file input -->
+    <input 
+      type="file" 
+      #fileInput 
+      (change)="onFileSelected($event)" 
+      style="display: none"
+      accept=".pdf,.docx,.txt,.png,.jpg,.jpeg">
+      
+    <!-- File upload button (paperclip) -->
+    <button 
+      class="upload-btn" 
+      (click)="fileInput.click()" 
+      [disabled]="isProcessing || uploading">
+      📎
+    </button>
+    
+    <!-- Text input -->
     <input [(ngModel)]="userInput" 
            type="text" 
-           placeholder="Type a message..." 
+           placeholder="Type a message or drop a file..." 
            (keyup.enter)="sendMessage()" 
-           [disabled]="isProcessing" />
+           [disabled]="isProcessing || uploading" />
+           
+    <!-- Send button -->
     <button class="send-btn" 
             (click)="sendMessage()" 
-            [disabled]="isProcessing || !userInput.trim()">
+            [disabled]="isProcessing || uploading || !userInput.trim()">
       <span *ngIf="!isProcessing">➤</span>
       <span *ngIf="isProcessing" class="processing-indicator"></span>
     </button>
+  </div>
+  
+  <!-- Upload hint -->
+  <div class="upload-hint" *ngIf="isDragOver">
+    <div class="upload-hint-content">
+      <span class="upload-icon">📄</span>
+      <span>Drop your file to upload</span>
+    </div>
   </div>
 </div>

@@ -1,63 +1,22 @@
 <div class="container">
-  <!-- Inject the sidebar -->
-  <app-sidebar></app-sidebar>
-
-  <!-- Document Metadata Popup -->
-  <app-document-metadata-popup 
-    *ngIf="showMetadataPopup" 
-    [documentId]="uploadedDocumentId" 
-    [documentName]="uploadedFile?.name || ''" 
-    (closePopup)="closeMetadataPopup()" 
-    (saveMetadata)="saveDocumentMetadata($event)">
-  </app-document-metadata-popup>
-
-  <!-- Main Content -->
-  <main class="main-content">
-    <!-- Enhanced Upload Card -->
-    <div
-      class="upload-card"
-      (drop)="onDrop($event)"
-      (dragover)="onDragOver($event)"
-      tabindex="0"
-      aria-label="File upload area. Drag and drop or click to select a file."
-    >
-      <div *ngIf="showSpinner" class="upload-spinner-overlay">
-        <div class="spinner"></div>
-        <div *ngIf="uploadProgress > 0 && uploadProgress < 100" class="progress-bar-container">
-          <div class="progress-bar" [style.width]="uploadProgress + '%'">
-            {{ uploadProgress }}%
-          </div>
+    <app-sidebar [currentRoute]="'upload'"></app-sidebar>
+    <div class="content-wrapper">
+        <div class="main-content">
+            <div class="welcome-section">
+                <h1>Welcome to BitAndBeam Document Management</h1>
+                <p>To get started, chat with our AI Assistant below. You can upload documents by:</p>
+                <ul>
+                    <li>Dragging and dropping files into the chat area</li>
+                    <li>Clicking the paperclip icon to browse for files</li>
+                    <li>Simply asking the AI for help with your documents</li>
+                </ul>
+            </div>
         </div>
-      </div>
-      <div class="illustration-wrapper">
-        <img src="assets/upload.png" alt="Upload Illustration" class="upload-illustration" width="110" height="80" loading="eager" />
-      </div>
-      <h2 class="upload-title">Upload Your Document</h2>
-      <p class="upload-instructions">Drag & drop your file here, or</p>
-      <input
-        id="fileInput"
-        type="file"
-        accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-        (change)="onFileSelected($event)"
-        hidden
-        #fileInput
-      />
-      <button class="choose-file" (click)="fileInput.click()">Choose File</button>
-
-      <div *ngIf="uploading && !showSpinner" class="upload-status"> Uploading...</div>
-      <div *ngIf="uploadSuccess && !showSpinner" class="upload-status success"> Upload successful!</div>
-      <div *ngIf="uploadError" class="upload-status error">{{ uploadError }}</div>
-
-      <div *ngIf="uploadedFile && !showSpinner" class="file-preview">
-        {{ uploadedFile.name }}
-      </div>
-
-      <div *ngIf="uploadedFile && !showMetadataPopup && !showSpinner" class="file-upload-status">
-        <p> <strong>{{ uploadedFile.name }}</strong> uploaded successfully!</p>
-      </div>
+        
+        <!-- Enhanced AI Assistant with integrated file upload -->
+        <app-ai-assistant 
+            [selectedBuildingId]="selectedBuildingId"
+            (fileUploaded)="onFileUploaded($event)">
+        </app-ai-assistant>
     </div>
-
-    <!-- AI Assistant Component -->
-    <app-ai-assistant></app-ai-assistant>
-  </main>
 </div>
