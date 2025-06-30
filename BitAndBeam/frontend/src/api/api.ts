@@ -449,6 +449,12 @@ export interface Document {
     'metadata'?: string | null;
     /**
      * 
+     * @type {any}
+     * @memberof Document
+     */
+    'keyInformation'?: any | null;
+    /**
+     * 
      * @type {string}
      * @memberof Document
      */

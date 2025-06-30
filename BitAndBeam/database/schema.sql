@@ -48,7 +48,7 @@ CREATE TABLE "documents" (
     "file_path" VARCHAR(255) NOT NULL,
     "file_type" VARCHAR(20) NOT NULL,
     "file_size" INTEGER NOT NULL, -- Size in bytes
-    "category_id" INTEGER,
+    "category_name" VARCHAR(100),
     "building_id" INTEGER REFERENCES "buildings" ("building_id") ON DELETE CASCADE,
     "uploaded_by" INTEGER REFERENCES "users" ("user_id") ON DELETE SET NULL,
     "upload_date" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
