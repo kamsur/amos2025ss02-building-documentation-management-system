@@ -63,6 +63,8 @@ export class FileViewComponent {
       this.buildingService.getBuildings().subscribe(b => this.buildings = b);
       this.categoryService.getCategories().subscribe(c => this.categories = c);
 
+      this.loadDocument(id);
+
       this.buildingService.getDocumentById(id).subscribe({
         next: (doc: ApiDocument) => {
           this.metadataRaw = doc.metadata ?? '';
