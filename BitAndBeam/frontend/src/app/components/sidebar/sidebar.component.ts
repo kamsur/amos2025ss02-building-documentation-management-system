@@ -32,8 +32,6 @@ export class SidebarComponent {
   themeMode: ThemeMode = 'device';
   isExplorerCollapsed = false;
   profileMenuOpen = false;
-  sidebarWidth = 260; // Default width
-  isResizing = false;
   expandedBuildings: Set<number | null> = new Set();
   
   groupedDocuments: {
@@ -43,11 +41,6 @@ export class SidebarComponent {
     isExpanded?: boolean;
   }[] = [];
   
-  // Store the initial width and mouse position
-  private startX = 0;
-  private startWidth = 0;
-
-
   constructor(
     public session: SessionService,
     private router: Router,
@@ -56,53 +49,9 @@ export class SidebarComponent {
     private themeService: ThemeService
   ) {}
   
-  // Resizing methods
-  startResizing(event: MouseEvent): void {
-    this.isResizing = true;
-    this.startX = event.clientX;
-    this.startWidth = this.sidebarWidth;
-    
-    // Add event listeners
-    document.addEventListener('mousemove', this.resize.bind(this));
-    document.addEventListener('mouseup', this.stopResizing.bind(this));
-    
-    // Prevent text selection during resize
-    document.body.style.userSelect = 'none';
-  }
-  
-  resize(event: MouseEvent): void {
-    if (!this.isResizing) return;
-    
-    // Calculate the new width
-    const newWidth = this.startWidth + (event.clientX - this.startX);
-    
-    // Apply min and max constraints
-    if (newWidth >= 200 && newWidth <= 400) {
-      this.sidebarWidth = newWidth;
-    }
-  }
-  
-  stopResizing(): void {
-    this.isResizing = false;
-    document.removeEventListener('mousemove', this.resize.bind(this));
-    document.removeEventListener('mouseup', this.stopResizing.bind(this));
-    
-    // Re-enable text selection
-    document.body.style.userSelect = '';
-    
-    // Store the width in local storage for persistence
-    localStorage.setItem('sidebarWidth', this.sidebarWidth.toString());
-  }
-
   ngOnInit(): void {
     // Ensure session is valid
     this.session.ensureSessionValid();
-    
-    // Load saved sidebar width if available
-    const savedWidth = localStorage.getItem('sidebarWidth');
-    if (savedWidth) {
-      this.sidebarWidth = parseInt(savedWidth, 10);
-    }
     
     // Load expanded buildings state from localStorage
     try {
@@ -242,8 +191,4 @@ export class SidebarComponent {
     this.session.logout();
     this.router.navigate(['/']);
   }
-
-
-
-
 }
