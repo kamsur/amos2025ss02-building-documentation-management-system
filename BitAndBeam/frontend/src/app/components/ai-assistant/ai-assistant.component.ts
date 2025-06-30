@@ -47,7 +47,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   userInput = '';
   errorMessage = '';
-  showHistory = false;
   showChatInterface = true; // Control visibility of entire chat interface
   isProcessing = false;
   isDarkMode = false;
@@ -82,16 +81,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     
     // Initialize with current theme state
     this.isDarkMode = this.themeService.isDarkMode();
-    
-    // Load chat history from local storage if available
-    const savedHistory = localStorage.getItem('chatHistory');
-    if (savedHistory) {
-      try {
-        this.messages = JSON.parse(savedHistory);
-      } catch (e) {
-        console.error('Error loading chat history:', e);
-      }
-    }
   }
   
   ngOnDestroy(): void {
@@ -99,14 +88,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
     }
-  }
-
-  showChatHistory(): void {
-    this.showHistory = true;
-  }
-
-  hideChatHistory(): void {
-    this.showHistory = false;
   }
 
   showChat(): void {
@@ -133,9 +114,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     this.userInput = '';
     this.errorMessage = '';
     this.isProcessing = true;
-
-    // Save history to local storage
-    this.saveHistory();
 
     // Prepare the previous messages for context if needed
     const previousMessages = this.messages
@@ -169,7 +147,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
 
         }
         this.isProcessing = false;
-        this.saveHistory();
       })
       .catch(error => {
         console.error('Error calling Ollama API:', error);
@@ -231,7 +208,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     };
     
     this.messages.push(uploadMessage);
-    this.saveHistory();
 
     // Pass the file directly as the API expects a File object, not FormData
     this.documentsApi.apiDocumentsPost(file, {
@@ -243,7 +219,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
           const index = this.messages.findIndex(m => m === uploadMessage);
           if (index !== -1) {
             this.messages[index].fileInfo!.status = `Uploading: ${this.uploadProgress}%`;
-            this.saveHistory();
           }
         }
       }
@@ -258,7 +233,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
         this.messages[index].text = `Uploaded ${file.name}`;
         this.messages[index].fileInfo!.status = 'Upload successful';
         this.messages[index].fileInfo!.id = this.uploadedDocumentId!==null?this.uploadedDocumentId:undefined;
-        this.saveHistory();
       }
       
       // Associate the document with a building if needed
@@ -273,7 +247,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
         timestamp: new Date()
 
       });
-      this.saveHistory();
       
       // Show metadata popup after short delay
       setTimeout(() => {
@@ -294,7 +267,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       if (index !== -1) {
         this.messages[index].text = `Failed to upload ${file.name}`;
         this.messages[index].fileInfo!.status = 'Upload failed';
-        this.saveHistory();
       }
       
       this.handleError('Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error'));
@@ -335,7 +307,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       sender: 'assistant',
       timestamp: new Date()
     });
-    this.saveHistory();
   }
 
   private handleError(message: string): void {
@@ -343,11 +314,5 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.errorMessage = '';
     }, 5000);
-  }
-
-  private saveHistory(): void {
-    // Keep only the last 50 messages to manage storage size
-    const historyToSave = this.messages.slice(-50);
-    localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
   }
 }
