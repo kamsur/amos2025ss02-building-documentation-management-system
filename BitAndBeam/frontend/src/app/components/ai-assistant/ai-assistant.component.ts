@@ -110,6 +110,18 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   toggleChat(): void {
     this.showChatInterface = !this.showChatInterface;
   }
+  
+  // Insert suggested text into the input field
+  insertSuggestion(text: string): void {
+    this.userInput = text;
+    // Focus the input field if possible
+    setTimeout(() => {
+      const inputElement = document.querySelector('.input-container input') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }, 0);
+  }
 
   sendMessage(): void {
     const userMessage = this.userInput.trim();

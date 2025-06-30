@@ -11,9 +11,12 @@
        (drop)="onDrop($event)">
     
     <div class="assistant-header">
-      <h3>AI Assistant</h3>
-      <button class="close-btn" (click)="hideChat()">
-        <i class="fa fa-times"></i>
+      <div class="header-title">
+        <i class="fa fa-robot"></i>
+        <h3>AI Assistant</h3>
+      </div>
+      <button class="close-btn" (click)="hideChat()" title="Minimize">
+        <i class="fa fa-minus"></i>
       </button>
     </div>
 
@@ -22,16 +25,34 @@
       <div *ngIf="messages.length === 0" class="welcome-message">
         <p>👋 Hi there! How can I help you today?</p>
         <p class="hint">You can ask me anything about your building documentation.</p>
+        <div class="suggestion-chips">
+          <button class="suggestion-chip" (click)="insertSuggestion('Search for documents')">
+            <i class="fa fa-search"></i> Search for documents
+          </button>
+          <button class="suggestion-chip" (click)="insertSuggestion('Upload a file')">
+            <i class="fa fa-upload"></i> Upload a file
+          </button>
+          <button class="suggestion-chip" (click)="insertSuggestion('Help me with...')">
+            <i class="fa fa-question-circle"></i> Help me with...
+          </button>
+        </div>
       </div>
       <div *ngFor="let msg of messages" 
            [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
            [class.file-message]="msg.isFileUpload">
-        <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
-        <span [innerHTML]="msg.text | markdownBold"></span>
+        <div class="message-header" *ngIf="msg.sender !== 'user'">
+          <i class="fa fa-robot"></i>
+          <span class="sender-name">AI Assistant</span>
+        </div>
+        <div class="message-content">
+          <span [innerHTML]="msg.text | markdownBold"></span>
+        </div>
         
         <!-- File upload info if this message is a file upload -->
         <div class="file-info" *ngIf="msg.isFileUpload && msg.fileInfo">
-          <div class="file-icon">📄</div>
+          <div class="file-icon">
+            <i class="fa fa-file-alt"></i>
+          </div>
           <div class="file-details">
             <div class="file-name">{{ msg.fileInfo.name }}</div>
             <div class="file-status">{{ msg.fileInfo.status }}</div>
@@ -50,6 +71,9 @@
             name="userInput" 
             placeholder="Ask me anything..."
             [disabled]="isProcessing">
+          <div class="drag-hint" *ngIf="!uploading">
+            <i class="fa fa-cloud-upload-alt"></i> Drop files here
+          </div>
         </div>
         <button 
           type="submit" 
@@ -72,14 +96,19 @@
 
   <!-- Error message display -->
   <div *ngIf="errorMessage" class="error-message">
+    <i class="fa fa-exclamation-circle"></i>
     {{ errorMessage }}
+    <button class="error-close" (click)="errorMessage = ''">
+      <i class="fa fa-times"></i>
+    </button>
   </div>
 
   <!-- Toggle button (visible when chat is hidden) -->
   <button 
     *ngIf="!showChatInterface" 
     class="chat-toggle-btn"
-    (click)="showChat()">
+    (click)="showChat()"
+    title="Chat with AI Assistant">
     <i class="fa fa-robot"></i>
   </button>
 </div>
