@@ -2,7 +2,7 @@
 .chat-controls {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .show-chat-btn,
@@ -33,9 +33,48 @@
   background-color: #c0392b;
 }
 
+/* Floating AI Assistant container */
+.ai-assistant-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: auto;
+}
+
+/* Chat toggle button */
+.chat-toggle-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background-color: var(--accent-color, #45c3b8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  border: none;
+  font-size: 24px;
+  margin-top: 10px;
+}
+
+.chat-toggle-btn:hover {
+  transform: scale(1.1);
+  background-color: #369995;
+}
+
+.dark-mode .chat-toggle-btn {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
 /* Main AI Assistant container */
 .ai-assistant {
-  width: 100%;
+  width: 350px;
   border: 1px solid var(--border-color, #ddd);
   border-radius: 12px;
   background-color: var(--card-bg, #fff);
@@ -43,10 +82,9 @@
   display: flex;
   flex-direction: column;
   height: 450px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 10;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .ai-assistant.hidden-interface {
@@ -165,6 +203,35 @@
 .dark-mode .ai-message {
   background-color: var(--bg-secondary-dark, #3a3f4b);
   color: var(--text-primary-dark, #f8f9fa);
+}
+
+/* Close button in the header */
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #333);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .close-btn {
+  color: var(--text-primary-dark, #f8f9fa);
+}
+
+.dark-mode .close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* File message styling */
@@ -286,16 +353,22 @@
 
 /* Upload progress */
 .upload-progress {
+  width: 350px;
   text-align: center;
-  padding: 0.75rem;
-  border-top: 1px solid var(--border-color, #ddd);
-  background-color: var(--bg-color, #fff);
+  padding: 1rem;
+  border-radius: 12px;
+  background-color: var(--card-bg, #fff);
+  color: var(--text-primary, #333);
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--border-color, #ddd);
 }
 
 .dark-mode .upload-progress {
   background-color: var(--bg-color-dark, #1a202c);
   border-color: var(--border-color-dark, #454545);
   color: var(--text-primary-dark, #f8f9fa);
+  box-shadow: var(--card-shadow-dark, 0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 .spinner {
@@ -340,18 +413,23 @@
 
 /* Error message */
 .error-message {
+  width: 350px;
   background-color: var(--error-bg, #ffdddd);
   color: var(--error-color, #d32f2f);
   padding: 0.75rem;
-  border-radius: 4px;
-  margin: 0.5rem;
+  border-radius: 12px;
+  margin-bottom: 10px;
   text-align: center;
   font-size: 0.9rem;
+  box-shadow: var(--card-shadow, 0 4px 8px rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--error-color, #d32f2f);
 }
 
 .dark-mode .error-message {
   background-color: var(--error-bg-dark, #481818);
   color: var(--error-color-dark, #f56565);
+  border-color: var(--error-color-dark, #f56565);
+  box-shadow: var(--card-shadow-dark, 0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 /* Document metadata popup */
@@ -365,7 +443,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100; /* Higher than chat window */
 }
 
 .dark-mode .metadata-popup-wrapper {
@@ -373,10 +451,15 @@
 }
 
 /* Make the AI Assistant responsive */
-@media screen and (max-width: 768px) {
+@media (max-width: 768px) {
   .ai-assistant {
-    width: 100%;
+    width: 300px;
     height: 400px;
+  }
+  
+  .upload-progress,
+  .error-message {
+    width: 300px;
   }
   
   .user-message,
@@ -384,11 +467,22 @@
     max-width: 95%;
     padding: 8px 12px;
   }
+  
+  .ai-assistant-wrapper {
+    bottom: 10px;
+    right: 10px;
+  }
 }
 
 @media (max-width: 576px) {
   .ai-assistant {
+    width: 280px;
     height: 350px;
+  }
+  
+  .upload-progress,
+  .error-message {
+    width: 280px;
   }
   
   .chat-input-container {
@@ -397,5 +491,11 @@
   
   .input-container input {
     padding: 0.6rem 0.8rem;
+  }
+  
+  .chat-toggle-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
   }
 }

@@ -1,87 +1,90 @@
-<!-- Chat controls -->
-<div class="chat-controls">
-  <button class="show-chat-btn" *ngIf="!showChatInterface" (click)="showChat()">
-    Show Chat
-  </button>
-  <button class="hide-chat-btn" *ngIf="showChatInterface" (click)="hideChat()">
-    Hide Chat
-  </button>
-</div>
+<!-- Floating AI Assistant wrapper -->
+<div class="ai-assistant-wrapper">
+  <!-- Main AI assistant container -->
+  <div class="ai-assistant" 
+       [class.hidden-interface]="!showChatInterface"
+       [class.dark-mode]="isDarkMode"
+       [class.drag-over]="isDragOver"
+       (dragover)="onDragOver($event)" 
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event)">
+    
+    <div class="assistant-header">
+      <h3>AI Assistant</h3>
+      <button class="close-btn" (click)="hideChat()">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
 
-<!-- Main AI assistant container -->
-<div class="ai-assistant" 
-     [class.hidden-interface]="!showChatInterface"
-     [class.dark-mode]="isDarkMode"
-     [class.drag-over]="isDragOver"
-     (dragover)="onDragOver($event)" 
-     (dragleave)="onDragLeave($event)"
-     (drop)="onDrop($event)">
-  
-  <div class="assistant-header">
-    <h3>AI Assistant</h3>
-  </div>
-
-  <!-- Chat messages - scrollable -->
-  <div class="chat-content">
-    <div *ngFor="let msg of messages" 
-         [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
-         [class.file-message]="msg.isFileUpload">
-      <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
-      <span [innerHTML]="msg.text | markdownBold"></span>
-      
-      <!-- File upload info if this message is a file upload -->
-      <div class="file-info" *ngIf="msg.isFileUpload && msg.fileInfo">
-        <div class="file-icon">📄</div>
-        <div class="file-details">
-          <div class="file-name">{{ msg.fileInfo.name }}</div>
-          <div class="file-status">{{ msg.fileInfo.status }}</div>
+    <!-- Chat messages - scrollable -->
+    <div class="chat-content">
+      <div *ngFor="let msg of messages" 
+           [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
+           [class.file-message]="msg.isFileUpload">
+        <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
+        <span [innerHTML]="msg.text | markdownBold"></span>
+        
+        <!-- File upload info if this message is a file upload -->
+        <div class="file-info" *ngIf="msg.isFileUpload && msg.fileInfo">
+          <div class="file-icon">📄</div>
+          <div class="file-details">
+            <div class="file-name">{{ msg.fileInfo.name }}</div>
+            <div class="file-status">{{ msg.fileInfo.status }}</div>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Chat input -->
+    <div class="chat-input-container">
+      <form (ngSubmit)="sendMessage()" class="chat-form">
+        <div class="input-container">
+          <input 
+            type="text" 
+            [(ngModel)]="userInput" 
+            name="userInput" 
+            placeholder="Ask me anything..."
+            [disabled]="isProcessing">
+        </div>
+        <button 
+          type="submit" 
+          class="send-btn" 
+          [disabled]="!userInput.trim() || isProcessing">
+          <i class="fa fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
   </div>
 
-  <!-- Chat input -->
-  <div class="chat-input-container">
-    <form (ngSubmit)="sendMessage()" class="chat-form">
-      <div class="input-container">
-        <input 
-          type="text" 
-          [(ngModel)]="userInput" 
-          name="userInput" 
-          placeholder="Type a message..." 
-          [disabled]="isProcessing || uploading"
-        >
-      </div>
-      
-      <button 
-        type="submit" 
-        class="send-btn" 
-        [disabled]="!userInput.trim() || isProcessing || uploading"
-      >
-        <i class="fas fa-paper-plane"></i>
-      </button>
-    </form>
-  </div>
-
-  <!-- Upload progress -->
-  <div class="upload-progress" *ngIf="uploading">
+  <!-- Upload progress display -->
+  <div *ngIf="uploading" class="upload-progress">
     <div class="spinner"></div>
-    <p>Uploading: {{ uploadProgress }}%</p>
+    <div>Uploading file... {{ uploadProgress }}%</div>
     <div class="progress-bar-container">
       <div class="progress-bar" [style.width.%]="uploadProgress"></div>
     </div>
   </div>
-  
-  <!-- Error message -->
-  <div class="error-message" *ngIf="errorMessage">
+
+  <!-- Error message display -->
+  <div *ngIf="errorMessage" class="error-message">
     {{ errorMessage }}
   </div>
+
+  <!-- Toggle button (visible when chat is hidden) -->
+  <button 
+    *ngIf="!showChatInterface" 
+    class="chat-toggle-btn"
+    (click)="showChat()">
+    <i class="fa fa-comment"></i>
+  </button>
 </div>
 
 <!-- Document metadata popup -->
-<app-document-metadata-popup
-  *ngIf="showMetadataPopup && uploadedDocumentId"
-  [documentId]="uploadedDocumentId!"
-  (close)="closeMetadataPopup()"
-  (save)="saveDocumentMetadata($event)"
-></app-document-metadata-popup>
+<div class="metadata-popup-wrapper" *ngIf="showMetadataPopup && uploadedDocumentId">
+  <app-document-metadata-popup 
+    [documentId]="uploadedDocumentId"
+    [selectedBuildingId]="selectedBuildingId"
+    (close)="onCloseMetadataPopup()"
+    (save)="onSaveMetadata($event)">
+  </app-document-metadata-popup>
+</div>
