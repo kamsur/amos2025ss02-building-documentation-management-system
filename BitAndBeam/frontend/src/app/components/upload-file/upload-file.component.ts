@@ -36,6 +36,7 @@ export class UploadFileComponent implements OnInit {
   uploadedFile: File | null = null;
   isDragOver = false;
   errorMessage = '';
+  successMessage = '';
   
   // Metadata popup control
   showMetadataPopup = false;
@@ -104,6 +105,7 @@ export class UploadFileComponent implements OnInit {
     this.uploading = true;
     this.uploadProgress = 0;
     this.errorMessage = '';
+    this.successMessage = '';
 
     // Pass the file directly as the API expects a File object, not FormData
     this.documentsApi.apiDocumentsPost(file, {
@@ -116,6 +118,7 @@ export class UploadFileComponent implements OnInit {
       console.log('Upload successful', response.data);
       this.uploading = false;
       this.uploadedDocumentId = response.data.id || response.data.documentId;
+      this.successMessage = `File "${file.name}" uploaded successfully!`;
       
       // Associate the document with a building if needed
       if (this.selectedBuildingId && this.uploadedDocumentId) {
@@ -128,10 +131,20 @@ export class UploadFileComponent implements OnInit {
       // Emit the uploaded document ID to the parent component or handle locally
       this.onFileUploaded(this.uploadedDocumentId!);
       
+      // Clear success message after a delay
+      setTimeout(() => {
+        this.successMessage = '';
+      }, 5000);
+      
     }).catch((error: any) => {
       console.error('Upload failed', error);
       this.uploading = false;
       this.errorMessage = 'Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error');
+      
+      // Clear error message after a delay
+      setTimeout(() => {
+        this.errorMessage = '';
+      }, 5000);
     });
   }
 
