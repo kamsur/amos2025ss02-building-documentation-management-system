@@ -200,12 +200,6 @@ export interface BuildingCreateDto {
     'description'?: string | null;
     /**
      * 
-     * @type {number}
-     * @memberof BuildingCreateDto
-     */
-    'organizationId'?: number;
-    /**
-     * 
      * @type {NpgsqlPoint}
      * @memberof BuildingCreateDto
      */
@@ -467,10 +461,10 @@ export interface Document {
     'uploadedAt'?: string;
     /**
      * 
-     * @type {string}
+     * @type {number}
      * @memberof Document
      */
-    'groupId'?: string | null;
+    'organizationId'?: number;
     /**
      * 
      * @type {User}
