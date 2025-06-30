@@ -19,7 +19,6 @@ interface FileInfo {
   id?: number;
 }
 
-
 interface ChatMessage {
   text: string;
   sender: 'user' | 'assistant';
@@ -49,6 +48,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   userInput = '';
   errorMessage = '';
   showHistory = false;
+  showChatInterface = true; // Control visibility of entire chat interface
   isProcessing = false;
   isDarkMode = false;
   isDragOver = false;
@@ -101,8 +101,20 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleHistory(): void {
-    this.showHistory = !this.showHistory;
+  showChatHistory(): void {
+    this.showHistory = true;
+  }
+
+  hideChatHistory(): void {
+    this.showHistory = false;
+  }
+
+  showChat(): void {
+    this.showChatInterface = true;
+  }
+
+  hideChat(): void {
+    this.showChatInterface = false;
   }
 
   sendMessage(): void {

@@ -1,4 +1,14 @@
+<div class="chat-controls">
+  <button class="show-chat-btn" *ngIf="!showChatInterface" (click)="showChat()">
+    Show Chat
+  </button>
+  <button class="hide-chat-btn" *ngIf="showChatInterface" (click)="hideChat()">
+    Hide Chat
+  </button>
+</div>
+
 <div class="ai-assistant" 
+     [class.hidden-interface]="!showChatInterface"
      [class.dark-mode]="isDarkMode"
      [class.drag-over]="isDragOver"
      (dragover)="onDragOver($event)" 
@@ -7,9 +17,14 @@
   
   <div class="assistant-header">
     <h3>AI Assistant</h3>
-    <button class="toggle-history-btn" (click)="toggleHistory()">
-      {{ showHistory ? 'Hide History' : 'Show History' }}
-    </button>
+    <div class="history-buttons">
+      <button class="show-history-btn" *ngIf="!showHistory" (click)="showChatHistory()">
+        Show
+      </button>
+      <button class="hide-history-btn" *ngIf="showHistory" (click)="hideChatHistory()">
+        Hide
+      </button>
+    </div>
   </div>
 
   <!-- Recent messages - always visible -->
