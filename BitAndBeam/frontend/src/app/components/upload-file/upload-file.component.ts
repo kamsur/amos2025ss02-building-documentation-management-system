@@ -4,6 +4,7 @@ import { ApiClientFactory } from '../../services/api-client.factory';
 import { DocumentsApi } from '../../../api';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { AiAssistantComponent } from '../ai-assistant/ai-assistant.component';
+import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
 import type { AxiosProgressEvent, AxiosResponse } from 'axios';
 
 interface FileInfo {
@@ -20,7 +21,8 @@ interface FileInfo {
   imports: [
     CommonModule,
     SidebarComponent,
-    AiAssistantComponent
+    AiAssistantComponent,
+    DocumentMetadataPopupComponent
   ]
 })
 export class UploadFileComponent implements OnInit {
@@ -34,6 +36,9 @@ export class UploadFileComponent implements OnInit {
   uploadedFile: File | null = null;
   isDragOver = false;
   errorMessage = '';
+  
+  // Metadata popup control
+  showMetadataPopup = false;
 
   private documentsApi: DocumentsApi;
 
@@ -117,6 +122,9 @@ export class UploadFileComponent implements OnInit {
         this.associateDocumentWithBuilding(this.uploadedDocumentId, this.selectedBuildingId);
       }
       
+      // Show metadata popup after successful upload
+      this.showMetadataPopup = true;
+      
       // Emit the uploaded document ID to the parent component or handle locally
       this.onFileUploaded(this.uploadedDocumentId!);
       
@@ -154,5 +162,29 @@ export class UploadFileComponent implements OnInit {
     
     // Any additional actions needed after a file is uploaded
     // For example, you might want to update a list of documents here
+  }
+  
+  /**
+   * Close the metadata popup
+   */
+  closeMetadataPopup(): void {
+    this.showMetadataPopup = false;
+    this.uploadedDocumentId = null;
+  }
+  
+  /**
+   * Save document metadata
+   */
+  saveDocumentMetadata(metadata: any): void {
+    if (this.uploadedDocumentId) {
+      this.documentsApi.apiDocumentsIdPatch(this.uploadedDocumentId, metadata)
+        .then(() => {
+          console.log('Document metadata updated successfully');
+          this.showMetadataPopup = false;
+        })
+        .catch(error => {
+          console.error('Failed to update document metadata:', error);
+        });
+    }
   }
 }

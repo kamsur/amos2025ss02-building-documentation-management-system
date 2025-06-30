@@ -57,3 +57,11 @@
         </app-ai-assistant>
     </div>
 </div>
+
+<!-- Document metadata popup -->
+<app-document-metadata-popup
+  *ngIf="showMetadataPopup && uploadedDocumentId"
+  [documentId]="uploadedDocumentId!"
+  (close)="closeMetadataPopup()"
+  (save)="saveDocumentMetadata($event)"
+></app-document-metadata-popup>
