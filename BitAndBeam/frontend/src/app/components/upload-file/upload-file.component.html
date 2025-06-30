@@ -61,10 +61,12 @@
         </div>
         
         <!-- Enhanced AI Assistant with integrated file upload -->
-        <app-ai-assistant 
-            [selectedBuildingId]="selectedBuildingId"
-            (fileUploaded)="onFileUploaded($event)">
-        </app-ai-assistant>
+        <div class="ai-assistant-container">
+            <app-ai-assistant 
+                [selectedBuildingId]="selectedBuildingId"
+                (fileUploaded)="onFileUploaded($event)">
+            </app-ai-assistant>
+        </div>
     </div>
 </div>
 
