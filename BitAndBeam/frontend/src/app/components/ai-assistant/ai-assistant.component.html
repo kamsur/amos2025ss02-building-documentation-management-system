@@ -49,17 +49,6 @@
           placeholder="Type a message..." 
           [disabled]="isProcessing || uploading"
         >
-        
-        <!-- File upload button (paperclip) -->
-        <label class="file-input-label">
-          <i class="fas fa-paperclip"></i>
-          <input 
-            type="file" 
-            class="file-input" 
-            (change)="onFileSelected($event)" 
-            [disabled]="uploading"
-          >
-        </label>
       </div>
       
       <button 
