@@ -42,9 +42,9 @@
 
           <div class="metadata-item">
             <label for="category-select"><strong>Category:</strong></label>
-            <select id="category-select" [(ngModel)]="selectedCategoryId">
+            <select id="category-select" [(ngModel)]="selectedCategoryName">
               <option [ngValue]="null">No Category</option>
-              <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+              <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
             </select>
           </div>
 

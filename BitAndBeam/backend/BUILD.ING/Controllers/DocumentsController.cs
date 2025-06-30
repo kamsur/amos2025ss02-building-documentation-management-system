@@ -309,6 +309,7 @@ namespace BUILD.ING.Controllers
                 IsPublic = false,
                 Description = "No description provided",
                 Metadata = metadata,
+                KeyInformation = null, // This could be populated with structured data from document analysis
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
                 OrganizationId = GetCurrentUserOrganizationId(),
@@ -379,6 +380,7 @@ namespace BUILD.ING.Controllers
                 Description = document.Description,
                 IsPublic = document.IsPublic,
                 Metadata = document.Metadata,
+                KeyInformation = document.KeyInformation,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
                 OrganizationId = document.OrganizationId
@@ -419,6 +421,7 @@ namespace BUILD.ING.Controllers
                 Description = document.Description,
                 IsPublic = document.IsPublic,
                 Metadata = document.Metadata,
+                KeyInformation = document.KeyInformation,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
                 OrganizationId = document.OrganizationId
@@ -537,6 +540,7 @@ namespace BUILD.ING.Controllers
                 Description = document.Description,
                 IsPublic = document.IsPublic,
                 Metadata = document.Metadata,
+                KeyInformation = document.KeyInformation,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
                 OrganizationId = document.OrganizationId
@@ -606,6 +610,7 @@ namespace BUILD.ING.Controllers
                 Description = document.Description,
                 IsPublic = document.IsPublic,
                 Metadata = document.Metadata,
+                KeyInformation = document.KeyInformation,
                 FileName = document.FileName,
                 UploadedAt = document.UploadedAt,
                 OrganizationId = document.OrganizationId
