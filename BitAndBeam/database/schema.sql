@@ -47,8 +47,7 @@ CREATE TABLE "documents" (
     "title" VARCHAR(255) NOT NULL,
     "file_path" VARCHAR(255) NOT NULL,
     "file_type" VARCHAR(20) NOT NULL,
-    "file_size" INTEGER NOT NULL, -- Size in bytes
-    "category_id" INTEGER,
+    "file_size" INTEGER NOT NULL, -- Size in bytes 
     "building_id" INTEGER REFERENCES "buildings" ("building_id") ON DELETE CASCADE,
     "uploaded_by" INTEGER REFERENCES "users" ("user_id") ON DELETE SET NULL,
     "upload_date" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -95,8 +94,7 @@ CREATE TABLE "building_document_relations" (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_documents_building_id ON documents(building_id);
-CREATE INDEX idx_documents_category_id ON documents(category_id);
+CREATE INDEX idx_documents_building_id ON documents(building_id); 
 CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
 CREATE INDEX idx_document_tags_name ON document_tags(name);
 CREATE INDEX idx_documents_key_information ON documents USING GIN (key_information);
