@@ -406,11 +406,11 @@ namespace BUILD.ING.Controllers
             var prompt = $$"""
             You are an intelligent document analyzer.
 
-            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+            \nGiven the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
             
-            Your answer MUST include the following top-level fields: "address", "category", and "key_information".
+            \nYour answer MUST include the following top-level fields: "address", "category", and "key_information".
 
-            \n**Example output:**
+            \n**Example format:**\n
             {
                 "address":
                 {
@@ -431,31 +431,31 @@ namespace BUILD.ING.Controllers
                 }
             }
 
-            \n**TASK A** → Extract an **address** if present.  
+            \n**TASK A** → Extract an **address** if present.\n  
             Look for labels like: 
             "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
             "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
             or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
 
-            \n**TASK B** → Choose the SINGLE best-matching **category** from "categories_schema"  
+            \n**TASK B** → Choose the SINGLE best-matching **category** from "categories_schema"\n  
             (use null if none fits)
 
-            \n**TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under `"key_information"`.  
+            \n**TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".\n  
             For every field in the selected category's 'fields' array:
             • Use the field's **name** as the JSON key.  
             • Try to extract the corresponding value from the document; if not found, set it to null.  
             • Only include the fields declared for that category — no extra keys.
 
-            \n**Rules**  
+            \n**Rules**\n
             • Every value must be a JSON string or null — no units, no comments.  
             • Output MUST be valid JSON that parses with 'JSON.parse()'.  
             • If any field cannot be detected, output it with a null value.  
             • Do **not** wrap the answer in markdown or code fences.
 
-            \n"categories_schema"\n
+            \n**categories_schema**:\n
             {{categoriesSchemaJson}}
 
-            \n"Extracted Text"\n
+            \n**Extracted Text**:\n
             {{shortText}}
             """;
 
