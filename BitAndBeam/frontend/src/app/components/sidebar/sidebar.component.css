@@ -1,4 +1,3 @@
-
 * {
   box-sizing: border-box;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -71,6 +70,33 @@ html, body {
   color: var(--text-primary);
 }
 
+.home-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px;
+  margin-left: auto;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.home-btn:hover {
+  background-color: var(--menu-hover-bg);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.home-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
 .sidebar-middle {
   display: flex;
   flex-direction: column;
@@ -114,7 +140,7 @@ html, body {
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: transparent;
@@ -424,24 +450,6 @@ body.dark-mode .logout-item {
   background-color: white;
   border-radius: 8px;
   padding: 4px;
-}
-
-.logo-text {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: white;
-}
-
-/* Add Building Button */
-.add-btn {
-  background-color: #45c3b8;
-  color: white;
-  border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
-  cursor: pointer;
-  width: 80%;
-  font-weight: 500;
 }
 
 /* Building List */

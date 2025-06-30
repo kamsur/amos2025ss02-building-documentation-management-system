@@ -57,6 +57,7 @@ export class SessionService {
   }
 
   logout(): void {
+    console.log('🚪 Logout called, clearing session');
     sessionStorage.removeItem(this.tokenKey);
     this.token.set(null);
     this.user.set(null);
@@ -73,11 +74,14 @@ export class SessionService {
 
   private restoreSession(): void {
     const token = sessionStorage.getItem(this.tokenKey);
+    console.log('🔄 RestoreSession called, token exists:', !!token);
+    
     if (!token) return;
 
     try {
       const decoded = jwt_decode<DecodedToken>(token);
       const now = Date.now() / 1000;
+      console.log('🔍 Token decoded, expires at:', new Date(decoded.exp * 1000), 'current time:', new Date());
 
       if (decoded.exp > now) {
         this.token.set(token);
@@ -87,15 +91,18 @@ export class SessionService {
           role: decoded.r,
           organizationId: Number(decoded.org)
         };
+        console.log('✅ User restored:', restoredUser);
         this.user.set(restoredUser);
 
         // ✅ Changed: use non-blocking timeout for auto-logout
         setTimeout(() => this.scheduleAutoLogout(token), 0);
       } else {
+        console.log('❌ Token expired, logging out');
         this.logout();
       }
-    } catch {
+    } catch (error) {
       // ✅ Added: defensive catch block for malformed/invalid token
+      console.log('❌ Token decode error, logging out:', error);
       this.logout();
     }
   }
@@ -114,5 +121,22 @@ export class SessionService {
 
   getToken(): string | null {
     return this.token();
+  }
+
+  // Debug method to check user state
+  debugUserState(): void {
+    console.log('🐛 Current user state:', {
+      token: this.getToken() ? 'exists' : 'null',
+      user: this.currentUser(),
+      isAuthenticated: this.isAuthenticated()
+    });
+  }
+
+  // Force session check and restoration if needed
+  ensureSessionValid(): void {
+    if (!this.currentUser() && this.getToken()) {
+      console.log('🔧 User data missing but token exists, restoring session...');
+      this.restoreSession();
+    }
   }
 }

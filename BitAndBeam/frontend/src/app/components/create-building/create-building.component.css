@@ -31,14 +31,17 @@
 }
 
 .create-building-form {
-  max-width: 480px;
-  margin: 2.5rem auto;
-  padding: 2.5rem 2rem 2rem 2rem;
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem;
   background: var(--bg-primary);
   border-radius: 18px;
   box-shadow: 0 4px 24px var(--shadow-color), 0 1.5px 6px rgba(27,60,88,0.05);
   position: relative;
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  min-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
 }
 
 /* Theme toggle switch */
@@ -120,6 +123,53 @@ input:checked + .slider:before {
   margin-bottom: 2rem;
 }
 
+/* Two-column layout for form sections */
+.form-sections-container {
+  display: flex;
+  gap: 2rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.form-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-section--required {
+  background: var(--bg-primary);
+}
+
+.form-section--optional {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.form-section h3 {
+  margin: 0 0 1.5rem 0;
+  color: var(--color-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .form-sections-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .create-building-form {
+    max-width: 90%;
+    margin: 1rem auto;
+    padding: 1.5rem;
+  }
+}
+
 .form-icon {
   width: 48px;
   height: 48px;
@@ -133,17 +183,6 @@ input:checked + .slider:before {
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
   text-align: center;
-}
-
-.form-section {
-  margin-bottom: 2rem;
-}
-
-.form-section--optional {
-  background: var(--bg-secondary);
-  border-radius: 10px;
-  padding: 1.2rem 1rem 0.5rem 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .create-building-form h2 {
@@ -271,5 +310,20 @@ input:checked + .slider:before {
   border-radius: 6px;
   cursor: pointer;
 }
-.error-message { color: red; margin-bottom: 1rem; }
-.success-message { color: green; margin-bottom: 1rem; }
+.error-message { 
+  color: #dc3545; 
+  margin-bottom: 1rem; 
+  padding: 0.75rem;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.success-message { 
+  color: #28a745; 
+  margin-bottom: 1rem; 
+  padding: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
