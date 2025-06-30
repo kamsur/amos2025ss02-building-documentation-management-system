@@ -167,7 +167,8 @@ export class UploadFileComponent implements OnInit {
   }
 
   /**
-   * Handle the fileUploaded event from the AI Assistant component
+   * Update document ID after successful upload
+   * This is called from within the uploadFile method after a successful upload
    */
   onFileUploaded(documentId: number): void {
     console.log('File uploaded with document ID:', documentId);

@@ -4,11 +4,7 @@
   <div class="ai-assistant" 
        [class.hidden-interface]="!showChatInterface"
        [class.dark-mode]="isDarkMode"
-       [class.drag-over]="isDragOver"
-       [class.global-mode]="globalMode"
-       (dragover)="onDragOver($event)" 
-       (dragleave)="onDragLeave($event)"
-       (drop)="onDrop($event)">
+       [class.global-mode]="globalMode">
     
     <div class="assistant-header">
       <div class="header-title">
@@ -25,39 +21,23 @@
       <div *ngIf="messages.length === 0" class="welcome-message">
         <p>👋 Hi there! How can I help you today?</p>
         <p class="hint">You can ask me anything about your building documentation.</p>
-        <div class="suggestion-chips">
-          <button class="suggestion-chip" (click)="insertSuggestion('Search for documents')">
-            <i class="fa fa-search"></i> Search for documents
-          </button>
-          <button class="suggestion-chip" (click)="insertSuggestion('Upload a file')">
-            <i class="fa fa-upload"></i> Upload a file
-          </button>
-          <button class="suggestion-chip" (click)="insertSuggestion('Help me with...')">
-            <i class="fa fa-question-circle"></i> Help me with...
-          </button>
-        </div>
       </div>
       <div *ngFor="let msg of messages" 
-           [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
-           [class.file-message]="msg.isFileUpload">
-        <div class="message-header" *ngIf="msg.sender !== 'user'">
-          <i class="fa fa-robot"></i>
-          <span class="sender-name">AI Assistant</span>
-        </div>
-        <div class="message-content">
-          <span [innerHTML]="msg.text | markdownBold"></span>
-        </div>
-        
-        <!-- File upload info if this message is a file upload -->
-        <div class="file-info" *ngIf="msg.isFileUpload && msg.fileInfo">
-          <div class="file-icon">
-            <i class="fa fa-file-alt"></i>
+           [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'">
+        <ng-container *ngIf="msg.sender === 'user'">
+          <div class="message-content">
+            <span>{{ msg.text }}</span>
           </div>
-          <div class="file-details">
-            <div class="file-name">{{ msg.fileInfo.name }}</div>
-            <div class="file-status">{{ msg.fileInfo.status }}</div>
+        </ng-container>
+        <ng-container *ngIf="msg.sender === 'assistant'">
+          <div class="message-header">
+            <i class="fa fa-robot"></i>
+            <span class="sender-name">AI Assistant</span>
           </div>
-        </div>
+          <div class="message-content">
+            <span [innerHTML]="msg.text | markdownBold"></span>
+          </div>
+        </ng-container>
       </div>
     </div>
 
@@ -71,9 +51,6 @@
             name="userInput" 
             placeholder="Ask me anything..."
             [disabled]="isProcessing">
-          <div class="drag-hint" *ngIf="!uploading">
-            <i class="fa fa-cloud-upload-alt"></i> Drop files here
-          </div>
         </div>
         <button 
           type="submit" 
@@ -82,15 +59,6 @@
           <i class="fa fa-paper-plane"></i>
         </button>
       </form>
-    </div>
-  </div>
-
-  <!-- Upload progress display -->
-  <div *ngIf="uploading" class="upload-progress">
-    <div class="spinner"></div>
-    <div>Uploading file... {{ uploadProgress }}%</div>
-    <div class="progress-bar-container">
-      <div class="progress-bar" [style.width.%]="uploadProgress"></div>
     </div>
   </div>
 
@@ -111,14 +79,4 @@
     title="Chat with AI Assistant">
     <i class="fa fa-robot"></i>
   </button>
-</div>
-
-<!-- Document metadata popup -->
-<div class="metadata-popup-wrapper" *ngIf="showMetadataPopup && uploadedDocumentId">
-  <app-document-metadata-popup 
-    [documentId]="uploadedDocumentId"
-    [selectedBuildingId]="selectedBuildingId"
-    (close)="onCloseMetadataPopup()"
-    (save)="onSaveMetadata($event)">
-  </app-document-metadata-popup>
 </div>

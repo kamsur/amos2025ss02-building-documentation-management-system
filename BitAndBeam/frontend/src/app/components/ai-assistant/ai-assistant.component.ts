@@ -1,30 +1,16 @@
-import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
-import { environment } from '../../../environments/environment';
 import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
-import { DocumentsApi } from '../../../api';
-import { OllamaApi, OllamaRequest } from '../../../api';
 import { ApiClientFactory } from '../../services/api-client.factory';
-import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
-import type { AxiosProgressEvent, AxiosResponse } from 'axios';
-
-interface FileInfo {
-  name: string;
-  status: string;
-  id?: number;
-}
 
 interface ChatMessage {
   text: string;
   sender: 'user' | 'assistant';
   timestamp?: Date;
-  isFileUpload?: boolean;
-  fileInfo?: FileInfo;
 }
 
 @Component({
@@ -34,16 +20,13 @@ interface ChatMessage {
     CommonModule, 
     FormsModule, 
     HttpClientModule, 
-    MarkdownBoldPipe,
-    DocumentMetadataPopupComponent
+    MarkdownBoldPipe
   ],
   templateUrl: './ai-assistant.component.html',
   styleUrls: ['./ai-assistant.component.css']
 })
 export class AiAssistantComponent implements OnInit, OnDestroy {
-  @Input() selectedBuildingId: number | null = null;
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
-  @Output() fileUploaded: EventEmitter<number> = new EventEmitter<number>();
   
   messages: ChatMessage[] = [];
   userInput = '';
@@ -51,31 +34,14 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   showChatInterface = false; // Start closed in global mode
   isProcessing = false;
   isDarkMode = false;
-  isDragOver = false;
-  
-  // File upload properties
-  uploading = false;
-  uploadProgress: number = 0;
-  uploadedFile: File | null = null;
-  uploadedDocumentId: number | null = null;
-  showMetadataPopup = false;
   
   private themeSubscription: Subscription | null = null;
-
-  private documentsApi: DocumentsApi;
-  private ollamaApi: OllamaApi;
-
+  
   constructor(
-    private http: HttpClient,
-    private themeService: ThemeService,
-    private apiFactory: ApiClientFactory
-  ) {
-    this.documentsApi = this.apiFactory.create<DocumentsApi>(DocumentsApi);
-    this.ollamaApi = this.apiFactory.create<OllamaApi>(OllamaApi);
-  }
+    private themeService: ThemeService
+  ) {}
 
   ngOnInit(): void {
-    // Subscribe to theme changes
     this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
     });
@@ -86,11 +52,15 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     // If in global mode, start with chat interface hidden
     if (this.globalMode) {
       this.showChatInterface = false;
+    } else {
+      this.showChatInterface = true;
     }
+    
+    // Load FontAwesome if not already loaded
+    this.loadFontAwesome();
   }
   
   ngOnDestroy(): void {
-    // Clean up subscription
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
     }
@@ -111,16 +81,15 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     this.showChatInterface = !this.showChatInterface;
   }
   
-  // Insert suggested text into the input field
-  insertSuggestion(text: string): void {
-    this.userInput = text;
-    // Focus the input field if possible
-    setTimeout(() => {
-      const inputElement = document.querySelector('.input-container input') as HTMLInputElement;
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }, 0);
+  // Load FontAwesome icons for the chat interface
+  private loadFontAwesome(): void {
+    if (!document.getElementById('font-awesome-css')) {
+      const link = document.createElement('link');
+      link.id = 'font-awesome-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+      document.head.appendChild(link);
+    }
   }
 
   sendMessage(): void {
@@ -140,200 +109,18 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.isProcessing = true;
 
-    // Prepare the previous messages for context if needed
-    const previousMessages = this.messages
-      .slice(-10) // Get last 10 messages for context
-      .map(msg => ({ role: msg.sender, content: msg.text }));
-
-    // Create Ollama request
-    const ollamaRequest: OllamaRequest = {
-
-      prompt: userMessage,
-      context: { 
-        conversation: previousMessages,
-        documents: this.uploadedDocumentId ? [this.uploadedDocumentId] : []
-      }
-
-    };
-
-    // Send to Ollama API
-    this.ollamaApi.apiOllamaAskPost(ollamaRequest)
-      .then(response => {
-        console.log('Ollama response:', response);
-        const responseData = response as any;
-        if (responseData && responseData.data && responseData.data.response) {
-          this.messages.push({
-            text: responseData.data.response,
-            sender: 'assistant',
-            timestamp: new Date()
-          });
-        } else {
-          this.handleError('Received an empty response from the AI');
-
-        }
-        this.isProcessing = false;
-      })
-      .catch(error => {
-        console.error('Error calling Ollama API:', error);
-        this.handleError('Failed to get a response from the AI assistant');
-        this.isProcessing = false;
-      });
-  }
-
-  // File handling methods
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragOver = true;
-  }
-
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragOver = false;
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragOver = false;
-    
-    if (event.dataTransfer?.files?.length) {
-      const file = event.dataTransfer.files[0];
-      this.uploadedFile = file;
-      this.uploadFile(file);
-    }
-  }
-
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    this.uploadedFile = file;
-    this.uploadFile(file);
-  }
-
-  uploadFile(file: File): void {
-    if (!file) return;
-
-    this.uploading = true;
-    this.uploadProgress = 0;
-    this.errorMessage = '';
-
-    // Add file upload message to chat
-    const uploadMessage: ChatMessage = {
-      text: `Uploading ${file.name}...`,
-      sender: 'user',
-      timestamp: new Date(),
-      isFileUpload: true,
-      fileInfo: {
-        name: file.name,
-        status: 'Uploading...'
-      }
-    };
-    
-    this.messages.push(uploadMessage);
-
-    // Pass the file directly as the API expects a File object, not FormData
-    this.documentsApi.apiDocumentsPost(file, {
-      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-        if (progressEvent.total) {
-          this.uploadProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          
-          // Update the upload message with progress
-          const index = this.messages.findIndex(m => m === uploadMessage);
-          if (index !== -1) {
-            this.messages[index].fileInfo!.status = `Uploading: ${this.uploadProgress}%`;
-          }
-        }
-      }
-    }).then((response: AxiosResponse<any>) => {
-      console.log('Upload successful', response.data);
-      this.uploading = false;
-      this.uploadedDocumentId = response.data.id || response.data.documentId;
-      
-      // Update the file upload message
-      const index = this.messages.findIndex(m => m === uploadMessage);
-      if (index !== -1) {
-        this.messages[index].text = `Uploaded ${file.name}`;
-        this.messages[index].fileInfo!.status = 'Upload successful';
-        this.messages[index].fileInfo!.id = this.uploadedDocumentId!==null?this.uploadedDocumentId:undefined;
-      }
-      
-      // Associate the document with a building if needed
-      if (this.selectedBuildingId && this.uploadedDocumentId) {
-        this.associateDocumentWithBuilding(this.uploadedDocumentId, this.selectedBuildingId);
-      }
-      
-      // Add AI response about the file
+    // Simple bot response for demo purposes
+    setTimeout(() => {
       this.messages.push({
-        text: `I've received your file "${file.name}". Would you like me to analyze its contents or help you categorize it?`,
+        text: `I received your message: "${userMessage}". This is a demo response.`,
         sender: 'assistant',
         timestamp: new Date()
-
       });
-      
-      // Show metadata popup after short delay
-      setTimeout(() => {
-        this.showMetadataPopup = true;
-      }, 500);
-      
-      // Emit the uploaded document ID
-      if (this.uploadedDocumentId !== null) {
-        this.fileUploaded.emit(this.uploadedDocumentId);
-      }
-      
-    }).catch((error: any) => {
-      console.error('Upload failed', error);
-      this.uploading = false;
-      
-      // Update the file upload message
-      const index = this.messages.findIndex(m => m === uploadMessage);
-      if (index !== -1) {
-        this.messages[index].text = `Failed to upload ${file.name}`;
-        this.messages[index].fileInfo!.status = 'Upload failed';
-      }
-      
-      this.handleError('Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error'));
-    });
+      this.isProcessing = false;
+    }, 1000);
   }
 
-  /**
-   * Associate the uploaded document with a building using the metadata PATCH endpoint
-   */
-  associateDocumentWithBuilding(documentId: number, buildingId: number): void {
-    const metadata = {
-      buildingId: buildingId,
-      categoryName: null // Keep the category as is or null if not set yet
-    };
-    
-    this.documentsApi.apiDocumentsIdPatch(documentId, metadata)
-      .then(() => {
-        console.log(`Document ${documentId} associated with building ${buildingId}`);
-      })
-      .catch(error => {
-        console.error('Failed to associate document with building:', error);
-      });
-  }
-
-  closeMetadataPopup(): void {
-    this.showMetadataPopup = false;
-  }
-
-  onCloseMetadataPopup(): void {
-    this.closeMetadataPopup();
-  }
-
-  saveDocumentMetadata(metadata: any): void {
-    console.log('Saving document metadata:', metadata);
-    // Implementation remains the same
-  }
-
-  onSaveMetadata(metadata: any): void {
-    this.saveDocumentMetadata(metadata);
-  }
-
-  private handleError(message: string): void {
+  handleError(message: string): void {
     this.errorMessage = message;
     setTimeout(() => {
       this.errorMessage = '';

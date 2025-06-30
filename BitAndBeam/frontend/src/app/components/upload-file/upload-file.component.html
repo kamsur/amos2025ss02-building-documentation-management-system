@@ -60,11 +60,10 @@
             </div>
         </div>
         
-        <!-- Enhanced AI Assistant with integrated file upload -->
+        <!-- Enhanced AI Assistant without file upload -->
         <div class="ai-assistant-container">
             <app-ai-assistant 
-                [selectedBuildingId]="selectedBuildingId"
-                (fileUploaded)="onFileUploaded($event)">
+                [selectedBuildingId]="selectedBuildingId">
             </app-ai-assistant>
         </div>
     </div>
