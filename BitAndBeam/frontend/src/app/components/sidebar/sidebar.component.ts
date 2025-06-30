@@ -95,6 +95,9 @@ export class SidebarComponent {
   }
 
   ngOnInit(): void {
+    // Ensure session is valid
+    this.session.ensureSessionValid();
+    
     // Load saved sidebar width if available
     const savedWidth = localStorage.getItem('sidebarWidth');
     if (savedWidth) {
@@ -199,6 +202,11 @@ export class SidebarComponent {
     this.router.navigate(['/create-building']);
   }
 
+  navigateToHome(): void {
+    console.log('🏠 Navigating to home, checking user state before navigation:');
+    this.session.debugUserState();
+    this.router.navigate(['/upload']);
+  }
 
   deleteBuilding(buildingId: number) {
     if (confirm('Are you sure you want to delete this building?')) {

@@ -19,6 +19,7 @@ interface FileInfo {
   id?: number;
 }
 
+
 interface ChatMessage {
   text: string;
   sender: 'user' | 'assistant';
@@ -60,6 +61,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   showMetadataPopup = false;
   
   private themeSubscription: Subscription | null = null;
+
   private documentsApi: DocumentsApi;
   private ollamaApi: OllamaApi;
 
@@ -130,11 +132,13 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
 
     // Create Ollama request
     const ollamaRequest: OllamaRequest = {
+
       prompt: userMessage,
       context: { 
         conversation: previousMessages,
         documents: this.uploadedDocumentId ? [this.uploadedDocumentId] : []
       }
+
     };
 
     // Send to Ollama API
@@ -150,6 +154,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
           });
         } else {
           this.handleError('Received an empty response from the AI');
+
         }
         this.isProcessing = false;
         this.saveHistory();
@@ -254,6 +259,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
         text: `I've received your file "${file.name}". Would you like me to analyze its contents or help you categorize it?`,
         sender: 'assistant',
         timestamp: new Date()
+
       });
       this.saveHistory();
       

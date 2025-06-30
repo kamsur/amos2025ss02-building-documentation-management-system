@@ -87,4 +87,8 @@ export class CreateBuildingComponent implements OnInit {
       }
     });
   }
+
+  goBack(): void {
+    this.router.navigate(['/upload']);
+  }
 }

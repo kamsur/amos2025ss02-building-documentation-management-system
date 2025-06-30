@@ -32,6 +32,7 @@ export class FileViewComponent {
   selectedCategoryId: number | null = null;
   loading = false;
   toastMessage = '';
+  isMetadataPanelCollapsed = false;
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
@@ -141,6 +142,10 @@ export class FileViewComponent {
       .finally(() => {
         this.loading = false;
       });
+  }
+
+  toggleMetadataPanel(): void {
+    this.isMetadataPanelCollapsed = !this.isMetadataPanelCollapsed;
   }
 
 }
