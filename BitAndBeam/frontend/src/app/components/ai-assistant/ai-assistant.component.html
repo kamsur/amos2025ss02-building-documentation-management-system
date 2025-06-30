@@ -7,15 +7,9 @@
   
   <div class="assistant-header">
     <h3>AI Assistant</h3>
-    <div class="header-actions">
-      <button class="upload-file-btn" (click)="fileInput.click()" [disabled]="isProcessing || uploading">
-        <span class="upload-icon">📎</span>
-        <span class="upload-text">Upload</span>
-      </button>
-      <button class="toggle-history-btn" (click)="toggleHistory()">
-        {{ showHistory ? 'Hide History' : 'Show History' }}
-      </button>
-    </div>
+    <button class="toggle-history-btn" (click)="toggleHistory()">
+      {{ showHistory ? 'Hide History' : 'Show History' }}
+    </button>
   </div>
 
   <!-- Recent messages - always visible -->

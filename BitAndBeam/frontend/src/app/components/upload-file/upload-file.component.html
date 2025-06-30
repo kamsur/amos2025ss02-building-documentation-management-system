@@ -2,12 +2,49 @@
     <app-sidebar [currentRoute]="'upload'"></app-sidebar>
     <div class="content-wrapper">
         <div class="main-content">
+            <!-- New upload component section -->
+            <div class="upload-section">
+                <div class="upload-container" 
+                     [class.drag-over]="isDragOver"
+                     (dragover)="onDragOver($event)" 
+                     (dragleave)="onDragLeave($event)"
+                     (drop)="onDrop($event)">
+                    <div class="upload-icon-container">
+                        <span class="upload-icon">📄</span>
+                    </div>
+                    <div class="upload-text-container">
+                        <h3>Upload Documents</h3>
+                        <p>Drag and drop files here or click to browse</p>
+                    </div>
+                    <div class="upload-button-container">
+                        <button class="upload-btn" (click)="fileInput.click()">Choose File</button>
+                        <input 
+                            type="file" 
+                            #fileInput 
+                            (change)="onFileSelected($event)" 
+                            style="display: none"
+                            accept=".pdf,.docx,.txt,.png,.jpg,.jpeg">
+                    </div>
+                </div>
+                
+                <!-- Upload progress and status -->
+                <div *ngIf="uploading" class="upload-progress">
+                    <div class="spinner"></div>
+                    <div *ngIf="uploadProgress > 0 && uploadProgress < 100" class="progress-bar-container">
+                        <div class="progress-bar" [style.width]="uploadProgress + '%'">
+                            {{ uploadProgress }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="welcome-section">
                 <h1>Welcome to BitAndBeam Document Management</h1>
                 <p>To get started, chat with our AI Assistant below. You can upload documents by:</p>
                 <ul>
+                    <li>Using the upload section above</li>
                     <li>Dragging and dropping files into the chat area</li>
-                    <li>Clicking the paperclip icon to browse for files</li>
+                    <li>Clicking the paperclip icon in the chat to browse for files</li>
                     <li>Simply asking the AI for help with your documents</li>
                 </ul>
             </div>
