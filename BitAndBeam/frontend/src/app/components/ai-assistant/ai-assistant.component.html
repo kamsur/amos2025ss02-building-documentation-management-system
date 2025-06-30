@@ -1,10 +1,11 @@
 <!-- Floating AI Assistant wrapper -->
-<div class="ai-assistant-wrapper">
+<div class="ai-assistant-wrapper" [class.global-widget]="globalMode">
   <!-- Main AI assistant container -->
   <div class="ai-assistant" 
        [class.hidden-interface]="!showChatInterface"
        [class.dark-mode]="isDarkMode"
        [class.drag-over]="isDragOver"
+       [class.global-mode]="globalMode"
        (dragover)="onDragOver($event)" 
        (dragleave)="onDragLeave($event)"
        (drop)="onDrop($event)">
@@ -18,6 +19,10 @@
 
     <!-- Chat messages - scrollable -->
     <div class="chat-content">
+      <div *ngIf="messages.length === 0" class="welcome-message">
+        <p>👋 Hi there! How can I help you today?</p>
+        <p class="hint">You can ask me anything about your building documentation.</p>
+      </div>
       <div *ngFor="let msg of messages" 
            [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
            [class.file-message]="msg.isFileUpload">
@@ -75,7 +80,7 @@
     *ngIf="!showChatInterface" 
     class="chat-toggle-btn"
     (click)="showChat()">
-    <i class="fa fa-comment"></i>
+    <i class="fa fa-robot"></i>
   </button>
 </div>
 

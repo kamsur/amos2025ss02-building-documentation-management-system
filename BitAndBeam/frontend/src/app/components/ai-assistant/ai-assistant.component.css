@@ -45,6 +45,11 @@
   width: auto;
 }
 
+/* When in global mode, ensure highest z-index */
+.global-widget {
+  z-index: 9999;
+}
+
 /* Chat toggle button */
 .chat-toggle-btn {
   width: 60px;
@@ -61,11 +66,28 @@
   border: none;
   font-size: 24px;
   margin-top: 10px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .chat-toggle-btn:hover {
   transform: scale(1.1);
   background-color: #369995;
+  animation: none;
 }
 
 .dark-mode .chat-toggle-btn {
@@ -83,8 +105,22 @@
   flex-direction: column;
   height: 450px;
   margin-bottom: 10px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   overflow: hidden;
+  transform-origin: bottom right;
+  transform: scale(0);
+  opacity: 0;
+}
+
+/* Animation for showing/hiding the chat interface */
+.ai-assistant:not(.hidden-interface) {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Ensure global mode has proper styling */
+.ai-assistant.global-mode {
+  box-shadow: var(--card-shadow, 0 5px 25px rgba(0, 0, 0, 0.2));
 }
 
 .ai-assistant.hidden-interface {
@@ -131,6 +167,35 @@
   color: var(--text-primary-dark, #f8f9fa);
 }
 
+/* Close button in the header */
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #333);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .close-btn {
+  color: var(--text-primary-dark, #f8f9fa);
+}
+
+.dark-mode .close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Chat content - scrollable area */
 .chat-content {
   flex: 1;
@@ -145,6 +210,35 @@
 
 .dark-mode .chat-content {
   background-color: var(--bg-color-dark, #1a202c);
+}
+
+/* Welcome message styling */
+.welcome-message {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-primary, #333);
+  background-color: var(--bg-secondary, #f9f9f9);
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+
+.dark-mode .welcome-message {
+  color: var(--text-primary-dark, #f8f9fa);
+  background-color: var(--bg-secondary-dark, #2d3748);
+}
+
+.welcome-message p {
+  margin: 0.5rem 0;
+}
+
+.welcome-message .hint {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+  margin-top: 0.5rem;
+}
+
+.dark-mode .welcome-message .hint {
+  color: var(--text-secondary-dark, #a0aec0);
 }
 
 /* Scrollbar styling */
@@ -203,35 +297,6 @@
 .dark-mode .ai-message {
   background-color: var(--bg-secondary-dark, #3a3f4b);
   color: var(--text-primary-dark, #f8f9fa);
-}
-
-/* Close button in the header */
-.close-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-primary, #333);
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.dark-mode .close-btn {
-  color: var(--text-primary-dark, #f8f9fa);
-}
-
-.dark-mode .close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* File message styling */

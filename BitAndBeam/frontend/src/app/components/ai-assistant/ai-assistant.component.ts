@@ -42,12 +42,13 @@ interface ChatMessage {
 })
 export class AiAssistantComponent implements OnInit, OnDestroy {
   @Input() selectedBuildingId: number | null = null;
+  @Input() globalMode: boolean = false; // Whether this is the global floating widget
   @Output() fileUploaded: EventEmitter<number> = new EventEmitter<number>();
   
   messages: ChatMessage[] = [];
   userInput = '';
   errorMessage = '';
-  showChatInterface = true; // Control visibility of entire chat interface
+  showChatInterface = false; // Start closed in global mode
   isProcessing = false;
   isDarkMode = false;
   isDragOver = false;
@@ -81,6 +82,11 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     
     // Initialize with current theme state
     this.isDarkMode = this.themeService.isDarkMode();
+    
+    // If in global mode, start with chat interface hidden
+    if (this.globalMode) {
+      this.showChatInterface = false;
+    }
   }
   
   ngOnDestroy(): void {
@@ -90,12 +96,19 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Show the chat interface
   showChat(): void {
     this.showChatInterface = true;
   }
 
+  // Hide the chat interface
   hideChat(): void {
     this.showChatInterface = false;
+  }
+
+  // Toggle chat visibility
+  toggleChat(): void {
+    this.showChatInterface = !this.showChatInterface;
   }
 
   sendMessage(): void {
