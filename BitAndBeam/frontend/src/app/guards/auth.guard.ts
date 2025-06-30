@@ -18,8 +18,8 @@ export class AuthGuard implements CanActivate {
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
     // TEMPORARY: Skip authentication for testing
-    return true;
-    /*
+    //return true;
+
     
     const isLoggedIn = this.session.isAuthenticated();
 
@@ -40,6 +40,6 @@ export class AuthGuard implements CanActivate {
     });
     
     return false;
-    */
+    
   }
 }
