@@ -99,7 +99,7 @@ namespace BUILD.ING.Data
                 .Property(d => d.Category);
 
             modelBuilder.Ignore<DocumentTag>();
-                
+
             // Configure JSONB columns for Document
             modelBuilder.Entity<Document>()
                 .Property(d => d.KeyInformation)
