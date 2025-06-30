@@ -72,6 +72,7 @@
   transform: translateY(20px);
   opacity: 0;
   pointer-events: none;
+  display: none;
 }
 
 /* Global mode styles */
@@ -275,6 +276,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   margin-top: 16px;
   transition: transform 0.3s ease;
+  z-index: 1001;
 }
 
 .chat-toggle-btn:hover {
