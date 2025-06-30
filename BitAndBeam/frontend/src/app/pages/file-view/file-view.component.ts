@@ -204,6 +204,10 @@ export class FileViewComponent {
       .then(() => {
         this.toastMessage = '✅ Metadata updated successfully.';
         this.sidebarRefreshService.triggerRefresh();
+
+        // ✅ After save, reload document to update UI
+        this.loadDocument(this.selectedFile!.id);
+        
         setTimeout(() => this.toastMessage = '', 4000);
       })
       .catch(() => {
