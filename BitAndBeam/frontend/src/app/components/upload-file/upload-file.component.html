@@ -72,5 +72,5 @@
   *ngIf="showMetadataPopup && uploadedDocumentId"
   [documentId]="uploadedDocumentId!"
   (close)="closeMetadataPopup()"
-  (save)="saveDocumentMetadata($event)"
+  (saveMetadata)="saveDocumentMetadata($event)"
 ></app-document-metadata-popup>

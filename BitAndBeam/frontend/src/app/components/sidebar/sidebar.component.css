@@ -332,8 +332,8 @@ html, body {
   font-weight: 500;
 }
 
-body.dark-mode .profile-name {
-  color: #ffffff; /* Ensure high contrast in dark mode */
+.dark-mode .profile-name {
+  color: var(--text-light, #e2e8f0); /* Use theme variable with fallback */
   opacity: 0.95;
 }
 
