@@ -19,8 +19,8 @@
     <!-- Chat messages - scrollable -->
     <div class="chat-content">
       <div *ngIf="messages.length === 0" class="welcome-message">
-        <p>👋 Hi there! How can I help you today?</p>
-        <p class="hint">You can ask me anything about your building documentation.</p>
+        <p>👋 Welcome to BitAndBeam AI Assistant!</p>
+        <p class="hint">I can help you find information about your buildings and their documentation. Ask me about specific building details, document locations, or how to use the system.</p>
       </div>
       <div *ngFor="let msg of messages" 
            [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'">
