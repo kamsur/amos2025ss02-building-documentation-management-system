@@ -7,12 +7,37 @@
   
   <div class="assistant-header">
     <h3>AI Assistant</h3>
-    <button class="toggle-history-btn" (click)="toggleHistory()">
-      {{ showHistory ? 'Hide History' : 'Show History' }}
-    </button>
+    <div class="header-actions">
+      <button class="upload-file-btn" (click)="fileInput.click()" [disabled]="isProcessing || uploading">
+        <span class="upload-icon">📎</span>
+        <span class="upload-text">Upload</span>
+      </button>
+      <button class="toggle-history-btn" (click)="toggleHistory()">
+        {{ showHistory ? 'Hide History' : 'Show History' }}
+      </button>
+    </div>
   </div>
 
-  <!-- Chat history -->
+  <!-- Recent messages - always visible -->
+  <div class="recent-messages">
+    <div *ngFor="let msg of messages.slice(-3)" 
+         [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
+         [class.file-message]="msg.isFileUpload">
+      <strong *ngIf="msg.sender !== 'user'">AI</strong>{{ msg.sender !== 'user' ? ':' : '' }}
+      <span [innerHTML]="msg.text | markdownBold"></span>
+      
+      <!-- File upload info if this message is a file upload -->
+      <div class="file-info" *ngIf="msg.isFileUpload && msg.fileInfo">
+        <div class="file-icon">📄</div>
+        <div class="file-details">
+          <div class="file-name">{{ msg.fileInfo.name }}</div>
+          <div class="file-status">{{ msg.fileInfo.status }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full chat history (when expanded) -->
   <div class="chat-history" [class.show]="showHistory">
     <div *ngFor="let msg of messages" 
          [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'"
