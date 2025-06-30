@@ -1,3 +1,4 @@
+<!-- Chat controls -->
 <div class="chat-controls">
   <button class="show-chat-btn" *ngIf="!showChatInterface" (click)="showChat()">
     Show Chat
@@ -7,6 +8,7 @@
   </button>
 </div>
 
+<!-- Main AI assistant container -->
 <div class="ai-assistant" 
      [class.hidden-interface]="!showChatInterface"
      [class.dark-mode]="isDarkMode"
@@ -74,12 +76,12 @@
   <div class="error-message" *ngIf="errorMessage">
     {{ errorMessage }}
   </div>
-  
-  <!-- Document metadata popup -->
-  <app-document-metadata-popup
-    *ngIf="showMetadataPopup && uploadedDocumentId"
-    [documentId]="uploadedDocumentId!"
-    (close)="closeMetadataPopup()"
-    (save)="saveDocumentMetadata($event)"
-  ></app-document-metadata-popup>
 </div>
+
+<!-- Document metadata popup -->
+<app-document-metadata-popup
+  *ngIf="showMetadataPopup && uploadedDocumentId"
+  [documentId]="uploadedDocumentId!"
+  (close)="closeMetadataPopup()"
+  (save)="saveDocumentMetadata($event)"
+></app-document-metadata-popup>
