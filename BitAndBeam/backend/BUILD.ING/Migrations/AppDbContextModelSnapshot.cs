@@ -216,26 +216,6 @@ namespace Build.ING.Migrations
                     b.ToTable("DocumentPermissions");
                 });
 
-            modelBuilder.Entity("BUILD.ING.Models.DocumentTag", b =>
-                {
-                    b.Property<int>("TagId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TagId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("TagId");
-
-                    b.ToTable("DocumentTags");
-                });
-
             modelBuilder.Entity("BUILD.ING.Models.DocumentTagRelation", b =>
                 {
                     b.Property<int>("DocumentId")
@@ -245,8 +225,6 @@ namespace Build.ING.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("DocumentId", "TagId");
-
-                    b.HasIndex("TagId");
 
                     b.ToTable("DocumentTagRelations");
                 });
@@ -419,15 +397,7 @@ namespace Build.ING.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BUILD.ING.Models.DocumentTag", "Tag")
-                        .WithMany("DocumentTagRelations")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Document");
-
-                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("BUILD.ING.Models.User", b =>
@@ -452,11 +422,6 @@ namespace Build.ING.Migrations
 
                     b.Navigation("DocumentPermissions");
 
-                    b.Navigation("DocumentTagRelations");
-                });
-
-            modelBuilder.Entity("BUILD.ING.Models.DocumentTag", b =>
-                {
                     b.Navigation("DocumentTagRelations");
                 });
 
