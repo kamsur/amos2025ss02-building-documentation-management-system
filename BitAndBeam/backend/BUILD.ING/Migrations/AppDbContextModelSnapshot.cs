@@ -116,9 +116,6 @@ namespace Build.ING.Migrations
 
                     b.Property<int?>("BuildingId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("text");
                         
                     b.Property<string>("CategoryName")
                         .HasColumnType("text");

@@ -96,7 +96,7 @@ namespace BUILD.ING.Data
 
 
             modelBuilder.Entity<Document>()
-                .Property(d => d.Category);
+                .Property(d => d.CategoryName);
 
             modelBuilder.Ignore<DocumentTag>();
 
