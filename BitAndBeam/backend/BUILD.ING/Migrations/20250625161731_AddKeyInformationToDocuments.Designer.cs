@@ -385,8 +385,6 @@ namespace Build.ING.Migrations
 
                     b.Navigation("Building");
 
-                    b.Navigation("Category");
-
                     b.Navigation("Uploader");
                 });
 
