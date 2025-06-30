@@ -81,6 +81,13 @@ namespace BUILD.ING.Controllers
             {
                 metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
                 textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
+
+                // ⚡ OCR fallback (Option B)
+                if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
+                {
+                    textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName, true).ConfigureAwait(false);
+                }
+
                 _logger.LogInformation("✅ Metadata & text extracted for {File}", file.FileName);
             }
             catch (Exception ex)
@@ -88,15 +95,15 @@ namespace BUILD.ING.Controllers
                 _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
             }
 
-            // ╭──────────────── 3. build prompt (address + category) ─────────────────╮
+            // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
             var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
-            var categoriesJson = JsonSerializer.Serialize(ReadCategories().Select(c => c.Name));
+            var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = $$"""
             You are an intelligent document analyzer.
 
-            Given the **extracted text** and a list of **categories** from a German document, your task is to analyze and extract the following fields in a JSON format:
-            
+            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
             **Example output:**
             {
                 "address":
@@ -106,33 +113,50 @@ namespace BUILD.ING.Controllers
                     "zip_code":"<string|null>",
                     "city":"<string|null>"
                 },
-                "category":"<string|null>"
+                "category":"Energy Consumption Reports",
+                "key_information":
+                {
+                    "report_period":"<string|null>",
+                    "total_energy_kwh":"<string|null>",
+                    "energy_source":"<string|null>",
+                    "benchmark":"<string|null>",
+                    "author":"<string|null>",
+                    "issue_date":"<string|null>"
+                }
             }
 
-            **TASK A** → Extract a **address** if present.  
+            **TASK A** → Extract an **address** if present.  
             Look for labels like: 
             "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
             "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
             or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
 
-            **TASK B** → Choose the SINGLE best-matching **category** from "categories"
+            **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema"  
             (use null if none fits)
 
+            **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under `"key_information"`.  
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.  
+            • Try to extract the corresponding value from the document; if not found, set it to null.  
+            • Only include the fields declared for that category — no extra keys.
+
             **Rules**  
-            • Every value must be a JSON string or null - no units, no comments.
-            • No markdown, code-fences, or extra keys.
-            • Output must parse with `JSON.parse()`.
+            • Every value must be a JSON string or null — no units, no comments.  
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.  
+            • If any field cannot be detected, output it with a null value.  
+            • Do **not** wrap the answer in markdown or code fences.
 
-            "categories":
-            {{categoriesJson}}
+            "categories_schema":
+            {{categoriesSchemaJson}}
 
-            "Extracted Text:":
+            "Extracted Text":
             {{shortText}}
             """;
 
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
             Building? matchedBuilding = null;
+            Dictionary<string, string?>? keyInformation = null;
 
             // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
             try
@@ -207,6 +231,12 @@ namespace BUILD.ING.Controllers
                                 !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
                                 matchedCategory = cat.Trim();
                         }
+
+                        // ---------- C. KEY INFORMATION ----------
+                        if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+                        {
+                            keyInformation = kiObj.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
+                        }
                     }
                 }
                 else _logger.LogWarning("⚠️ Ollama service failed (status {Code})", resp.StatusCode);
@@ -264,7 +294,6 @@ namespace BUILD.ING.Controllers
                 matchedCategoryName = null;
             }
 
-
             // ╭──────────────────────────── 7. persist ───────────────────────────────╮
             var document = new Document
             {
@@ -284,7 +313,8 @@ namespace BUILD.ING.Controllers
                 UploadedBy = null,
                 OrganizationId = GetCurrentUserOrganizationId(),
                 BuildingId = matchedBuilding?.BuildingId,
-                CategoryName = matchedCategoryName
+                CategoryName = matchedCategoryName,
+                // KeyInformation  = keyInformation != null ? JsonSerializer.Serialize(keyInformation) : null
             };
 
             _context.Documents.Add(document);
@@ -311,7 +341,9 @@ namespace BUILD.ING.Controllers
                                     },
                 BuildingId = matchedBuilding?.BuildingId,
                 BuildingName = matchedBuilding?.Name,
-                CategoryName = matchedCategoryName
+                SuggestedCategoryName = matchedCategory,
+                CategoryName = matchedCategoryName,
+                KeyInformation = keyInformation
             });
         }
 
