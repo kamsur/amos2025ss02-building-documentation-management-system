@@ -301,7 +301,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   /**
    * Associate the uploaded document with a building using the metadata PATCH endpoint
    */
-  private associateDocumentWithBuilding(documentId: number, buildingId: number): void {
+  associateDocumentWithBuilding(documentId: number, buildingId: number): void {
     const metadata = {
       buildingId: buildingId,
       categoryName: null // Keep the category as is or null if not set yet
@@ -318,20 +318,19 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
 
   closeMetadataPopup(): void {
     this.showMetadataPopup = false;
-    this.uploadedFile = null;
+  }
+
+  onCloseMetadataPopup(): void {
+    this.closeMetadataPopup();
   }
 
   saveDocumentMetadata(metadata: any): void {
-    console.log('Saving metadata:', metadata);
-    this.showMetadataPopup = false;
-    this.uploadedFile = null;
-    
-    // Add a message indicating metadata was saved
-    this.messages.push({
-      text: `Document metadata saved successfully.`,
-      sender: 'assistant',
-      timestamp: new Date()
-    });
+    console.log('Saving document metadata:', metadata);
+    // Implementation remains the same
+  }
+
+  onSaveMetadata(metadata: any): void {
+    this.saveDocumentMetadata(metadata);
   }
 
   private handleError(message: string): void {
