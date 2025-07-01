@@ -96,7 +96,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
     this.categoryService.createCategory({ name: this.otherCategoryName }).subscribe({
       next: (newCategory: Category) => {
-        this.categories.push(newCategory);
+        this.loadCategories(); // reloads the list, avoids duplicates
         this.selectedCategoryName = newCategory.name;
         this.isOtherCategory = false;
         this.otherCategoryName = '';
@@ -141,9 +141,9 @@ export class DocumentMetadataPopupComponent implements OnInit {
       this.sidebarRefreshService.triggerRefresh(); // ✅ Refresh sidebar
       console.log('✅ Document metadata updated:', response.data);
 
-      // ✅ Show success and auto-close
+      // Show success notification and close immediately
       this.showSuccessNotification('Metadata updated successfully');
-      setTimeout(() => this.onClose(), 1500);
+      this.onClose(); // Close popup immediately after successful submission
     }).catch(error => {
       console.error('❌ Failed to update document metadata', error);
       this.showErrorNotification('Failed to update document metadata');

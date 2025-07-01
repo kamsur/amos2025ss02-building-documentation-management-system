@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { BuildingService } from '../../services/building.service';
 import { Building as ApiBuilding } from '../../../api';
 
@@ -12,7 +13,12 @@ import { Building as ApiBuilding } from '../../../api';
   templateUrl: './create-building.component.html',
   styleUrls: ['./create-building.component.css']
 })
-export class CreateBuildingComponent {
+export class CreateBuildingComponent implements OnInit {
+  ngOnInit() {
+    // No need to manage theme here as it's handled by the sidebar
+  }
+
+  // Theme management removed - now handled globally by the sidebar
 
   // Initialize the building object
   building: Partial<ApiBuilding> & { latitude?: number; longitude?: number } = {
@@ -34,8 +40,11 @@ export class CreateBuildingComponent {
   successMessage = '';
   errorMessage = '';
 
-  constructor(private buildingService: BuildingService, private router: Router) {
-  }
+  constructor(
+    private buildingService: BuildingService, 
+    private router: Router,
+    private themeService: ThemeService
+  ) {}
 
   submitForm() {
     if (!this.building.name?.trim() || !this.building.streetName?.trim() || !this.building.houseNumber?.trim() || !this.building.postalCode?.trim()
@@ -77,5 +86,9 @@ export class CreateBuildingComponent {
         this.errorMessage = 'Failed to create building. Please try again.';
       }
     });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/upload']);
   }
 }
