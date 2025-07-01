@@ -53,13 +53,9 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     
     // Initialize with current theme state
     this.isDarkMode = this.themeService.isDarkMode();
-    
-    // If in global mode, start with chat interface hidden
-    if (this.globalMode) {
-      this.showChatInterface = false;
-    } else {
-      this.showChatInterface = true;
-    }
+
+    // Always start with chat interface hidden after page load/reload/redirect
+    this.showChatInterface = false;
     
     // Load FontAwesome if not already loaded
     this.loadFontAwesome();
