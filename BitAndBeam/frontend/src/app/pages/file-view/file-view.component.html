@@ -12,19 +12,33 @@
       <!-- Main File Content -->
       <div class="file-main-content" *ngIf="selectedFile">
 
-        <section class="image-viewer" *ngIf="isImage">
+        <section class="image-viewer" *ngIf="isImage" (mouseenter)="showToolbar = true" (mouseleave)="showToolbar = false" style="position: relative;">
           <img
             [src]="selectedFile.url"
             alt="Document Image"
-            style="display: block; max-width: 100%; max-height: 100%; margin: auto; object-fit: contain;">
+            [style.transform]="'scale(' + imageZoom + ')'"
+            style="display: block; max-width: 100%; max-height: 100%; margin: auto; object-fit: contain; transition: transform 0.2s;">
+          <div class="viewer-toolbar" *ngIf="showToolbar" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border-radius: 4px; padding: 4px; display: flex; gap: 8px; z-index: 10;">
+            <button (click)="zoomIn()" title="Zoom In" style="color: white; background: none; border: none; font-size: 20px; cursor: pointer;">+</button>
+            <button (click)="zoomOut()" title="Zoom Out" style="color: white; background: none; border: none; font-size: 20px; cursor: pointer;">-</button>y
+            <button (click)="resetZoom()" title="Reset Zoom" style="color: white; background: none; border: none; font-size: 20px; cursor: pointer;">⟳</button>
+          </div>
         </section>
 
         <!-- ✅ PDF viewer -->
-        <section class="pdf-viewer" *ngIf="isPdf">
+        <section class="pdf-viewer" *ngIf="isPdf" (mouseenter)="showToolbar = true" (mouseleave)="showToolbar = false" style="position: relative;">
+          <div class="viewer-toolbar" *ngIf="showToolbar" style="position: absolute; top: 10px; right: 24px; background: rgba(0,0,0,0.7); border-radius: 4px; padding: 4px; display: flex; gap: 8px; z-index: 20;">
+            <button (click)="zoomIn()" title="Zoom In" style="color: white; background: none; border: none; font-size: 20px; cursor: pointer;">+</button>
+            <button (click)="zoomOut()" title="Zoom Out" style="color: white; background: none; border: none; font-size: 20px; cursor: pointer;">-</button>
+            <button (click)="resetZoom()" title="Reset Zoom" style="color: white; background: none; border: none; font-size: 20px; cursor: pointer;">⟳</button>
+          </div>
           <pdf-viewer
             [src]="selectedFile.url"
             [show-all]="true"
-            style="display: block; height: 100%; width: 100%;">
+            [zoom]="pdfZoom"
+            [render-text]="true"
+            [original-size]="false"
+            style="display: block; height: 100%; width: 100%; background: transparent;">
           </pdf-viewer>
         </section>
         <!-- Metadata Panel-->
