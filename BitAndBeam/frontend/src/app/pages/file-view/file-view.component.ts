@@ -32,6 +32,10 @@ export class FileViewComponent {
   selectedCategoryName: string | null = null;
   loading = false;
   toastMessage = '';
+  isMetadataPanelCollapsed = false;
+  showToolbar = false;
+  imageZoom = 1;
+  pdfZoom = 1;
 
   // ✅ New variables for key info
   keyInfo: any = null;
@@ -216,6 +220,31 @@ export class FileViewComponent {
       .finally(() => {
         this.loading = false;
       });
+  }
+
+  toggleMetadataPanel(): void {
+    this.isMetadataPanelCollapsed = !this.isMetadataPanelCollapsed;
+  }
+
+  zoomIn() {
+    if (this.isImage) {
+      this.imageZoom = Math.min(this.imageZoom + 0.2, 5);
+    } else if (this.isPdf) {
+      this.pdfZoom = Math.min(this.pdfZoom + 0.2, 5);
+    }
+  }
+
+  zoomOut() {
+    if (this.isImage) {
+      this.imageZoom = Math.max(this.imageZoom - 0.2, 0.2);
+    } else if (this.isPdf) {
+      this.pdfZoom = Math.max(this.pdfZoom - 0.2, 0.2);
+    }
+  }
+
+  resetZoom() {
+    this.imageZoom = 1;
+    this.pdfZoom = 1;
   }
 
 }
