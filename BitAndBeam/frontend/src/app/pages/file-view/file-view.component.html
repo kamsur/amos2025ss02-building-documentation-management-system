@@ -79,11 +79,20 @@
               </tr>
             </table>
           </div>
-          <div class="metadata-section" *ngIf="keyInformation.length > 0">
+          <div class="metadata-section">
             <h3>Extracted Key Information</h3>
-            <div *ngFor="let item of keyInformation">
-              <strong>{{ item.label }}:</strong> {{ item.value }}
+
+            <div *ngIf="keyInformation.length > 0; else noKeyInfo">
+              <div *ngFor="let item of keyInformation">
+                <strong>{{ item.label }}:</strong> {{ item.value }}
+              </div>
             </div>
+
+            <ng-template #noKeyInfo>
+              <p style="color: gray; font-style: italic;">
+                No extracted key information found or extraction failed.
+              </p>
+            </ng-template>
           </div>
 
             <div class="meta-actions">
