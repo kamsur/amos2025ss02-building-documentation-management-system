@@ -132,6 +132,15 @@ export class FileViewComponent {
           this.selectedBuildingId = doc.buildingId ?? null;
           this.selectedCategoryName = doc.categoryName ?? null;
 
+          if (doc.keyInformation) {
+            this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
+              label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),  // Pretty label
+              value: value || 'N/A'
+            }));
+          } else {
+              this.keyInformation = [];
+            }
+
           const fileType = (doc.fileType ?? '').toLowerCase();
           this.isPdf = fileType === 'pdf';
           this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
