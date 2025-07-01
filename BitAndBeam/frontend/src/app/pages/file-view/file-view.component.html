@@ -62,14 +62,13 @@
                 <option *ngFor="let b of buildings" [ngValue]="b.id">{{ b.name }}</option>
               </select>
             </div>
-
-            <div class="metadata-item">
-              <label for="category-select"><strong>Category:</strong></label>
-              <select id="category-select" [(ngModel)]="selectedCategoryId">
-                <option [ngValue]="null">No Category</option>
-                <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
-              </select>
-            </div>
+          <div class="metadata-item">
+            <label for="category-select"><strong>Category:</strong></label>
+            <select id="category-select" [(ngModel)]="selectedCategoryName">
+              <option [ngValue]="null">No Category</option>
+              <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
+            </select>
+          </div>
 
             <div class="meta-actions">
               <button class="save-btn" (click)="saveMetadataChanges()" [disabled]="loading">
