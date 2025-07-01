@@ -38,10 +38,10 @@ export class FileViewComponent {
   pdfZoom = 1;
 
   // ✅ New variables for key info
-  keyInfo: any = null;
-  loadingKeyInfo = false;
   metadataRaw: string = '';
   parsedMetadata: { label: string; value: string }[] = [];
+  keyInformation: { label: string; value: string | null }[] = [];
+
 
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
