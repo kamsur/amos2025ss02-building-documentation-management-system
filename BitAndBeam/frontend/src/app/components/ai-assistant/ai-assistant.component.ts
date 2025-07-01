@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { ThemeService } from '../../services/theme.service';
+import { SessionService } from '../../services/session.service';
 import { Subscription } from 'rxjs';
 import { ApiClientFactory } from '../../services/api-client.factory';
 import { OllamaApi, OllamaRequest } from '../../../api';
@@ -35,15 +36,22 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   showChatInterface = false; // Start closed in global mode
   isProcessing = false;
   isDarkMode = false;
+  isAuthenticated = false;
   
   private themeSubscription: Subscription | null = null;
-  private ollamaApi: OllamaApi;
+  private ollamaApi: OllamaApi | null = null;
   
   constructor(
     private themeService: ThemeService,
-    private apiClientFactory: ApiClientFactory
+    private apiClientFactory: ApiClientFactory,
+    private sessionService: SessionService
   ) {
-    this.ollamaApi = this.apiClientFactory.create<OllamaApi>(OllamaApi);
+    // Don't create API client in constructor - create it when needed
+    
+    // Watch for authentication state changes using effect
+    effect(() => {
+      this.isAuthenticated = this.sessionService.isAuthenticated();
+    });
   }
 
   ngOnInit(): void {
@@ -51,8 +59,9 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       this.isDarkMode = isDark;
     });
     
-    // Initialize with current theme state
+    // Initialize with current theme and auth state
     this.isDarkMode = this.themeService.isDarkMode();
+    this.isAuthenticated = this.sessionService.isAuthenticated();
 
     // Always start with chat interface hidden after page load/reload/redirect
     this.showChatInterface = false;
@@ -93,6 +102,22 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Check if user is authenticated
+  isUserAuthenticated(): boolean {
+    return this.isAuthenticated;
+  }
+
+  // Get or create API client with current authentication token
+  private getOllamaApi(): OllamaApi {
+    // Only create API client if it doesn't exist yet
+    if (!this.ollamaApi) {
+      // Create API client with current token
+      this.ollamaApi = this.apiClientFactory.create<OllamaApi>(OllamaApi);
+    }
+    
+    return this.ollamaApi;
+  }
+
   sendMessage(): void {
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {
@@ -124,7 +149,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     };
 
     // Send to Ollama API
-    this.ollamaApi.apiOllamaAskPost(ollamaRequest)
+    this.getOllamaApi().apiOllamaAskPost(ollamaRequest)
       .then(response => {
         const responseData = response as any;
         if (responseData && responseData.data && responseData.data.response) {

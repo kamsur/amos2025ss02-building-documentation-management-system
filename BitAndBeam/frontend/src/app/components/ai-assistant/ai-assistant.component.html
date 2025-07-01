@@ -1,5 +1,5 @@
-<!-- Floating AI Assistant wrapper -->
-<div class="ai-assistant-wrapper" [class.global-widget]="globalMode">
+<!-- Floating AI Assistant wrapper - Only show if user is authenticated -->
+<div *ngIf="isAuthenticated" class="ai-assistant-wrapper" [class.global-widget]="globalMode">
   <!-- Main AI assistant container -->
   <div class="ai-assistant" 
        [class.hidden-interface]="!showChatInterface"
