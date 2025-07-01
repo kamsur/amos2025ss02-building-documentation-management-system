@@ -96,7 +96,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
     this.categoryService.createCategory({ name: this.otherCategoryName }).subscribe({
       next: (newCategory: Category) => {
-        this.categories.push(newCategory);
+        this.loadCategories(); // reloads the list, avoids duplicates
         this.selectedCategoryName = newCategory.name;
         this.isOtherCategory = false;
         this.otherCategoryName = '';
