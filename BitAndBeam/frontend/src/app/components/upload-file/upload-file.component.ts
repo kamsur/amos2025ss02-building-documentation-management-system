@@ -61,6 +61,7 @@ export class UploadFileComponent implements OnInit {
    * Handle drag leave event for file upload
    */
   onDragLeave(event: DragEvent): void {
+    if (this.uploading) return;
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver = false;
