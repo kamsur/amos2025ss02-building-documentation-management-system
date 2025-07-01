@@ -24,7 +24,7 @@ export class UploadFileComponent implements OnInit {
   // For building association with documents
   selectedBuildingId: number | null = null;
   uploadedDocumentId: number | null = null;
-  
+
   // File upload properties
   uploading = false;
   uploadProgress: number = 0;
@@ -32,7 +32,7 @@ export class UploadFileComponent implements OnInit {
   isDragOver = false;
   errorMessage = '';
   successMessage = '';
-  
+
   // Metadata popup control
   showMetadataPopup = false;
 
@@ -51,6 +51,7 @@ export class UploadFileComponent implements OnInit {
    * Handle drag over event for file upload
    */
   onDragOver(event: DragEvent): void {
+    if (this.uploading) return;
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver = true;
@@ -72,7 +73,7 @@ export class UploadFileComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver = false;
-    
+
     if (event.dataTransfer?.files?.length) {
       const file = event.dataTransfer.files[0];
       this.uploadedFile = file;
@@ -114,28 +115,28 @@ export class UploadFileComponent implements OnInit {
       this.uploading = false;
       this.uploadedDocumentId = response.data.id || response.data.documentId;
       this.successMessage = `File "${file.name}" uploaded successfully!`;
-      
+
       // Associate the document with a building if needed
       if (this.selectedBuildingId && this.uploadedDocumentId) {
         this.associateDocumentWithBuilding(this.uploadedDocumentId, this.selectedBuildingId);
       }
-      
+
       // Show metadata popup after successful upload
       this.showMetadataPopup = true;
-      
+
       // Emit the uploaded document ID to the parent component or handle locally
       this.onFileUploaded(this.uploadedDocumentId!);
-      
+
       // Clear success message after a delay
       setTimeout(() => {
         this.successMessage = '';
       }, 5000);
-      
+
     }).catch((error: any) => {
       console.error('Upload failed', error);
       this.uploading = false;
       this.errorMessage = 'Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error');
-      
+
       // Clear error message after a delay
       setTimeout(() => {
         this.errorMessage = '';
@@ -151,7 +152,7 @@ export class UploadFileComponent implements OnInit {
       buildingId: buildingId,
       categoryName: null // Keep the category as is or null if not set yet
     };
-    
+
     this.documentsApi.apiDocumentsIdPatch(documentId, metadata)
       .then(() => {
         console.log(`Document ${documentId} associated with building ${buildingId}`);
@@ -173,7 +174,7 @@ export class UploadFileComponent implements OnInit {
     // Any additional actions needed after a file is uploaded
     // For example, you might want to update a list of documents here
   }
-  
+
   /**
    * Close the metadata popup
    */
@@ -181,7 +182,7 @@ export class UploadFileComponent implements OnInit {
     this.showMetadataPopup = false;
     this.uploadedDocumentId = null;
   }
-  
+
   /**
    * Save document metadata
    */
