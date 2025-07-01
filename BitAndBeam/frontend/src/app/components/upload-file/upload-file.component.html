@@ -4,9 +4,9 @@
         <div class="main-content">
             <!-- New upload component section -->
             <div class="upload-section">
-                <div class="upload-container" 
+                <div class="upload-container"
                      [class.drag-over]="isDragOver"
-                     (dragover)="onDragOver($event)" 
+                     (dragover)="onDragOver($event)"
                      (dragleave)="onDragLeave($event)"
                      (drop)="onDrop($event)">
                     <div class="upload-icon-container">
@@ -17,16 +17,16 @@
                         <p>Drag and drop files here or click to browse</p>
                     </div>
                     <div class="upload-button-container">
-                        <button class="upload-btn" (click)="fileInput.click()">Choose File</button>
-                        <input 
-                            type="file" 
-                            #fileInput 
-                            (change)="onFileSelected($event)" 
+                      <button class="upload-btn" [disabled]="uploading" (click)="!uploading && fileInput.click()">Choose File</button>
+                        <input
+                            type="file"
+                            #fileInput
+                            (change)="onFileSelected($event)"
                             style="display: none"
                             accept=".pdf,.docx,.txt,.png,.jpg,.jpeg">
                     </div>
                 </div>
-                
+
                 <!-- Upload progress and status -->
                 <div *ngIf="uploading" class="upload-progress">
                     <div class="spinner"></div>
@@ -36,12 +36,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Success message -->
                 <div *ngIf="successMessage" class="success-message">
                     <i class="fas fa-check-circle"></i> {{ successMessage }}
                 </div>
-                
+
                 <!-- Error message -->
                 <div *ngIf="errorMessage" class="error-message">
                     <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
@@ -58,7 +58,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <!-- Enhanced AI Assistant without file upload -->
         <div class="ai-assistant-container">
             <app-ai-assistant></app-ai-assistant>
