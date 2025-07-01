@@ -71,6 +71,7 @@ export class UploadFileComponent implements OnInit {
    * Handle file drop event for file upload
    */
   onDrop(event: DragEvent): void {
+    if (this.uploading) return;
     event.preventDefault();
     event.stopPropagation();
     this.isDragOver = false;
