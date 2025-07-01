@@ -41,8 +41,8 @@ export class FileViewComponent {
   metadataRaw: string = '';
   parsedMetadata: { label: string; value: string }[] = [];
   keyInformation: { label: string; value: string | null }[] = [];
-
-
+  loadingKeyInfo: boolean = false;
+  keyInfo: any = null;
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
@@ -135,7 +135,7 @@ export class FileViewComponent {
           if (doc.keyInformation) {
             this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
               label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),  // Pretty label
-              value: value || 'N/A'
+              value: value ? String(value) : 'N/A'
             }));
           } else {
               this.keyInformation = [];
