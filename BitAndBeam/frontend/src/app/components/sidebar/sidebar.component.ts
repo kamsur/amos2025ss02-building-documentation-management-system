@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output, Input } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SessionService } from '../../services/session.service';
 import { FormsModule } from '@angular/forms';
@@ -41,9 +41,12 @@ export class SidebarComponent {
     isExpanded?: boolean;
   }[] = [];
   
+  currentDocument: DocumentItem | null = null;
+  
   constructor(
     public session: SessionService,
     private router: Router,
+    private route: ActivatedRoute,
     public buildingService: BuildingService,
     private sidebarRefreshService: SidebarRefreshService,
     private themeService: ThemeService
@@ -52,7 +55,13 @@ export class SidebarComponent {
   ngOnInit(): void {
     // Ensure session is valid
     this.session.ensureSessionValid();
-    
+
+    // Get current document id from route if present
+    let currentDocId: string | null = null;
+    this.route.paramMap.subscribe(params => {
+      currentDocId = params.get('id');
+    });
+
     // Load expanded buildings state from localStorage
     try {
       const savedExpanded = localStorage.getItem('expandedBuildings');
@@ -69,6 +78,16 @@ export class SidebarComponent {
         this.groupedDocuments = data;
         // Apply expansion state to loaded documents
         this.updateDocumentExpansionState();
+        // Set currentDocument if route has id
+        if (currentDocId) {
+          for (const group of this.groupedDocuments) {
+            const found = group.documents.find(doc => String(doc.id) === String(currentDocId));
+            if (found) {
+              this.currentDocument = found;
+              break;
+            }
+          }
+        }
       },
       error: (err) => console.error('Failed to load grouped documents', err)
     });
@@ -144,6 +163,7 @@ export class SidebarComponent {
       console.error('Document has no ID');
       return;
     }
+    this.currentDocument = doc;
     this.router.navigate(['/documents', doc.id]);
   }
 

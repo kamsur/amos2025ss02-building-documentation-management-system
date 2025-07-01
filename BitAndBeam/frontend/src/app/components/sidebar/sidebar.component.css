@@ -250,6 +250,21 @@ html, body {
   background-color: var(--sidebar-item-hover-bg);
 }
 
+/* Highlight for active document in sidebar */
+.tree-child.active {
+  background-color: var(--sidebar-item-active-bg, #d1fae5); /* fallback for light */
+  color: var(--accent-color);
+  font-weight: 600;
+  border-left: 3px solid var(--accent-color);
+}
+
+body.dark-mode .tree-child.active {
+  background-color: var(--sidebar-item-active-bg, #134e4a); /* fallback for dark */
+  color: var(--accent-color);
+  font-weight: 600;
+  border-left: 3px solid var(--accent-color);
+}
+
 .doc-icon {
   width: 16px;
   height: 16px;

@@ -54,7 +54,8 @@
         
         <!-- Document list - only visible when parent is expanded -->
         <div class="tree-children" *ngIf="isBuildingExpanded(group.buildingId)">
-          <div class="tree-child" *ngFor="let doc of group.documents" (click)="viewDocument(doc)">
+          <div class="tree-child" *ngFor="let doc of group.documents" (click)="viewDocument(doc)"
+               [ngClass]="{'active': currentDocument && currentDocument.id === doc.id}">
             <!-- Document icon -->
             <svg xmlns="http://www.w3.org/2000/svg" class="doc-icon" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
