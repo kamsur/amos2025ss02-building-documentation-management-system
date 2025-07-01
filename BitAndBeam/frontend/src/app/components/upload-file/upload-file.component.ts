@@ -87,6 +87,7 @@ export class UploadFileComponent implements OnInit {
    * Handle file selection from file input
    */
   onFileSelected(event: any): void {
+    if (this.uploading) return;
     const file = event.target.files[0];
     if (!file) return;
 
