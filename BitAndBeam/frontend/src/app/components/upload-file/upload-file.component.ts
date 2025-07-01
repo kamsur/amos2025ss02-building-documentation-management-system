@@ -6,12 +6,7 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 import { AiAssistantComponent } from '../ai-assistant/ai-assistant.component';
 import { DocumentMetadataPopupComponent } from '../document-metadata-popup/document-metadata-popup.component';
 import type { AxiosProgressEvent, AxiosResponse } from 'axios';
-
-interface FileInfo {
-  name: string;
-  status: string;
-  id?: number;
-}
+import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
 
 @Component({
   selector: 'app-upload-file',
@@ -43,7 +38,7 @@ export class UploadFileComponent implements OnInit {
 
   private documentsApi: DocumentsApi;
 
-  constructor(private apiFactory: ApiClientFactory) {
+  constructor(private apiFactory: ApiClientFactory, private sidebarRefreshService: SidebarRefreshService) {
     this.documentsApi = this.apiFactory.create<DocumentsApi>(DocumentsApi);
   }
 
@@ -173,7 +168,8 @@ export class UploadFileComponent implements OnInit {
   onFileUploaded(documentId: number): void {
     console.log('File uploaded with document ID:', documentId);
     this.uploadedDocumentId = documentId;
-    
+    // Trigger sidebar refresh after upload
+    this.sidebarRefreshService.triggerRefresh();
     // Any additional actions needed after a file is uploaded
     // For example, you might want to update a list of documents here
   }

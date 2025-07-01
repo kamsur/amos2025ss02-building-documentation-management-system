@@ -40,6 +40,15 @@ html, body {
   gap: 10px;
 }
 
+.logo-img-container {
+  background: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .logo-img {
   width: 30px;
   height: 30px;
@@ -48,8 +57,8 @@ html, body {
 .logo-text {
   font-weight: 700;
   font-size: 16px;
+  color: var(--sidebar-color);
   margin-left: 8px;
-  color: var(--text-primary);
 }
 
 .home-btn {
@@ -123,13 +132,13 @@ html, body {
   justify-content: center;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #45c3b8;
   border-radius: 6px;
-  background: transparent;
+  background: #45c3b8;
   font-size: 13px;
-  color: var(--text-primary);
+  color: white;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   margin-bottom: 6px;
 }
 
@@ -140,7 +149,9 @@ html, body {
 }
 
 .add-btn:hover {
-  background-color: var(--menu-hover-bg);
+  background-color: #3ab5a8;
+  border-color: #3ab5a8;
+  color: white;
 }
 
 /* Tree View Styling */
@@ -199,6 +210,8 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-right: 8px; /* Add some space before the delete button */
+  min-width: 0; /* Allow flex item to shrink below its content size */
 }
 
 /* Children Documents Styling */
@@ -265,14 +278,20 @@ html, body {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px;
+  padding: 4px;
   border-radius: 4px;
-  margin-left: 4px;
+  margin-left: auto; /* Push to the right */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
   transition: color 0.15s ease;
 }
 
 .delete-btn:hover {
   color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Profile Section */
