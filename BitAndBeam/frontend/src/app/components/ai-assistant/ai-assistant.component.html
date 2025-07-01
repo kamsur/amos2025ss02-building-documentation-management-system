@@ -20,7 +20,7 @@
     <div class="chat-content">
       <div *ngIf="messages.length === 0" class="welcome-message">
         <p>👋 Welcome to BitAndBeam AI Assistant!</p>
-        <p class="hint">I can help you find information about your buildings and their documentation. Ask me about specific building details, document locations, or how to use the system.</p>
+        <p class="hint">I can help you find information about your buildings from their documentation. Ask me about specific building details, in light of uploaded documents, or ask me how to use the system.</p>
       </div>
       <div *ngFor="let msg of messages" 
            [ngClass]="msg.sender === 'user' ? 'user-message' : 'ai-message'">
@@ -44,20 +44,22 @@
     <!-- Chat input -->
     <div class="chat-input-container">
       <form (ngSubmit)="sendMessage()" class="chat-form">
-        <div class="input-container">
+        <div class="input-container" style="flex: 1; display: flex; align-items: center; gap: 8px;">
           <input 
             type="text" 
             [(ngModel)]="userInput" 
             name="userInput" 
             placeholder="Ask me anything..."
-            [disabled]="isProcessing">
+            [disabled]="isProcessing"
+            style="flex: 1; min-width: 0;" />
+          <button 
+            type="submit" 
+            class="send-btn" 
+            [disabled]="!userInput.trim() || isProcessing"
+            style="margin-left: 4px;">
+            <i class="fa fa-paper-plane"></i>
+          </button>
         </div>
-        <button 
-          type="submit" 
-          class="send-btn" 
-          [disabled]="!userInput.trim() || isProcessing">
-          <i class="fa fa-paper-plane"></i>
-        </button>
       </form>
     </div>
   </div>
