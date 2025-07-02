@@ -51,30 +51,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: List files for debug
-        run: |
-          ls -l BitAndBeam/
-          ls -l BitAndBeam/ollama || true
-          ls -l BitAndBeam/docker-compose-prod.yml || true
-          echo "Current directory:"
-          pwd
-          echo "Contents:"
-          ls -l
-
-      - name: Verify source files exist
-        run: |
-          test -d ./BitAndBeam/ollama && echo "Ollama folder exists"
-          test -f ./BitAndBeam/docker-compose-prod.yml && echo "Compose file exists"
-
       - name: Upload ollama folder to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./BitAndBeam/ollama"
-          target: "~/BitAndBeam"
-          strip_components: 0
+          source: "BitAndBeam/ollama/"
+          target: "~/BitAndBeam/ollama"
+          strip_components: 1
 
       - name: Upload docker-compose-prod.yml to server
         uses: appleboy/scp-action@v0.1.4
@@ -82,9 +67,21 @@ jobs:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./BitAndBeam/docker-compose-prod.yml"
-          target: "~/BitAndBeam"
+          source: "BitAndBeam/docker-compose-prod.yml"
+          target: "~/BitAndBeam/"
           strip_components: 1
+
+      - name: Verify remote files
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROJECT_SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "Listing ~/BitAndBeam contents:"
+            ls -l ~/BitAndBeam
+            echo "Listing ~/BitAndBeam/ollama contents:"
+            ls -l ~/BitAndBeam/ollama
 
       - name: Deploy Ollama to Remote Server
         uses: appleboy/ssh-action@v1.0.0
