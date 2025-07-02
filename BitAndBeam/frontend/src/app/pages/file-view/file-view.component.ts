@@ -181,6 +181,15 @@ export class FileViewComponent {
           suggestedAddress: data.suggestedAddress,
           rawMetadata: data.metadata,
         };
+        //safely fallback if address is missing
+        if (!this.keyInfo.suggestedAddress) {
+          this.keyInfo.suggestedAddress = {
+            street: 'N/A',
+            house_number: 'N/A',
+            zip_code: 'N/A',
+            city: 'N/A'
+          };
+        }
         this.loadingKeyInfo = false;
       },
       error: (err) => {
