@@ -97,6 +97,15 @@
               <h4>🏷️ Detected Category</h4>
               <p>{{ selectedCategoryName }}</p>
             </div>
+            <!-- C. Key Information -->
+            <div *ngIf="keyInformation.length > 0">
+              <h4>🔑 Key Information</h4>
+              <ul>
+                <li *ngFor="let item of keyInformation">
+                  <strong>{{ item.label }}:</strong> {{ item.value }}
+                </li>
+              </ul>
+            </div>
           </div>
 
             <div class="meta-actions">
