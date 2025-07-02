@@ -111,9 +111,10 @@ export class FileViewComponent {
   }
 
   downloadFile(): void {
-    if (!this.selectedFile?.id) return; {
-      this.buildingService.downloadDocument(this.selectedFile.id);
-    }
+    if (!this.selectedFile?.id) return;
+
+  const token = this.session.getToken();
+  const url = `${this.config.apiUrl}/api/Documents/${this.selectedFile.id}/download`;
   }
 
   deleteFile(): void {
