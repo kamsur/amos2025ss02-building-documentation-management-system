@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="team-logo.png" alt="Bit&Beam Logo" width="250">
+  <img src="Deliverables/sprint-01/team-logo.png" alt="Bit&Beam Logo" width="250">
 
 # Bit&Beam
 
