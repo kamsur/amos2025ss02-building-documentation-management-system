@@ -84,7 +84,7 @@
 
             <!-- A. Suggested Address -->
             <div *ngIf="keyInfo.suggestedAddress">
-              <h4>📍 Suggested Address</h4>
+              <h4> Suggested Address</h4>
               <ul>
                 <li><strong>Street:</strong> {{ keyInfo.suggestedAddress.street }}</li>
                 <li><strong>House Number:</strong> {{ keyInfo.suggestedAddress.house_number }}</li>
@@ -94,15 +94,15 @@
             </div>
             <!-- B. Category -->
             <div *ngIf="selectedCategoryName">
-              <h4>🏷️ Detected Category</h4>
+              <h4> Detected Category</h4>
               <p>{{ selectedCategoryName }}</p>
             </div>
             <!-- C. Key Information -->
             <div *ngIf="keyInformation.length > 0">
-              <h4>🔑 Key Information</h4>
+              <h4> Key Information</h4>
               <ul>
                 <li *ngFor="let item of keyInformation">
-                  <strong>{{ item.label }}:</strong> {{ item.value }}
+                  <strong>{{ item.label }}:</strong> {{ item.value || 'N/A' }}
                 </li>
               </ul>
             </div>
