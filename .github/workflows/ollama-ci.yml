@@ -61,16 +61,14 @@ jobs:
           echo "Contents:"
           ls -l
 
-
       - name: Upload ollama project and compose file to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "ollama docker-compose-prod.yml"
+          source: "BitAndBeam/ollama BitAndBeam/docker-compose-prod.yml"
           target: "~/BitAndBeam"
-
 
       - name: Deploy Ollama to Remote Server
         uses: appleboy/ssh-action@v1.0.0
