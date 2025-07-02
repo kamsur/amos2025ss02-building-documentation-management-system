@@ -119,6 +119,16 @@ export class FileViewComponent {
   const headers = new HttpHeaders({
     Authorization: `Bearer ${token}`
   });
+
+  this.http.get(url, { headers, responseType: 'blob' }).subscribe({
+    next: blob => {
+      const downloadLink = document.createElement('a');
+      const objectUrl = URL.createObjectURL(blob);
+      downloadLink.href = objectUrl;
+      downloadLink.download = this.selectedFile?.name || 'document.pdf';
+      downloadLink.click();
+      URL.revokeObjectURL(objectUrl);
+    },
   }
 
   deleteFile(): void {
