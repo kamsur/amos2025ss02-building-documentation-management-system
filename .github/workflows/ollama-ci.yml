@@ -74,6 +74,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "./BitAndBeam/ollama"
           target: "~/BitAndBeam"
+          strip_components: 0
 
       - name: Upload docker-compose-prod.yml to server
         uses: appleboy/scp-action@v0.1.4
@@ -83,6 +84,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "./BitAndBeam/docker-compose-prod.yml"
           target: "~/BitAndBeam"
+          strip_components: 0
 
       - name: Deploy Ollama to Remote Server
         uses: appleboy/ssh-action@v1.0.0
