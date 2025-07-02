@@ -92,6 +92,11 @@
                 <li><strong>City:</strong> {{ keyInfo.suggestedAddress.city }}</li>
               </ul>
             </div>
+            <!-- B. Category -->
+            <div *ngIf="selectedCategoryName">
+              <h4>🏷️ Detected Category</h4>
+              <p>{{ selectedCategoryName }}</p>
+            </div>
           </div>
 
             <div class="meta-actions">
