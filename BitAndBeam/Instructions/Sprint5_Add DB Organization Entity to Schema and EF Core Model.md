@@ -1,7 +1,7 @@
 # Sprint 5: Add Organization Entity to Database Schema and EF Core Model
 
 ## Objective
-Add a new `Organization` entity to the BUILD.ING Document Management System, establish relationships to existing models, and update all relevant documentation and diagrams.
+Add a new `Organization` entity to the BitAndBeam Document Management System, establish relationships to existing models, and update all relevant documentation and diagrams.
 
 ---
 

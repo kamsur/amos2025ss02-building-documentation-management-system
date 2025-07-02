@@ -73,7 +73,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace BUILD.ING.Models
+namespace BitAndBeam.Models
 {
     public class DocumentTag
     {
