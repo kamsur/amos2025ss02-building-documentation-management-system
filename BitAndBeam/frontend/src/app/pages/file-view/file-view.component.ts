@@ -129,6 +129,7 @@ export class FileViewComponent {
       downloadLink.click();
       URL.revokeObjectURL(objectUrl);
     },
+    error: err => console.error('❌ Download failed:', err)
   }
 
   deleteFile(): void {
