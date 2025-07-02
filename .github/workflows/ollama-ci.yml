@@ -51,13 +51,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Upload ollama project to server
+      - name: Upload ollama project and compose file to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "BitAndBeam/ollama"
+          source: |
+            BitAndBeam/ollama
+            BitAndBeam/docker-compose-prod.yml
           target: "~/BitAndBeam/ollama"
 
       - name: Deploy Ollama to Remote Server
