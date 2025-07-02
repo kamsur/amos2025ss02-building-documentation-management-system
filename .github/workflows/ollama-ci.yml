@@ -66,7 +66,7 @@ jobs:
           source: |
             "BitAndBeam/ollama"
             "BitAndBeam/docker-compose-prod.yml"
-          target: "~/BitAndBeam"
+          target: "~/"
 
       - name: Deploy Ollama to Remote Server
         uses: appleboy/ssh-action@v1.0.0
