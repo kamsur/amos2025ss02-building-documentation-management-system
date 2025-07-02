@@ -198,6 +198,12 @@
   cursor: not-allowed;
 }
 
+.ollama-section {
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
 .edit-btn {
   background-color: #45c3b8;
   color: white;
