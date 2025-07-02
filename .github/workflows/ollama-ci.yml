@@ -66,13 +66,22 @@ jobs:
           test -d ./BitAndBeam/ollama && echo "Ollama folder exists"
           test -f ./BitAndBeam/docker-compose-prod.yml && echo "Compose file exists"
 
-      - name: Upload ollama project and compose file to server
+      - name: Upload ollama folder to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./BitAndBeam/ollama ./BitAndBeam/docker-compose-prod.yml"
+          source: "./BitAndBeam/ollama"
+          target: "~/BitAndBeam"
+
+      - name: Upload docker-compose-prod.yml to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.PROJECT_SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./BitAndBeam/docker-compose-prod.yml"
           target: "~/BitAndBeam"
 
       - name: Deploy Ollama to Remote Server
@@ -84,16 +93,12 @@ jobs:
           script: |
             cd ~/BitAndBeam
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            # Stop running ollama container
             docker compose -f docker-compose-prod.yml stop ollama || true
-            # Remove old image if ollama folder changed
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
               echo "Ollama folder changed – removing old image."
               docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
             else
               echo "Ollama folder unchanged – keeping existing image."
             fi
-            # Always pull latest image
             docker compose -f docker-compose-prod.yml pull ollama
-            # Relaunch only ollama
             docker compose -f docker-compose-prod.yml up -d ollama
