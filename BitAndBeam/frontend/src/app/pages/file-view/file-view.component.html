@@ -86,10 +86,10 @@
             <div *ngIf="keyInfo.suggestedAddress">
               <h4> Suggested Address</h4>
               <ul>
-                <li><strong>Street:</strong> {{ keyInfo.suggestedAddress.street }}</li>
-                <li><strong>House Number:</strong> {{ keyInfo.suggestedAddress.house_number }}</li>
-                <li><strong>ZIP Code:</strong> {{ keyInfo.suggestedAddress.zip_code }}</li>
-                <li><strong>City:</strong> {{ keyInfo.suggestedAddress.city }}</li>
+                <li><strong>Street:</strong> {{ keyInfo.suggestedAddress.street || 'N/A' }}</li>
+                <li><strong>House Number:</strong> {{ keyInfo.suggestedAddress.house_number || 'N/A' }}</li>
+                <li><strong>ZIP Code:</strong> {{ keyInfo.suggestedAddress.zip_code || 'N/A' }}</li>
+                <li><strong>City:</strong> {{ keyInfo.suggestedAddress.city || 'N/A' }}</li>
               </ul>
             </div>
             <!-- B. Category -->
