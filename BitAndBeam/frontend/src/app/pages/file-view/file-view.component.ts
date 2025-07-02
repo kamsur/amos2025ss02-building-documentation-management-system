@@ -132,6 +132,11 @@ export class FileViewComponent {
           this.selectedBuildingId = doc.buildingId ?? null;
           this.selectedCategoryName = doc.categoryName ?? null;
 
+          // ✅ Add document's category to the list if it doesn't exist
+          if (doc.categoryName && !this.categories.some(c => c.name === doc.categoryName)) {
+            this.categories.push({ name: doc.categoryName } as Category);
+          }
+
           if (doc.keyInformation) {
             this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
               label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),  // Pretty label
