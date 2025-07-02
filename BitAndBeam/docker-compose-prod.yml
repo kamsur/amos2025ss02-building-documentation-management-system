@@ -1,99 +1,72 @@
-name: Start Ollama Service Only
+services:
+  backend:
+    image: ghcr.io/amosproj/bitandbeam-backend:latest
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - ollama
+      - tika
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:5000
+      - CORS__AllowedOrigins=http://amos.b-iq.net,https://amos.b-iq.net
+      - Tika__ServerUrl=http://tika:9998
+    volumes:
+      - documentdata:/app/documents
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'BitAndBeam/ollama/**'
-      - '.github/workflows/ollama-ci.yml'
 
-jobs:
-  build-and-deploy-ollama:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  frontend:
+    image: ghcr.io/amosproj/bitandbeam-frontend:latest
+    restart: always
+    environment:
+      - API_URL=http://amos.b-iq.net:5000
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
 
-      - name: Check if ollama folder changed
-        id: changed
-        run: |
-          BEFORE_SHA="${{ github.event.before }}"
-          echo "Comparing $BEFORE_SHA … ${{ github.sha }}"
-          if [ "$BEFORE_SHA" != "" ] && git diff --name-only "$BEFORE_SHA" "${{ github.sha }}" | grep -q '^BitAndBeam/ollama/'; then
-            echo "Ollama folder changed."
-            echo "changed=true"  >> "$GITHUB_OUTPUT"
-          else
-            echo "Ollama folder unchanged."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
+  ollama:
+    image: ghcr.io/amosproj/bitandbeam-ollama:latest
+    container_name: ollama
+    restart: always
+    ports:
+      - "11434:11434"
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  postgres:
+    image: postgres:17
+    container_name: bitandbeam_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - .:/app
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bitandbeam
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  tika:
+    image: apache/tika
+    container_name: bitandbeam_tika
+    restart: always
+    ports:
+      - "9998:9998"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9998/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-      - name: Build and push ollama image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./BitAndBeam/ollama
-          push: true
-          tags: |
-            ghcr.io/amosproj/bitandbeam-ollama:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: List files for debug
-        run: |
-          ls -l BitAndBeam/
-          ls -l BitAndBeam/ollama || true
-          ls -l BitAndBeam/docker-compose-prod.yml || true
-          echo "Current directory:"
-          pwd
-          echo "Contents:"
-          ls -l
-
-      - name: Verify source files exist
-        run: |
-          test -d ./BitAndBeam/ollama && echo "Ollama folder exists"
-          test -f ./BitAndBeam/docker-compose-prod.yml && echo "Compose file exists"
-
-      - name: Upload ollama project and compose file to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./BitAndBeam/ollama ./BitAndBeam/docker-compose-prod.yml"
-          target: "~/BitAndBeam"
-
-      - name: Deploy Ollama to Remote Server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/BitAndBeam
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            # Stop running ollama container
-            docker compose -f docker-compose-prod.yml stop ollama || true
-            # Remove old image if ollama folder changed
-            if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
-              echo "Ollama folder changed – removing old image."
-              docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
-            else
-              echo "Ollama folder unchanged – keeping existing image."
-            fi
-            # Always pull latest image
-            docker compose -f docker-compose-prod.yml pull ollama
-            # Relaunch only ollama
-            docker compose -f docker-compose-prod.yml up -d ollama
+volumes:
+  documentdata:
+  pgdata:

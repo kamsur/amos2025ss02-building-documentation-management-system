@@ -61,13 +61,18 @@ jobs:
           echo "Contents:"
           ls -l
 
+      - name: Verify source files exist
+        run: |
+          test -d ./BitAndBeam/ollama && echo "Ollama folder exists"
+          test -f ./BitAndBeam/docker-compose-prod.yml && echo "Compose file exists"
+
       - name: Upload ollama project and compose file to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "BitAndBeam/ollama BitAndBeam/docker-compose-prod.yml"
+          source: "./BitAndBeam/ollama ./BitAndBeam/docker-compose-prod.yml"
           target: "~/BitAndBeam"
 
       - name: Deploy Ollama to Remote Server
@@ -92,5 +97,3 @@ jobs:
             docker compose -f docker-compose-prod.yml pull ollama
             # Relaunch only ollama
             docker compose -f docker-compose-prod.yml up -d ollama
-            # docker compose -f docker-compose-prod.yml logs ollama --tail=50
-            # docker compose -f docker-compose-prod.yml exec ollama printenv
