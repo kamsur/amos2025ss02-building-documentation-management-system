@@ -115,6 +115,10 @@ export class FileViewComponent {
 
   const token = this.session.getToken();
   const url = `${this.config.apiUrl}/api/Documents/${this.selectedFile.id}/download`;
+
+  const headers = new HttpHeaders({
+    Authorization: `Bearer ${token}`
+  });
   }
 
   deleteFile(): void {
