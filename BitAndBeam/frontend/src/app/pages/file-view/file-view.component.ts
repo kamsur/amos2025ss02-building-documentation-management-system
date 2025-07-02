@@ -140,7 +140,7 @@ export class FileViewComponent {
           if (doc.keyInformation) {
             this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
               label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),  // Pretty label
-              value: value ? String(value) : 'N/A'
+              value: value !== null ? String(value) : 'N/A'  // Force even nulls to show
             }));
           } else {
               this.keyInformation = [];
