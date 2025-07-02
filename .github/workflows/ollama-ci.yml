@@ -51,6 +51,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: List files for debug
+        run: |
+          ls -l BitAndBeam/
+          ls -l BitAndBeam/ollama || true
+          ls -l BitAndBeam/docker-compose-prod.yml || true
+
       - name: Upload ollama project and compose file to server
         uses: appleboy/scp-action@v0.1.4
         with:
