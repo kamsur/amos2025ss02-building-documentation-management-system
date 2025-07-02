@@ -64,8 +64,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: |
-            BitAndBeam/ollama
-            BitAndBeam/docker-compose-prod.yml
+            "BitAndBeam/ollama"
+            "BitAndBeam/docker-compose-prod.yml"
           target: "~/BitAndBeam"
 
       - name: Deploy Ollama to Remote Server
