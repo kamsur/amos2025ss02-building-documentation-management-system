@@ -120,9 +120,9 @@
 }
 
 .metadata-content {
-  max-height: calc(100vh - 4rem); /* Adjust if needed */
   overflow-y: auto;
-  padding-bottom: 100px; /* Reserve space for Save button */
+  padding-bottom: 100px; /* makes space for buttons at bottom */
+  max-height: calc(100vh - 60px); /* adjust this as needed */
 }
 
 .metadata-panel.collapsed .metadata-content {
