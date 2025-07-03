@@ -6,7 +6,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     environment:
-      - OLLAMA_MODEL=gemma3:1b     # <--- Bas yahan se change karna hai
+      - OLLAMA_MODEL=gemma3:1b
     entrypoint: ["/bin/sh", "-c"]
     command: >
       "ollama serve & sleep 8 && ollama pull $OLLAMA_MODEL && wait"
