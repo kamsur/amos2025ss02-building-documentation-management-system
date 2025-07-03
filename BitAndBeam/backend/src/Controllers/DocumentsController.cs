@@ -400,7 +400,10 @@ namespace BitAndBeam.Controllers
             }
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
-            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
+            // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
+            var shortText = cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = $$"""
@@ -607,7 +610,7 @@ namespace BitAndBeam.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
+                FileSize = (int)file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -1049,7 +1052,37 @@ namespace BitAndBeam.Controllers
         //     public List<Dictionary<string, string>>? Fields { get; set; }
         // }
     }
-
 }
+
+    public static class OcrTextPreprocessor
+    {
+        public static string Preprocess(string ocrText)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText))
+                return string.Empty;
+
+            // Remove non-printable characters
+            var cleaned = new string(ocrText.Where(c => !char.IsControl(c) || c == '\n' || c == '\r').ToArray());
+
+            // Normalize line endings
+            cleaned = cleaned.Replace("\r\n", "\n").Replace('\r', '\n');
+
+            // Remove excessive line breaks (more than 2 in a row)
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\n{3,}", "\n\n");
+
+            // Remove excessive spaces
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"[ \t]{2,}", " ");
+
+            // Trim each line
+            cleaned = string.Join("\n", cleaned.Split('\n').Select(line => line.Trim()));
+
+            // Optionally, remove lines that are too short or likely to be noise
+            cleaned = string.Join("\n", cleaned
+                .Split('\n')
+                .Where(line => line.Length > 2 || string.IsNullOrWhiteSpace(line)));
+
+            return cleaned.Trim();
+        }
+    }
 
 
