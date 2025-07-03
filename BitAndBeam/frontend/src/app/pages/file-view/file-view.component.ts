@@ -43,6 +43,7 @@ export class FileViewComponent {
   keyInformation: { label: string; value: string | null }[] = [];
   loadingKeyInfo: boolean = false;
   keyInfo: any = null;
+  hasChanges: boolean = false;
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
@@ -285,6 +286,7 @@ export class FileViewComponent {
     documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
       .then(() => {
         this.toastMessage = '✅ Metadata updated successfully.';
+        this.hasChanges = false;
         this.sidebarRefreshService.triggerRefresh();
 
         // ✅ After save, reload document to update UI
