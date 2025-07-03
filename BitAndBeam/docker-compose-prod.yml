@@ -69,9 +69,10 @@ services:
       retries: 3
     networks:
       - internal
+    ports:
+      - "8000:8000"
     expose:
       - "11434"
-      - "8000"
 
   tika:
     image: apache/tika
