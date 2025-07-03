@@ -238,9 +238,17 @@ export class FileViewComponent {
     this.loading = true;
     this.toastMessage = '';
 
-    const patchRequest: DocumentMetadataPatchRequest = {
+    const patchRequest: DocumentMetadataPatchRequest & {
+      suggestedAddress?: any,
+      keyInformation?: any
+    } = {
       buildingId: this.selectedBuildingId,
-      categoryName: this.selectedCategoryName ?? undefined
+      categoryName: this.selectedCategoryName ?? undefined,
+      suggestedAddress: this.keyInfo?.suggestedAddress,
+      keyInformation: Object.fromEntries(this.keyInformation.map(k => [
+        k.label.toLowerCase().replace(/ /g, '_'),
+        k.value
+      ]))
     };
 
     const documentsApi = this.apiFactory.create(DocumentsApi);
