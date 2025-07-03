@@ -91,17 +91,22 @@
               </div>
               <!-- B. Category -->
               <div *ngIf="selectedCategoryName">
-                <h4> Detected Category</h4>
+                <h4>Detected Category</h4>
                 <p>{{ selectedCategoryName }}</p>
               </div>
               <!-- C. Key Information -->
-              <div *ngIf="keyInformation.length > 0">
+              <div>
                 <h4> Key Information</h4>
-                <ul>
-                  <li *ngFor="let item of keyInformation">
-                    <strong>{{ item.label }}:</strong> {{ item.value || 'N/A' }}
-                  </li>
-                </ul>
+                <ng-container *ngIf="keyInformation.length > 0; else noKeyInfo">
+                  <ul>
+                    <li *ngFor="let item of keyInformation">
+                      <strong>{{ item.label }}:</strong> {{ item.value || 'N/A' }}
+                    </li>
+                  </ul>
+                </ng-container>
+                <ng-template #noKeyInfo>
+                  <p>No key information found.</p>
+                </ng-template>
               </div>
             </div>
 
