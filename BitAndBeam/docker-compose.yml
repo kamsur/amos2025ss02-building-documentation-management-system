@@ -76,7 +76,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    command: ["dotnet", "Build.ING.dll"]
+    command: ["dotnet", "BitAndBeam.dll"]
 
   frontend:
     build:

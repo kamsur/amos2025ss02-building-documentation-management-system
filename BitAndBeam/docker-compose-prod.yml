@@ -5,7 +5,7 @@ services:
     image: ghcr.io/amosproj/bitandbeam-backend:latest
     restart: always
     ports:
-      - "5000:5000"
+      - "5000:5000"  # Exposed to internet
     depends_on:
       postgres:
         condition: service_healthy
@@ -26,25 +26,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    command: ["dotnet", "Build.ING.dll"]
+    command: ["dotnet", "BitAndBeam.dll"]
+    networks:
+      - web
+      - internal
 
   frontend:
     image: ghcr.io/amosproj/bitandbeam-frontend:latest
     restart: always
-    depends_on:
-      - backend
     environment:
       - API_URL=http://amos.b-iq.net:5000
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "80:80"
+      - "80:80"  # Exposed to internet
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - web
+      - internal
 
   ollama:
     build:
@@ -54,21 +58,22 @@ services:
     container_name: ollama
     restart: always
     ports:
-      - "11434:11434"  # Ollama internal API
-      - "8000:8000"
+      - "11434:11434"  # External API
+      - "8000:8000"    # Also external
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/ || echo 'ok'"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 60s
+    networks:
+      - web
+      - internal
 
   postgres:
     image: postgres:17
     container_name: bitandbeam_postgres
     restart: always
-    ports:
-      - "5432:5432"
     volumes:
       - .:/app
       - pgdata:/var/lib/postgresql/data
@@ -82,12 +87,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    expose:
+      - "5432"  # Only exposed internally
+    networks:
+      - internal
 
   tika:
     build:
       context: ./tika
       dockerfile: Dockerfile
-    #image: apache/tika
     container_name: bitandbeam_tika
     restart: always
     healthcheck:
@@ -95,10 +103,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - internal
     expose:
       - "9998"
+    networks:
+      - internal
 
 volumes:
   documentdata:
