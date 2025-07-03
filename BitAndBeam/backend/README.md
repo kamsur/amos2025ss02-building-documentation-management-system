@@ -1,4 +1,4 @@
-# BUILD.ING
+# BitAndBeam
 
 This project provides a starter template for an ASP.NET Core Web API with built-in support for:
 
@@ -23,7 +23,7 @@ Before you begin, ensure you have the following installed:
 1. Clone the repository:
 ```bash
 git clone https://github.com/amosproj/amos2025ss02-building-documentation-management-system.git
-cd BitAndBeam/backend/BUILD.ING
+cd BitAndBeam/backend/src
 ```
 
 2. Trust the development HTTPS certificate (only needed once per machine):

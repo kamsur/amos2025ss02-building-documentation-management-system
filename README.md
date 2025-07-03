@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="team-logo.png" alt="Bit&Beam Logo" width="250">
+  <img src="Deliverables/sprint-01/team-logo.png" alt="Bit&Beam Logo" width="250">
 
 # Bit&Beam
 
@@ -50,7 +50,7 @@ Bit&Beam is an intelligent document management system designed specifically for 
 /BitAndBeam
 │
 ├── backend/                # ASP.NET Core API (C#)
-│   ├── BUILD.ING/          # Main backend source code and migrations
+│   ├── src/          # Main backend source code and migrations
 │   └── Dockerfile
 │
 ├── frontend/               # Angular app (TypeScript)
