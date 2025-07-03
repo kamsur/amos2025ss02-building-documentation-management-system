@@ -105,7 +105,7 @@
 #             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
 #             # Stop running stack
-#             docker compose -f docker-compose-prod.yml down
+#             docker compose -f docker-compose-prod.yml stop frontend backend postgres tika openapi-client || true
 
 #             # --- uncomment to reset DB volume ---
 #             echo "Dropping Postgres volume to force schema reinitialization..."
