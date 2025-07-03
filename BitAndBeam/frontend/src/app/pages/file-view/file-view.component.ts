@@ -300,6 +300,15 @@ export class FileViewComponent {
         this.loading = false;
       });
   }
+  onCategoryChange(): void {
+    const selected = this.categories.find(c => c.name === this.selectedCategoryName);
+    if (selected && Array.isArray(selected.fields)) {
+      this.keyInformation = selected.fields.map(field => ({
+        label: field.name,
+        value: ''
+      }));
+    }
+  }
 
   toggleMetadataPanel(): void {
     this.isMetadataPanelCollapsed = !this.isMetadataPanelCollapsed;
