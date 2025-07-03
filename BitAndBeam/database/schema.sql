@@ -1,4 +1,4 @@
--- PostgreSQL Database Schema for BUILD.ING Document Management System
+-- PostgreSQL Database Schema for BitAndBeam Document Management System
 
 -- Users Table
 CREATE TABLE "users" (
