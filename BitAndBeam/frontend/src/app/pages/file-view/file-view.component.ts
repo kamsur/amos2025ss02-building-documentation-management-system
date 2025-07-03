@@ -184,10 +184,10 @@ export class FileViewComponent {
         //safely fallback if address is missing
         if (!this.keyInfo.suggestedAddress) {
           this.keyInfo.suggestedAddress = {
-            street: 'N/A',
-            house_number: 'N/A',
-            zip_code: 'N/A',
-            city: 'N/A'
+            street: '',
+            house_number: '',
+            zip_code: '',
+            city: ''
           };
         }
         this.loadingKeyInfo = false;
