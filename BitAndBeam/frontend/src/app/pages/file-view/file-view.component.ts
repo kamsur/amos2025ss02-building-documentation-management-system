@@ -238,6 +238,18 @@ export class FileViewComponent {
     this.loading = true;
     this.toastMessage = '';
 
+    // 🟡 AUTO-GENERATE blank key info if none is loaded but category is selected
+    if ((!this.keyInformation || this.keyInformation.length === 0) &&
+        this.selectedCategoryName && this.categories.length > 0) {
+      const match = this.categories.find(c => c.name === this.selectedCategoryName);
+      if (match && Array.isArray(match.fields) && match.fields.length > 0) {
+        this.keyInformation = match.fields.map(f => ({
+          label: f.name,   // assumes each field object has a 'name'
+          value: ''        // user can edit this later
+        }));
+      }
+    }
+
     const patchRequest: DocumentMetadataPatchRequest & {
       suggestedAddress?: any,
       keyInformation?: any
