@@ -190,6 +190,22 @@ export class FileViewComponent {
             city: ''
           };
         }
+        // ✅ If no keyInformation found but category is selected, generate empty key fields
+        if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
+            this.selectedCategoryName && this.categories.length > 0) {
+          const match = this.categories.find(c => c.name === this.selectedCategoryName);
+          if (match && Array.isArray(match.fields)) {
+            this.keyInformation = match.fields.map(f => ({
+              label: f.name,
+              value: ''
+            }));
+          }
+        } else {
+          this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
+            label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            value: value !== null ? String(value) : 'N/A'
+          }));
+        }
         this.loadingKeyInfo = false;
       },
       error: (err) => {
