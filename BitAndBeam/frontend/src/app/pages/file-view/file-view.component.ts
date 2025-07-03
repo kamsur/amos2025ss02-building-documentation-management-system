@@ -192,25 +192,7 @@ export class FileViewComponent {
 
   downloadFile(): void {
     if (!this.selectedFile?.id) return;
-
-    const token = this.session.getToken();
-    const url = `${this.config.apiUrl}/api/Documents/${this.selectedFile.id}/download`;
-
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`
-    });
-
-    this.http.get(url, { headers, responseType: 'blob' }).subscribe({
-      next: blob => {
-        const downloadLink = document.createElement('a');
-        const objectUrl = URL.createObjectURL(blob);
-        downloadLink.href = objectUrl;
-        downloadLink.download = this.selectedFile?.name || 'document.pdf';
-        downloadLink.click();
-        URL.revokeObjectURL(objectUrl);
-      },
-      error: err => console.error('❌ Download failed:', err)
-    });
+    this.buildingService.downloadDocument(this.selectedFile.id, this.selectedFile.name);
   }
 
   deleteFile(): void {
