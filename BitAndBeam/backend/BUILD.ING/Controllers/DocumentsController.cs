@@ -902,6 +902,9 @@ namespace BUILD.ING.Controllers
             {
                 document.BuildingId = null;
             }
+            if (request.KeyInformation != null)
+                document.KeyInformation = JsonDocument.Parse(JsonSerializer.Serialize(request.KeyInformation));
+
 
             _context.SaveChanges();
             // No longer reload navigation properties for Category or Building
