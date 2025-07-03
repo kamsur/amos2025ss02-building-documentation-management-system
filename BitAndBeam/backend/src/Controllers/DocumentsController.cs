@@ -1024,6 +1024,7 @@ namespace BitAndBeam.Controllers
             - Every value must be a JSON string or `null`.
             - Output MUST be valid JSON that parses with 'JSON.parse()'.
             - Do not include extra keys or comments.
+            - Do not create new information
 
             **Example Output**:
             {
