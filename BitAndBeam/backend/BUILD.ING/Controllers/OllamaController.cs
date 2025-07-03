@@ -48,8 +48,10 @@ namespace BUILD.ING.Controllers
 
             var payload = new
             {
-                prompt = request.Prompt
-                // context can be added here if needed in the future
+                model = "gemma3:1b", // Replace with your default model if needed
+                prompt = request.Prompt,
+                stream = false
+                // Add 'context' if you want to pass it
             };
 
             var json = JsonSerializer.Serialize(payload);
@@ -57,7 +59,7 @@ namespace BUILD.ING.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsync("http://ollama:8000/api/Ollama/ask", httpContent).ConfigureAwait(false);
+                var response = await _httpClient.PostAsync("http://ollama:11434/api/generate", httpContent).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

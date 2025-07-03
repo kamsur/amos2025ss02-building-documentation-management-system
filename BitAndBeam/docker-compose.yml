@@ -1,17 +1,22 @@
 services:
   ollama:
-    build:
-      context: ./ollama
-      dockerfile: Dockerfile
-    container_name: ollama
+    image: ollama/ollama:latest
     ports:
-      - "11434:11434"   # Ollama internal API
-      - "8000:8000"    # FastAPI external endpoint
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_MODEL=gemma3:1b     # <--- Bas yahan se change karna hai
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "ollama serve & sleep 8 && ollama pull $OLLAMA_MODEL && wait"
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # or some endpoint that signals Ollama is ready
-      interval: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 20s
       timeout: 5s
-      retries: 5
+      retries: 3
+      start_period: 20s
 
   backend:
     build:
@@ -89,5 +94,6 @@ services:
       retries: 5
 
 volumes:
+  ollama_data:
   documentdata:
   pgdata:
