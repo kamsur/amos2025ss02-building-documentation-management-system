@@ -403,14 +403,14 @@ namespace BitAndBeam.Controllers
             // Extract OCR text from HTML if applicable
             if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
             {
-                textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
+                // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
+                 var cleanedText = ProcessOcrOutput(textForOllama);
             }
 
             // Clean the extracted text
             // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
-            var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
-            // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
-            var shortText = ProcessOcrOutput(textForOllama);
+            // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
+            var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = BuildPrompt(shortText, categoriesSchemaJson);
