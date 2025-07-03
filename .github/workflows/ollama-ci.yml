@@ -67,7 +67,7 @@ jobs:
           strip_components: 1
 
       - name: Wait before next upload
-        run: sleep 20
+        run: sleep 61
 
       - name: Upload docker-compose-prod.yml to server
         uses: appleboy/scp-action@v0.1.4
