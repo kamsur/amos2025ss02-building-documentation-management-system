@@ -175,7 +175,7 @@
   position: sticky;
   bottom: 0;
   background-color: var(--bg-secondary);
-  padding: 1rem 0;
+  padding: 1rem 0 3rem;
   z-index: 10;
 }
 
