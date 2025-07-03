@@ -410,64 +410,10 @@ namespace BitAndBeam.Controllers
             // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
-            var shortText = cleanedText;
+            var shortText = ProcessOcrOutput(textForOllama);
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
-            var prompt = $$"""
-            You are an intelligent document analyzer.
-
-            \nGiven the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
-            
-            \nYour answer MUST include the following top-level fields: "address", "category", and "key_information".
-
-            \n**Example format:**\n
-            {
-                "address":
-                {
-                    "street":"<string|null>",
-                    "house_number":"<string|null>",
-                    "zip_code":"<string|null>",
-                    "city":"<string|null>"
-                },
-                "category":"Energy Consumption Reports",
-                "key_information":
-                {
-                    "report_period":"<string|null>",
-                    "total_energy_kwh":"<string|null>",
-                    "energy_source":"<string|null>",
-                    "benchmark":"<string|null>",
-                    "author":"<string|null>",
-                    "issue_date":"<string|null>"
-                }
-            }
-
-            \n**TASK A** → Extract an **address** if present.\n  
-            Look for labels like: 
-            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
-            "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
-            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
-
-            \n**TASK B** → Choose the SINGLE best-matching **category** from "categories_schema"\n  
-            (use null if none fits)
-
-            \n**TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".\n  
-            For every field in the selected category's 'fields' array:
-            • Use the field's **name** as the JSON key.  
-            • Try to extract the corresponding value from the document; if not found, set it to null.  
-            • Only include the fields declared for that category — no extra keys.
-
-            \n**Rules**\n
-            • Every value must be a JSON string or null — no units, no comments.  
-            • Output MUST be valid JSON that parses with 'JSON.parse()'.  
-            • If any field cannot be detected, output it with a null value.  
-            • Do **not** wrap the answer in markdown or code fences.
-
-            \n**categories_schema**:\n
-            {{categoriesSchemaJson}}
-
-            \n**Extracted Text**:\n
-            {{shortText}}
-            """;
+            var prompt = BuildPrompt(shortText, categoriesSchemaJson);
 
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
@@ -1058,6 +1004,67 @@ namespace BitAndBeam.Controllers
         //     public string? Description { get; set; }
         //     public List<Dictionary<string, string>>? Fields { get; set; }
         // }
+
+        private string BuildPrompt(string extractedText, string categoriesSchemaJson)
+        {
+            return $$"""
+            You are an intelligent document analyzer.
+
+            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            1. **Address**: Extract the address if present. Look for labels like:
+               - "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Postanschrift".
+               - Field names such as "Straße", "Haus-Nr.", "PLZ", "Ort".
+
+            2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema". If no category fits, return `null`.
+
+            3. **Key Information**: For the selected category, extract the fields defined in its 'fields' array. Use the field's **name** as the JSON key. If a value cannot be found, set it to `null`.
+
+            **Rules**:
+            - Every value must be a JSON string or `null`.
+            - Output MUST be valid JSON that parses with 'JSON.parse()'.
+            - Do not include extra keys or comments.
+
+            **Example Output**:
+            {
+                "address": {
+                    "street": "Musterstraße",
+                    "house_number": "123",
+                    "zip_code": "12345",
+                    "city": "Berlin"
+                },
+                "category": "Energy Consumption Reports",
+                "key_information": {
+                    "report_period": "2023",
+                    "total_energy_kwh": "5000",
+                    "energy_source": "Solar",
+                    "benchmark": "A+",
+                    "author": "John Doe",
+                    "issue_date": "2023-01-01"
+                }
+            }
+
+            **categories_schema**:
+            {categoriesSchemaJson}
+
+            **Extracted Text**:
+            {extractedText}
+            """;
+        }
+
+        private string ProcessOcrOutput(string ocrHtml)
+        {
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            doc.LoadHtml(ocrHtml);
+
+            var ocrText = doc.DocumentNode
+                .SelectNodes("//div[@class='ocr']")
+                ?.Select(node => node.InnerText.Trim())
+                .Where(text => !string.IsNullOrWhiteSpace(text))
+                .Aggregate((current, next) => current + " " + next);
+
+            return ocrText ?? ocrHtml.Trim();
+        }
     }
 }
 
