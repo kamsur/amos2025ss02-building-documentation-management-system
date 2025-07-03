@@ -14,9 +14,9 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'BUILD.ING' title`, () => {
+  it(`should have the 'BitAndBeam' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('BUILD.ING');
+    expect(app.title).toEqual('BitAndBeam');
   });
 });
