@@ -204,6 +204,11 @@
   padding-top: 1rem;
 }
 
+.metadata-content h4 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .edit-btn {
   background-color: #45c3b8;
   color: white;
