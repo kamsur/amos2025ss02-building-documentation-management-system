@@ -263,6 +263,7 @@ export class FileViewComponent {
       ]))
     };
 
+    console.log('📦 Patch request payload:', patchRequest);
     const documentsApi = this.apiFactory.create(DocumentsApi);
     documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
       .then(() => {
