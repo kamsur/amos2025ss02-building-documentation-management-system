@@ -53,7 +53,6 @@
               </svg>
             </button>
           </div>
-
           <div class="metadata-content">
             <div class="metadata-item">
               <label for="building-select"><strong>Building:</strong></label>
@@ -79,11 +78,10 @@
               </table>
             </div>
             <div class="ollama-info" *ngIf="keyInfo">
-              <h3>🤖 AI-Extracted Information (Ollama)</h3>
-
+              <h3>Extracted Information</h3>
               <!-- A. Suggested Address -->
               <div *ngIf="keyInfo.suggestedAddress">
-                <h4> Suggested Address</h4>
+                <h4>Suggested Address</h4>
                 <ul>
                   <li><strong>Street:</strong> {{ keyInfo.suggestedAddress.street || 'N/A' }}</li>
                   <li><strong>House Number:</strong> {{ keyInfo.suggestedAddress.house_number || 'N/A' }}</li>
