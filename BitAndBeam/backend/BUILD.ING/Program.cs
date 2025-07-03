@@ -145,9 +145,10 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 */
 
-// Add health check service
+// Add health check services for both Tika and Ollama
 builder.Services.AddHealthChecks()
-    .AddCheck<BUILD.ING.HealthChecks.TikaHealthCheck>("tika_health_check", tags: new[] { "tika", "ready" });
+    .AddCheck<BUILD.ING.HealthChecks.TikaHealthCheck>("tika_health_check", tags: new[] { "tika", "ready" })
+    .AddCheck<BUILD.ING.HealthChecks.OllamaHealthCheck>("ollama_health_check", tags: new[] { "ollama", "ready" });
 
 // Register HttpClient for TikaService with extended timeout (5 minutes)
 builder.Services.AddHttpClient<BUILD.ING.Services.TikaService>(client =>
@@ -156,11 +157,12 @@ builder.Services.AddHttpClient<BUILD.ING.Services.TikaService>(client =>
 });
 
 // Register HttpClient for OllamaService with extended timeout (5 minutes)
-builder.Services.AddHttpClient("Ollama", client =>
+builder.Services.AddHttpClient<BUILD.ING.Services.OllamaService>(client =>
 {
-    client.BaseAddress = new Uri("http://ollama:8000/");
+    client.BaseAddress = new Uri("http://ollama:11434/");
     client.Timeout = TimeSpan.FromMinutes(5);
 });
+
 
 // ---------- JWT AUTHENTICATION CONFIGURATION ----------
 // Configure JWT Bearer Authentication to secure the API endpoints
