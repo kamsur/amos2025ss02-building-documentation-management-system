@@ -57,7 +57,7 @@ namespace BitAndBeam.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsync("http://ollama:8000/api/Ollama/ask", httpContent).ConfigureAwait(false);
+                var response = await _httpClient.PostAsync("http://amos.b-iq.net:8000/api/Ollama/ask", httpContent).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

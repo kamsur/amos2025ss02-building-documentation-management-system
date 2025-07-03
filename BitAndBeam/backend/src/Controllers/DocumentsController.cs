@@ -470,7 +470,7 @@ namespace BitAndBeam.Controllers
                 var client = httpClientFactory.CreateClient("Ollama");
                 var payload = JsonSerializer.Serialize(new { prompt });
                 var resp = await client.PostAsync(
-                                "http://ollama:8000/api/Ollama/ask",
+                                "http://amos.b-iq.net:8000/api/Ollama/ask",
                                 new StringContent(payload, Encoding.UTF8, "application/json"))
                                         .ConfigureAwait(false);
 
