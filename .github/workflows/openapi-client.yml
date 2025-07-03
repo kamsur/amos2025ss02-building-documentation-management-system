@@ -13,11 +13,11 @@ on:
     paths:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
-  workflow_call:
-    outputs:
-      sdk_updated:
-        description: "Whether the SDK was updated"
-        value: ${{ jobs.generate-client.outputs.sdk_updated }}
+  # workflow_call:
+  #   outputs:
+  #     sdk_updated:
+  #       description: "Whether the SDK was updated"
+  #       value: ${{ jobs.generate-client.outputs.sdk_updated }}
 
 jobs:
   generate-client:

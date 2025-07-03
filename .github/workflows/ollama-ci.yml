@@ -8,6 +8,11 @@ on:
     paths:
       - 'BitAndBeam/ollama/**'
       - '.github/workflows/ollama-ci.yml'
+  workflow_call:
+    outputs:
+      ollama_built:
+        description: "Whether the Ollama image was built and pushed"
+        value: ${{ jobs.build-and-deploy-ollama.result }}
 
 jobs:
   build-and-deploy-ollama:
