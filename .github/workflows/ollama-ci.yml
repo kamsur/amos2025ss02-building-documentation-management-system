@@ -56,23 +56,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Upload ollama folder to server
+      - name: Upload ollama folder and docker-compose-prod.yml to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "BitAndBeam/ollama/"
-          target: "~/BitAndBeam/ollama"
-          strip_components: 1
-
-      - name: Upload docker-compose-prod.yml to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "BitAndBeam/docker-compose-prod.yml"
+          source: |
+            BitAndBeam/ollama/
+            BitAndBeam/docker-compose-prod.yml
           target: "~/BitAndBeam/"
           strip_components: 1
 
