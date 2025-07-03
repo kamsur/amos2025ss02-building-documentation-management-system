@@ -109,7 +109,7 @@
                   <ul>
                     <li *ngFor="let item of keyInformation">
                       <strong>{{ item.label }}:</strong>
-                      <input type="text" [(ngModel)]="item.value" />
+                      <input type="text" [(ngModel)]="item.value" (ngModelChange)="hasChanges = true"/>
                     </li>
                   </ul>
                 </ng-container>
