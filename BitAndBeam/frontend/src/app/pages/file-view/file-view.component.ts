@@ -267,16 +267,13 @@ export class FileViewComponent {
     }
 
     const patchRequest: DocumentMetadataPatchRequest & {
-      suggestedAddress?: any,
-      keyInformation?: any
+      keyInformation?: any;
     } = {
       buildingId: this.selectedBuildingId,
       categoryName: this.selectedCategoryName ?? undefined,
-      suggestedAddress: this.keyInfo?.suggestedAddress,
-      keyInformation: Object.fromEntries(this.keyInformation.map(k => [
-        k.label.toLowerCase().replace(/ /g, '_'),
-        k.value
-      ]))
+      keyInformation: Object.fromEntries(
+        this.keyInformation.map(k => [k.label.toLowerCase().replace(/ /g, '_'), k.value])
+      )
     };
 
     console.log('📦 Patch request payload:', patchRequest);
