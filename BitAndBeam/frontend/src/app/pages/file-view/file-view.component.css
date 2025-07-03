@@ -173,10 +173,10 @@
 }
 
 .meta-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
+  position: sticky;
+  bottom: 0;
+  background-color: var(--bg-secondary);
+  padding: 1rem 0;
 }
 
 .meta-actions button {
