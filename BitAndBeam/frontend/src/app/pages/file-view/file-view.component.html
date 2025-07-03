@@ -63,7 +63,7 @@
             </div>
             <div class="metadata-item">
               <label for="category-select"><strong>Category:</strong></label>
-              <select id="category-select" [(ngModel)]="selectedCategoryName">
+              <select id="category-select" [(ngModel)]="selectedCategoryName" (change)="onCategoryChange()">
                 <option [ngValue]="null">No Category</option>
                 <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
               </select>
