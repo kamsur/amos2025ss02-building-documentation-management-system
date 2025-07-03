@@ -400,6 +400,13 @@ namespace BitAndBeam.Controllers
             }
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
+            // Extract OCR text from HTML if applicable
+            if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
+            {
+                textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
+            }
+
+            // Clean the extracted text
             // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
@@ -610,7 +617,7 @@ namespace BitAndBeam.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int)file.Length,
+                FileSize = (int) file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -1054,35 +1061,66 @@ namespace BitAndBeam.Controllers
     }
 }
 
-    public static class OcrTextPreprocessor
+public static class OcrTextPreprocessor
+{
+    public static string Preprocess(string ocrText)
     {
-        public static string Preprocess(string ocrText)
-        {
-            if (string.IsNullOrWhiteSpace(ocrText))
-                return string.Empty;
+        if (string.IsNullOrWhiteSpace(ocrText))
+            return string.Empty;
 
-            // Remove non-printable characters
-            var cleaned = new string(ocrText.Where(c => !char.IsControl(c) || c == '\n' || c == '\r').ToArray());
+        // Remove non-printable characters
+        var cleaned = new string(ocrText.Where(c => !char.IsControl(c) || c == '\n' || c == '\r').ToArray());
 
-            // Normalize line endings
-            cleaned = cleaned.Replace("\r\n", "\n").Replace('\r', '\n');
+        // Normalize line endings
+        cleaned = cleaned.Replace("\r\n", "\n").Replace('\r', '\n');
 
-            // Remove excessive line breaks (more than 2 in a row)
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\n{3,}", "\n\n");
+        // Remove excessive line breaks (more than 2 in a row)
+        cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\n{3,}", "\n\n");
 
-            // Remove excessive spaces
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"[ \t]{2,}", " ");
+        // Remove excessive spaces
+        cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"[ \t]{2,}", " ");
 
-            // Trim each line
-            cleaned = string.Join("\n", cleaned.Split('\n').Select(line => line.Trim()));
+        // Trim each line
+        cleaned = string.Join("\n", cleaned.Split('\n').Select(line => line.Trim()));
 
-            // Optionally, remove lines that are too short or likely to be noise
-            cleaned = string.Join("\n", cleaned
-                .Split('\n')
-                .Where(line => line.Length > 2 || string.IsNullOrWhiteSpace(line)));
+        // Optionally, remove lines that are too short or likely to be noise
+        cleaned = string.Join("\n", cleaned
+            .Split('\n')
+            .Where(line => line.Length > 2 || string.IsNullOrWhiteSpace(line)));
 
-            return cleaned.Trim();
-        }
+        return cleaned.Trim();
     }
+}
+
+public static class OcrHtmlExtractor
+{
+    public static string ExtractOcrText(string htmlContent)
+    {
+        if (string.IsNullOrWhiteSpace(htmlContent))
+            return string.Empty;
+
+        var extractedText = new StringBuilder();
+
+        var matches = System.Text.RegularExpressions.Regex.Matches(
+            htmlContent,
+            "<div class=\\\"ocr\\\">(.*?)</div>",
+            System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            if (match.Groups.Count > 1)
+            {
+                var innerText = System.Text.RegularExpressions.Regex.Replace(
+                    match.Groups[1].Value,
+                    "<.*?>", // Remove any nested HTML tags
+                    string.Empty);
+
+                extractedText.AppendLine(innerText.Trim());
+            }
+        }
+
+        return extractedText.ToString().Trim();
+    }
+}
 
 
