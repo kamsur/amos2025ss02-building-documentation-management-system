@@ -16,5 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV OLLAMA_HOST=0.0.0.0:8000
 
 # Start Ollama + FastAPI server
-CMD ["sh", "-c", "ollama serve & sleep 8 && ollama pull gemma3:1b && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "ollama serve & sleep 8 && ollama pull gemma3:1b && uvicorn main:app --host 0.0.0.0 --port 8001"]
 
