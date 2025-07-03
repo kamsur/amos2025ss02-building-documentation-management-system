@@ -206,6 +206,10 @@ export class FileViewComponent {
             value: value !== null ? String(value) : 'N/A'
           }));
         }
+        if (!this.keyInformation.length && this.selectedCategoryName) {
+          this.onCategoryChange();
+        }
+
         this.loadingKeyInfo = false;
       },
       error: (err) => {
