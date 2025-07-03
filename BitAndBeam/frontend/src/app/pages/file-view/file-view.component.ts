@@ -285,6 +285,7 @@ export class FileViewComponent {
 
         // ✅ After save, reload document to update UI
         this.loadDocument(this.selectedFile!.id);
+        this.fetchKeyInfo(this.selectedFile!.id);
 
         setTimeout(() => this.toastMessage = '', 4000);
       })
