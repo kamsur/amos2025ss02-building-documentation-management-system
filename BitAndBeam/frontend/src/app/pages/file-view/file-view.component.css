@@ -177,6 +177,7 @@
   bottom: 0;
   background-color: var(--bg-secondary);
   padding: 1rem 0;
+  z-index: 10;
 }
 
 .meta-actions button {
