@@ -1130,24 +1130,48 @@ namespace BitAndBeam.Controllers
                     return NotFound(new { error = $"Document file not found on server." });
                 }
             
-            // Get the document text content
+            // Extract document content from file
+            string fullPath = document.FilePath;
             string documentContent;
             try
             {
-                byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
-                documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName);
+                _logger.LogInformation("📄 Attempting to read file at path: {FilePath} for document {DocumentId}", fullPath, documentId);
                 
-                // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
-                if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
+                // Check if file exists before attempting to read
+                if (!System.IO.File.Exists(fullPath))
                 {
-                    _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
-                    documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true);
+                    _logger.LogError("❌ File not found at path: {FilePath} for document {DocumentId}", fullPath, documentId);
+                    return BadRequest(new { error = $"Document file not found at {fullPath}." });
+                }
+                
+                try
+                {
+                    byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
+                    _logger.LogInformation("📊 Successfully read {ByteCount} bytes from file for document {DocumentId}", fileBytes.Length, documentId);
+                    
+                    // Document file read successfully, now attempt extraction
+                    documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName);
+                    _logger.LogInformation("📝 Text extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+                    
+                    // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
+                    if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
+                    {
+                        _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
+                        documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true);
+                        _logger.LogInformation("📝 OCR extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+                    }
+                }
+                catch (IOException ioEx)
+                {
+                    _logger.LogError(ioEx, "❌ IO error reading file: {FilePath} for document {DocumentId}", fullPath, documentId);
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"Error reading document file: {ioEx.Message}" });
                 }
                 
                 if (string.IsNullOrWhiteSpace(documentContent))
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
                 }
+                
             }
             catch (Exception ex)
             {
@@ -1215,8 +1239,8 @@ Please provide a concise and accurate answer based solely on the document conten
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}", documentId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An unexpected error occurred." });
+                _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}: {ErrorMessage}", documentId, ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"An unexpected error occurred: {ex.Message}" });
             }
         }
     }
