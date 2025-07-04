@@ -1019,7 +1019,7 @@ namespace BitAndBeam.Controllers
 
             2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema". If no category fits, return `null`.
 
-            3. **Key Information**: For the selected category, extract the fields defined in its 'fields' array in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. The values in **Extracted Text** can be different from given **Example Output**. If a value cannot be found, set it to `null`.
+            3. **Key Information**: From **Extracted Text**, extract only the fields defined in the 'fields' array of the selected category, in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. The values in **Extracted Text** can be different from given **Example Output**. If a value cannot be found, set it to `null`.
 
             **Rules**:
             - Every value must be a JSON string or `null`.
