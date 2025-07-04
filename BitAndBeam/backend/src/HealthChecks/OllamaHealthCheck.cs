@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using BUILD.ING.Services; // Make sure this namespace has your OllamaService
+using BitAndBeam.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 
-namespace BUILD.ING.HealthChecks
+namespace BitAndBeam.HealthChecks
 {
     public class OllamaHealthCheck : IHealthCheck
     {
