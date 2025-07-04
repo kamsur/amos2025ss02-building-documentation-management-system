@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace BitAndBeam.Controllers
 {
 [ApiController]
