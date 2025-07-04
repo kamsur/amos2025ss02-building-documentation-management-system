@@ -401,11 +401,11 @@ namespace BitAndBeam.Controllers
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
             // Extract OCR text from HTML if applicable
-            if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
-            {
-                // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
-                textForOllama = ProcessOcrOutput(textForOllama);
-            }
+            // if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
+            // {
+            //     // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
+            //     textForOllama = ProcessOcrOutput(textForOllama);
+            // }
 
             // Clean the extracted text
             var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
@@ -1034,14 +1034,20 @@ namespace BitAndBeam.Controllers
                     "zip_code": "12345",
                     "city": "Berlin"
                 },
-                "category": "Energy Consumption Reports",
+                "category": "Energieausweis",
                 "key_information": {
-                    "report_period": "2023",
-                    "total_energy_kwh": "5000",
-                    "energy_source": "Solar",
-                    "benchmark": "A+",
-                    "author": "John Doe",
-                    "issue_date": "2023-01-01"
+                    "Art des Ausweises": "Bedarfsausweis",
+                    "Ausstellungsdatum": "2023-01-01",
+                    "Gültigkeit (Ablaufdatum)": "2033-01-01",
+                    "Registriernummer des Ausweises": "DE-123456789",
+                    "Gebäudetyp": "Wohngebäude",
+                    "Adresse": "Musterstraße 123, 12345 Berlin",
+                    "Baujahr Gebäude": "1990",
+                    "Gebäudenutzfläche": "150",
+                    "Wesentliche Energieträger für Heizung": "Gas",
+                    "Treibhausgasemissionen": "20",
+                    "Endenergiebedarf": "120",
+                    "Primärenergiebedarf Ist-Wert": "140"
                 }
             }
 
