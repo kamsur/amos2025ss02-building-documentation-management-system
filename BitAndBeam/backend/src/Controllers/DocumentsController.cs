@@ -1100,20 +1100,20 @@ namespace BitAndBeam.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> AskDocumentChatbot(int documentId, [FromBody] DocumentChatbotRequest request, [FromServices] IHttpClientFactory httpClientFactory)
         {
-        // Validate the request
-        if (request == null || string.IsNullOrWhiteSpace(request.UserInput))
-        {
-            return BadRequest(new { error = "User input is required." });
-        }
-        
-        // Get the current user's organization ID
-        var orgId = GetCurrentUserOrganizationId();
-        
-        try
-        {
-            // Get the document from the database
-            var document = await _context.Documents
-                .FirstOrDefaultAsync(d => d.DocumentId == documentId && d.OrganizationId == orgId);
+            // Validate the request
+            if (request == null || string.IsNullOrWhiteSpace(request.UserInput))
+            {
+                return BadRequest(new { error = "User input is required." });
+            }
+            
+            // Get the current user's organization ID
+            var orgId = GetCurrentUserOrganizationId();
+            
+            try
+            {
+                // Get the document from the database
+                var document = await _context.Documents
+                    .FirstOrDefaultAsync(d => d.DocumentId == documentId && d.OrganizationId == orgId);
             
             // Check if the document exists
             if (document == null)
