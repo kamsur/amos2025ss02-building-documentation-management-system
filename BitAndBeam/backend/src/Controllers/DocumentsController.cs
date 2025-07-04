@@ -3,13 +3,13 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
 using BitAndBeam.Data;
 using BitAndBeam.Models;
 using BitAndBeam.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BitAndBeam.Controllers
@@ -1063,7 +1063,7 @@ namespace BitAndBeam.Controllers
         //     public string? Description { get; set; }
         //     public List<Dictionary<string, string>>? Fields { get; set; }
         // }
-        
+
         /// <summary>
         /// Request model for document chatbot queries
         /// </summary>
@@ -1074,7 +1074,7 @@ namespace BitAndBeam.Controllers
             /// </summary>
             public string UserInput { get; set; }
         }
-        
+
         /// <summary>
         /// Response model for document chatbot queries
         /// </summary>
@@ -1085,7 +1085,7 @@ namespace BitAndBeam.Controllers
             /// </summary>
             public string Response { get; set; }
         }
-    
+
         /// <summary>
         /// Query the chatbot about a specific document
         /// </summary>
@@ -1105,40 +1105,40 @@ namespace BitAndBeam.Controllers
             {
                 return BadRequest(new { error = "User input is required." });
             }
-            
+
             // Get the current user's organization ID
             var orgId = GetCurrentUserOrganizationId();
-            
+
             try
             {
                 // Get the document from the database
                 var document = await _context.Documents
-                    .FirstOrDefaultAsync(d => d.DocumentId == documentId && d.OrganizationId == orgId);
-                
+                    .FirstOrDefaultAsync(d => d.DocumentId == documentId && d.OrganizationId == orgId).ConfigureAwait(false);
+
                 // Check if the document exists
                 if (document == null)
                 {
                     return NotFound(new { error = $"Document with ID {documentId} not found." });
                 }
-                
+
                 // Get the document content
                 var uploadsPath = Path.Combine("/app/documents");
-                
+
                 // Check if directory exists and log results
                 bool directoryExists = Directory.Exists(uploadsPath);
                 _logger.LogInformation("📂 Documents directory exists: {DirectoryExists}, path: {UploadsPath}", directoryExists, uploadsPath);
-                
+
                 // Check if we have the FilePath from the database vs using filename
                 _logger.LogInformation("📃 Document record info - FilePath: {FilePath}, FileName: {FileName}", document.FilePath, document.FileName);
-                
+
                 // Try both potential paths
                 var fullPathUsingFileName = Path.Combine(uploadsPath, document.FileName);
                 var fullPathUsingFilePath = document.FilePath; // Use the stored FilePath directly
-                
+
                 _logger.LogInformation("📄 Checking file at paths:\n1) {Path1}\n2) {Path2}", fullPathUsingFileName, fullPathUsingFilePath);
-                
+
                 var fullPath = "";
-                
+
                 // Check which path exists
                 if (System.IO.File.Exists(fullPathUsingFileName))
                 {
@@ -1162,64 +1162,64 @@ namespace BitAndBeam.Controllers
                             _logger.LogInformation("📄 Found file: {FileName}", Path.GetFileName(file));
                         }
                     }
-                    
+
                     return NotFound(new { error = $"Document file not found on server. Checked paths:\n{fullPathUsingFileName}\n{fullPathUsingFilePath}" });
                 }
-            
-            // Extract document content from file
-            string documentContent;
-            try
-            {
-                _logger.LogInformation("📄 Attempting to read file at path: {FilePath} for document {DocumentId}", fullPath, documentId);
-                
-                // Check if file exists before attempting to read
-                if (!System.IO.File.Exists(fullPath))
-                {
-                    _logger.LogError("❌ File not found at path: {FilePath} for document {DocumentId}", fullPath, documentId);
-                    return BadRequest(new { error = $"Document file not found at {fullPath}." });
-                }
-                
+
+                // Extract document content from file
+                string documentContent;
                 try
                 {
-                    byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
-                    _logger.LogInformation("📊 Successfully read {ByteCount} bytes from file for document {DocumentId}", fileBytes.Length, documentId);
-                    
-                    // Document file read successfully, now attempt extraction
-                    documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName);
-                    _logger.LogInformation("📝 Text extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
-                    
-                    // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
-                    if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
+                    _logger.LogInformation("📄 Attempting to read file at path: {FilePath} for document {DocumentId}", fullPath, documentId);
+
+                    // Check if file exists before attempting to read
+                    if (!System.IO.File.Exists(fullPath))
                     {
-                        _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
-                        documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true);
-                        _logger.LogInformation("📝 OCR extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+                        _logger.LogError("❌ File not found at path: {FilePath} for document {DocumentId}", fullPath, documentId);
+                        return BadRequest(new { error = $"Document file not found at {fullPath}." });
                     }
+
+                    try
+                    {
+                        byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
+                        _logger.LogInformation("📊 Successfully read {ByteCount} bytes from file for document {DocumentId}", fileBytes.Length, documentId);
+
+                        // Document file read successfully, now attempt extraction
+                        documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName).ConfigureAwait(false);
+                        _logger.LogInformation("📝 Text extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+
+                        // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
+                        if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
+                        {
+                            _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
+                            documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true).ConfigureAwait(false);
+                            _logger.LogInformation("📝 OCR extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+                        }
+                    }
+                    catch (IOException ioEx)
+                    {
+                        _logger.LogError(ioEx, "❌ IO error reading file: {FilePath} for document {DocumentId}", fullPath, documentId);
+                        return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"Error reading document file: {ioEx.Message}" });
+                    }
+
+                    if (string.IsNullOrWhiteSpace(documentContent))
+                    {
+                        return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
+                    }
+
                 }
-                catch (IOException ioEx)
+                catch (Exception ex)
                 {
-                    _logger.LogError(ioEx, "❌ IO error reading file: {FilePath} for document {DocumentId}", fullPath, documentId);
-                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"Error reading document file: {ioEx.Message}" });
-                }
-                
-                if (string.IsNullOrWhiteSpace(documentContent))
-                {
+                    _logger.LogError(ex, "❌ Failed to extract text from document {DocumentId}", documentId);
                     return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
                 }
-                
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Failed to extract text from document {DocumentId}", documentId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
-            }
-            
+
                 // Truncate document content if too long
                 var maxContentLength = 8000; // Adjust based on model context window
-                var truncatedContent = documentContent.Length > maxContentLength 
-                    ? documentContent.Substring(0, maxContentLength) 
+                var truncatedContent = documentContent.Length > maxContentLength
+                    ? documentContent.Substring(0, maxContentLength)
                     : documentContent;
-                
+
                 // Construct the prompt for Ollama
                 var prompt = $@"You are a helpful assistant answering questions about document content. 
 Use ONLY the information from the document content provided below to answer the question. 
@@ -1232,40 +1232,40 @@ USER QUESTION:
 {request.UserInput}
 
 Please provide a concise and accurate answer based solely on the document content.";
-            
+
                 try
                 {
                     // Create HTTP client for Ollama
                     var client = httpClientFactory.CreateClient("Ollama");
-                    
+
                     // Prepare the request to Ollama
                     var payload = JsonSerializer.Serialize(new { prompt });
                     var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                    
+
                     // Send the request to Ollama
                     var response = await client.PostAsync(
                         "http://ollama:8000/api/Ollama/ask",
                         content).ConfigureAwait(false);
-                    
+
                     // Check if the request was successful
                     if (!response.IsSuccessStatusCode)
                     {
                         _logger.LogWarning("⚠️ Ollama service failed (status {Code})", response.StatusCode);
-                        return StatusCode((int)response.StatusCode, new { error = "Ollama service error" });
+                        return StatusCode((int) response.StatusCode, new { error = "Ollama service error" });
                     }
-                    
+
                     // Parse the response
                     var jsonStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
                         jsonStr,
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    
+
                     // Return the response
                     return Ok(new DocumentChatbotResponse
                     {
                         Response = ollamaResponse?.Response ?? "No response from the model"
                     });
-            }
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "❌ Error communicating with Ollama service for document {DocumentId}", documentId);
