@@ -900,9 +900,7 @@ Please provide a concise and accurate answer based solely on the document conten
                     var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
                     // Send the request to Ollama
-                    var response = await client.PostAsync(
-                        "http://ollama:8000/api/Ollama/ask",
-                        content).ConfigureAwait(false);
+                    var response = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
 
                     // Check if the request was successful
                     if (!response.IsSuccessStatusCode)
