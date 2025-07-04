@@ -902,6 +902,9 @@ namespace BitAndBeam.Controllers
             {
                 document.BuildingId = null;
             }
+            if (request.KeyInformation != null)
+                document.KeyInformation = JsonDocument.Parse(JsonSerializer.Serialize(request.KeyInformation));
+
 
             _context.SaveChanges();
             // No longer reload navigation properties for Category or Building
@@ -1032,6 +1035,16 @@ namespace BitAndBeam.Controllers
         {
             public string? CategoryName { get; set; }
             public int? BuildingId { get; set; }
+            public SuggestedAddress? SuggestedAddress { get; set; }
+            public Dictionary<string, string?>? KeyInformation { get; set; }
+        }
+
+        public class SuggestedAddress
+        {
+            public string? Street { get; set; }
+            public string? House_Number { get; set; }
+            public string? Zip_Code { get; set; }
+            public string? City { get; set; }
         }
 
         public class DocumentUpdateRequest
