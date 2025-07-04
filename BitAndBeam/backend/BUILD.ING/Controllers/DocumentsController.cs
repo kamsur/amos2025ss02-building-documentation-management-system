@@ -390,6 +390,7 @@ namespace BUILD.ING.Controllers
             Your answer MUST include the following top-level fields: "address", "category", and "key_information".
 
             **Example format:**
+
             {
                 "address": {
                     "street":"<string|null>",
@@ -422,15 +423,18 @@ namespace BUILD.ING.Controllers
             • Only include the fields declared for that category — no extra keys.
 
             **Rules**
+            
             • Every value must be a JSON string or null — no units, no comments.  
             • Output MUST be valid JSON that parses with 'JSON.parse()'.  
             • If any field cannot be detected, output it with a null value.  
             • Do **not** wrap the answer in markdown or code fences.
 
             **categories_schema**:
+
             {{categoriesSchemaJson}}
 
             **Extracted Text**:
+
             {{shortText}}
             """;
 
@@ -440,7 +444,7 @@ namespace BUILD.ING.Controllers
             Building? matchedBuilding = null;
             Dictionary<string, string?>? keyInformation = null;
 
-            // 4. Ollama call (YOUR SERVICE ONLY)
+            // 4. Ollama call
             try
             {
                 var ollamaRawResponse  = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
