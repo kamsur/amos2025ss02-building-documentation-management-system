@@ -1008,24 +1008,25 @@ namespace BitAndBeam.Controllers
         private string BuildPrompt(string extractedText, string categoriesSchemaJson)
         {
             return $$"""
-            You are an intelligent document analyzer.
+            You are an intelligent document analyzer for documents in German language, related to buildings.
 
-            Given the **Extracted Text** and a **categories_schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+            Given the "Extracted Text" and a "categories_schema" (including field definitions) from a German document, your task is to carefully analyze "Extracted Text" and extract the following information in a strict JSON format:
 
             1. **Address**: Extract the address if present. Look for labels like:
                - "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Postanschrift".
                - Field names such as "Straße", "Haus-Nr.", "PLZ", "Ort".
-               - The field values in **Extracted Text** can be different from given **Example Output**.
+               - The field values in "Extracted Text" can be different from "Example Output" given below.
 
-            2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema". If no category fits, return `null`.
+            2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema", that describes the document. If no category fits, return `null`.
 
-            3. **Key Information**: From **Extracted Text**, extract only the fields defined in the 'fields' array of the selected category, in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. The values in **Extracted Text** can be different from given **Example Output**. If a value cannot be found, set it to `null`.
+            3. **Key Information**: From the provided "Extracted Text", extract only the fields defined in the 'fields' array of the selected category, in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in "Extracted Text". The values in "Extracted Text" can be different from given "Example Output". If a value cannot be found, set it to `null`.
 
             **Rules**:
+            - Analyze the document step-by-step, first the address, then the category, and finally the key information.
             - Every value must be a JSON string or `null`.
             - Output MUST be valid JSON that parses with 'JSON.parse()'.
             - Do not include extra keys or comments.
-            - Do not create new information or modify the provided schema.
+            - Do not create information that is not present in "Extracted Text" and do not modify the "categories_schema" provided below.
 
             **Example Output**:
             {
