@@ -98,7 +98,7 @@ namespace BUILD.ING.Controllers
             }
 
             // 3. Build prompt
-            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            var shortText = textForOllama.Length > 2_000 ? textForOllama[..2_000] : textForOllama;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = $$"""
