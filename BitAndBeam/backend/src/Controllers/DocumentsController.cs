@@ -1123,11 +1123,47 @@ namespace BitAndBeam.Controllers
                 
                 // Get the document content
                 var uploadsPath = Path.Combine("/app/documents");
-                var fullPath = Path.Combine(uploadsPath, document.FileName);
                 
-                if (!System.IO.File.Exists(fullPath))
+                // Check if directory exists and log results
+                bool directoryExists = Directory.Exists(uploadsPath);
+                _logger.LogInformation("📂 Documents directory exists: {DirectoryExists}, path: {UploadsPath}", directoryExists, uploadsPath);
+                
+                // Check if we have the FilePath from the database vs using filename
+                _logger.LogInformation("📃 Document record info - FilePath: {FilePath}, FileName: {FileName}", document.FilePath, document.FileName);
+                
+                // Try both potential paths
+                var fullPathUsingFileName = Path.Combine(uploadsPath, document.FileName);
+                var fullPathUsingFilePath = document.FilePath; // Use the stored FilePath directly
+                
+                _logger.LogInformation("📄 Checking file at paths:\n1) {Path1}\n2) {Path2}", fullPathUsingFileName, fullPathUsingFilePath);
+                
+                var fullPath = "";
+                
+                // Check which path exists
+                if (System.IO.File.Exists(fullPathUsingFileName))
                 {
-                    return NotFound(new { error = $"Document file not found on server." });
+                    _logger.LogInformation("✅ File found using FileName at: {Path}", fullPathUsingFileName);
+                    fullPath = fullPathUsingFileName;
+                }
+                else if (System.IO.File.Exists(fullPathUsingFilePath))
+                {
+                    _logger.LogInformation("✅ File found using FilePath at: {Path}", fullPathUsingFilePath);
+                    fullPath = fullPathUsingFilePath;
+                }
+                else
+                {
+                    // Check parent directory contents to debug
+                    if (directoryExists)
+                    {
+                        var files = Directory.GetFiles(uploadsPath);
+                        _logger.LogInformation("📁 Files in upload directory: {FileCount}", files.Length);
+                        foreach (var file in files.Take(10)) // List up to 10 files
+                        {
+                            _logger.LogInformation("📄 Found file: {FileName}", Path.GetFileName(file));
+                        }
+                    }
+                    
+                    return NotFound(new { error = $"Document file not found on server. Checked paths:\n{fullPathUsingFileName}\n{fullPathUsingFilePath}" });
                 }
             
             // Extract document content from file
