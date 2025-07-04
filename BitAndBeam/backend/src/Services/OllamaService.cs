@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
-namespace BUILD.ING.Services
+namespace BitAndBeam.Services
 {
     public class OllamaService
     {
@@ -32,14 +32,14 @@ namespace BUILD.ING.Services
             var json = JsonSerializer.Serialize(payload);
             var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"{_ollamaBaseUrl}/api/generate", httpContent);
+            var response = await _httpClient.PostAsync($"{_ollamaBaseUrl}/api/generate", httpContent).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
 
         public async Task<bool> CheckHealthAsync()
         {
-            var response = await _httpClient.GetAsync($"{_ollamaBaseUrl}/api/tags");
+            var response = await _httpClient.GetAsync($"{_ollamaBaseUrl}/api/tags").ConfigureAwait(false);
             return response.IsSuccessStatusCode;
         }
     }
