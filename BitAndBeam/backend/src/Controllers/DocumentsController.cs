@@ -1131,7 +1131,6 @@ namespace BitAndBeam.Controllers
                 }
             
             // Extract document content from file
-            string fullPath = document.FilePath;
             string documentContent;
             try
             {
