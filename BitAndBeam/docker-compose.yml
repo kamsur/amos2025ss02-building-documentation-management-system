@@ -34,7 +34,7 @@ services:
     volumes:
       - documentdata:/app/documents
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/healthz" ]
       interval: 10s
       timeout: 5s
       retries: 5
