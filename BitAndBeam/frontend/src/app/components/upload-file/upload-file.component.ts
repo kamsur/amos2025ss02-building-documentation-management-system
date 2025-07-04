@@ -36,6 +36,9 @@ export class UploadFileComponent implements OnInit {
   // Metadata popup control
   showMetadataPopup = false;
 
+  //Holds full esponse including suggestedCategoryName
+  uploadedDocument:any | null = null;
+
   private documentsApi: DocumentsApi;
 
   constructor(private apiFactory: ApiClientFactory, private sidebarRefreshService: SidebarRefreshService) {
