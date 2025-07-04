@@ -11,20 +11,20 @@ namespace BitAndBeam.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _ollamaBaseUrl;
-        private readonly string _model;
+        // private readonly string _model;
 
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _ollamaBaseUrl = configuration["Ollama:BaseUrl"];
-            _model = configuration["Ollama:Model"];
+            // _model = configuration["Ollama:Model"];
         }
 
         public async Task<string> GenerateAsync(string prompt)
         {
             var payload = new
             {
-                model = _model,
+                // model = _model,
                 prompt = prompt,
                 stream = false
             };
