@@ -164,9 +164,9 @@ namespace BitAndBeam.Controllers
             // 4. Ollama call
             try
             {
-                var ollamaRawResponse  = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
-                _logger.LogInformation("OLLAMA response field:\n{0}", ollamaRawResponse );
-                
+                var ollamaRawResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
+                _logger.LogInformation("OLLAMA response field:\n{0}", ollamaRawResponse);
+
                 // Parse main response object
                 var ollamaJsonDoc = JsonDocument.Parse(ollamaRawResponse);
                 var ollamaRoot = ollamaJsonDoc.RootElement;
@@ -265,7 +265,7 @@ namespace BitAndBeam.Controllers
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int)file.Length,
+                FileSize = (int) file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
