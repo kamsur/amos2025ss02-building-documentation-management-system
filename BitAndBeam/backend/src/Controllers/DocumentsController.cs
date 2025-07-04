@@ -401,11 +401,11 @@ namespace BitAndBeam.Controllers
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
             // Extract OCR text from HTML if applicable
-            // if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
-            // {
-            //     // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
-            //     textForOllama = ProcessOcrOutput(textForOllama);
-            // }
+            if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
+            {
+                // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
+                textForOllama = ProcessOcrOutput(textForOllama);
+            }
 
             // Clean the extracted text
             var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
@@ -1010,16 +1010,16 @@ namespace BitAndBeam.Controllers
             return $$"""
             You are an intelligent document analyzer.
 
-            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+            Given the **Extracted Text** and a **categories_schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
 
             1. **Address**: Extract the address if present. Look for labels like:
                - "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Postanschrift".
                - Field names such as "Straße", "Haus-Nr.", "PLZ", "Ort".
-               - The field values can be different from given **Example Output**.
+               - The field values in **Extracted Text** can be different from given **Example Output**.
 
             2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema". If no category fits, return `null`.
 
-            3. **Key Information**: For the selected category, extract the fields defined in its 'fields' array in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in **extracted text**. The values can be different from given **Example Output**. If a value cannot be found, set it to `null`.
+            3. **Key Information**: For the selected category, extract the fields defined in its 'fields' array in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. The values in **Extracted Text** can be different from given **Example Output**. If a value cannot be found, set it to `null`.
 
             **Rules**:
             - Every value must be a JSON string or `null`.
