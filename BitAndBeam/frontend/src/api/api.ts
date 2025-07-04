@@ -2421,8 +2421,7 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2456,6 +2455,38 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiOllamaHealthGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/Ollama/health`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -2468,8 +2499,7 @@ export const OllamaApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2477,6 +2507,17 @@ export const OllamaApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiOllamaAskPost(ollamaRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['OllamaApi.apiOllamaAskPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiOllamaHealthGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiOllamaHealthGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['OllamaApi.apiOllamaHealthGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -2491,13 +2532,20 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: any): AxiosPromise<void> {
             return localVarFp.apiOllamaAskPost(ollamaRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiOllamaHealthGet(options?: any): AxiosPromise<void> {
+            return localVarFp.apiOllamaHealthGet(options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -2511,14 +2559,23 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
 export class OllamaApi extends BaseAPI {
     /**
      * 
-     * @summary Sends prompt to Ollama backend and returns response with metadata.
-     * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+     * @param {OllamaRequest} [ollamaRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OllamaApi
      */
     public apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: RawAxiosRequestConfig) {
         return OllamaApiFp(this.configuration).apiOllamaAskPost(ollamaRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof OllamaApi
+     */
+    public apiOllamaHealthGet(options?: RawAxiosRequestConfig) {
+        return OllamaApiFp(this.configuration).apiOllamaHealthGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 
