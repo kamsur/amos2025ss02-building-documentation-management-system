@@ -101,8 +101,8 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9998/version"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 12
 
 volumes:
   documentdata:
