@@ -1217,5 +1217,6 @@ Please provide a concise and accurate answer based solely on the document conten
                 _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}", documentId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An unexpected error occurred." });
             }
+        }
     }
 }
