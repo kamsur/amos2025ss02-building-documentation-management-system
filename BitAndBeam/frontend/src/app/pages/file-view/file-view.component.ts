@@ -191,9 +191,8 @@ export class FileViewComponent {
   }
 
   downloadFile(): void {
-    if (this.selectedFile?.id) {
-      this.buildingService.downloadDocument(this.selectedFile.id);
-    }
+    if (!this.selectedFile?.id) return;
+    this.buildingService.downloadDocument(this.selectedFile.id, this.selectedFile.name);
   }
 
   deleteFile(): void {

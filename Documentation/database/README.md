@@ -1,6 +1,6 @@
-# BUILD.ING Document Management System Database
+# BitAndBeam Document Management System Database
 
-This directory contains the database schema and documentation for the BUILD.ING Document Management System.
+This directory contains the database schema and documentation for the BitAndBeam Document Management System.
 
 ## Database Schema
 

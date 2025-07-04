@@ -1,6 +1,9 @@
+version: "3.8"
+
 services:
   backend:
     image: ghcr.io/amosproj/bitandbeam-backend:latest
+    restart: always
     ports:
       - "5000:5000"
     depends_on:
@@ -9,62 +12,91 @@ services:
       - tika
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - ASPNETCORE_URLS=http://+:5000
       - CORS__AllowedOrigins=http://amos.b-iq.net,https://amos.b-iq.net
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - Tika__ServerUrl=http://tika:9998
     volumes:
-      - documentdata:/app/documents
-
+      - documentdata:/app/documents:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - internal
+      - web
 
   frontend:
     image: ghcr.io/amosproj/bitandbeam-frontend:latest
     restart: always
-    environment:
-      - API_URL=http://amos.b-iq.net:5000
     depends_on:
       - backend
+    environment:
+      - API_URL=http://amos.b-iq.net:5000
     ports:
       - "80:80"
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollamadata:/root/.ollama
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    networks:
+      - web
 
   postgres:
     image: postgres:17
     container_name: bitandbeam_postgres
     restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=bitandbeam
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+      
+  ollama:
+    image: ghcr.io/amosproj/bitandbeam-ollama:latest
+    container_name: ollama
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ollamadata:/root/.ollama
     ports:
       - "11434:11434"
+    networks:
+      - internal
     expose:
       - "11434"
-    volumes:
-      - ollama_data:/root/.ollama
-
 
   tika:
     image: apache/tika
     container_name: bitandbeam_tika
     restart: always
-    ports:
-      - "9998:9998"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9998/version"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
+    expose:
+      - "9998"
 
 volumes:
   ollamadata:
   documentdata:
   pgdata:
+
+networks:
+  internal:
+    driver: bridge
+  web:
+    driver: bridge

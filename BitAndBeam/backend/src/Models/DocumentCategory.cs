@@ -1,0 +1,24 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
+
+namespace BitAndBeam.Models
+{
+    public class DocumentCategory
+    {
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("fields")]
+        public List<DocumentCategoryField> Fields { get; set; } = [];
+
+
+    }
+}
+
+

@@ -4,14 +4,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
 # Copy csproj and restore
-COPY ./BUILD.ING/*.csproj ./BUILD.ING/
-WORKDIR /app/BUILD.ING
+COPY ./src/*.csproj ./src/
+WORKDIR /app/src
 RUN dotnet restore
 RUN dotnet add package Npgsql
 RUN dotnet add package Npgsql.NetTopologySuite
 
 # Copy rest of the source code
-COPY ./BUILD.ING/. ./
+COPY ./src/. ./
 RUN dotnet publish -c Release -o out
 
 # Stage 2: Runtime
@@ -29,7 +29,7 @@ COPY wait-for-it.sh wait-for-it.sh
 RUN dos2unix wait-for-it.sh && chmod +x wait-for-it.sh
 
 # Copy build artifacts from previous stage
-COPY --from=build /app/BUILD.ING/out ./
+COPY --from=build /app/src/out ./
 # Copy resources directory for document_categories.json
 COPY ./resources ./resources
 
@@ -38,4 +38,4 @@ EXPOSE 5000
 #EXPOSE 5001
 
 # Wait for PostgreSQL then start app
-ENTRYPOINT ["./wait-for-it.sh", "postgres:5432", "--", "dotnet", "Build.ING.dll"]
+ENTRYPOINT ["./wait-for-it.sh", "postgres:5432", "--", "dotnet", "BitAndBeam.dll"]
