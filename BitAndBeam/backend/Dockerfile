@@ -19,7 +19,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 # Install dos2unix to normalize scripts
-RUN apt-get update && apt-get install -y dos2unix && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl dos2unix && rm -rf /var/lib/apt/lists/*
+
 
 # To allow configurable ports via environment variable
 ENV ASPNETCORE_URLS=http://+:5000
