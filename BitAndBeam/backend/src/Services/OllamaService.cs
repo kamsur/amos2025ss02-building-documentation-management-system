@@ -16,8 +16,8 @@ namespace BitAndBeam.Services
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _ollamaBaseUrl = configuration["Ollama:BaseUrl"] ?? "http://ollama:11434"; // Default
-            _model = configuration["Ollama:Model"] ?? "gemma3:1b"; // Default model
+            _ollamaBaseUrl = configuration["Ollama:BaseUrl"];
+            _model = configuration["Ollama:Model"];
         }
 
         public async Task<string> GenerateAsync(string prompt)

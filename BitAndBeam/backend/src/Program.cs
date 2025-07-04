@@ -160,7 +160,7 @@ builder.Services.AddHttpClient<BitAndBeam.Services.TikaService>(client =>
 builder.Services.AddHttpClient<BitAndBeam.Services.OllamaService>((provider, client) =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
-    var baseUrl = config["Ollama:BaseUrl"] ?? "http://ollama:11434";
+    var baseUrl = config["Ollama:BaseUrl"];
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(5);
 });
