@@ -156,10 +156,12 @@ builder.Services.AddHttpClient<BUILD.ING.Services.TikaService>(client =>
     client.Timeout = TimeSpan.FromMinutes(5);
 });
 
-// Register HttpClient for OllamaService with extended timeout (5 minutes)
-builder.Services.AddHttpClient<BUILD.ING.Services.OllamaService>(client =>
+// Register HttpClient for OllamaService with extended timeout and config-driven BaseAddress
+builder.Services.AddHttpClient<BUILD.ING.Services.OllamaService>((provider, client) =>
 {
-    client.BaseAddress = new Uri("http://ollama:11434/");
+    var config = provider.GetRequiredService<IConfiguration>();
+    var baseUrl = config["Ollama:BaseUrl"] ?? "http://ollama:11434";
+    client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromMinutes(5);
 });
 
