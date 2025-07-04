@@ -147,8 +147,8 @@ builder.WebHost.ConfigureKestrel(options =>
 
 // Add health check services for both Tika and Ollama
 builder.Services.AddHealthChecks()
-    .AddCheck<BUILD.ING.HealthChecks.TikaHealthCheck>("tika_health_check", tags: new[] { "tika", "ready" })
-    .AddCheck<BUILD.ING.HealthChecks.OllamaHealthCheck>("ollama_health_check", tags: new[] { "ollama", "ready" });
+    .AddCheck<BitAndBeam.HealthChecks.TikaHealthCheck>("tika_health_check", tags: new[] { "tika", "ready" })
+    .AddCheck<BitAndBeam.HealthChecks.OllamaHealthCheck>("ollama_health_check", tags: new[] { "ollama", "ready" });
 
 // Register HttpClient for TikaService with extended timeout (5 minutes)
 builder.Services.AddHttpClient<BitAndBeam.Services.TikaService>(client =>
@@ -157,7 +157,7 @@ builder.Services.AddHttpClient<BitAndBeam.Services.TikaService>(client =>
 });
 
 // Register HttpClient for OllamaService with extended timeout and config-driven BaseAddress
-builder.Services.AddHttpClient<BUILD.ING.Services.OllamaService>((provider, client) =>
+builder.Services.AddHttpClient<BitAndBeam.Services.OllamaService>((provider, client) =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
     var baseUrl = config["Ollama:BaseUrl"] ?? "http://ollama:11434";
