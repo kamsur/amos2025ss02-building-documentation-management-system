@@ -1053,10 +1053,10 @@ namespace BitAndBeam.Controllers
             }
 
             **categories_schema**:
-            {categoriesSchemaJson}
+            {{categoriesSchemaJson}}
 
             **Extracted Text**:
-            {extractedText}
+            {{extractedText}}
             """;
         }
 
