@@ -8,10 +8,11 @@ services:
       - "11434:11434"   # Ollama internal API
       - "8000:8000"    # FastAPI external endpoint
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # or some endpoint that signals Ollama is ready
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 120s
 
   backend:
     build:
@@ -20,14 +21,23 @@ services:
     ports:
       - "5001:5000"
     depends_on:
-      - postgres
-      - ollama
+      postgres:
+        condition: service_healthy
+      tika:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/healthz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
@@ -74,6 +84,13 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: bitandbeam
 
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
   tika:
     build:
       context: ./tika
@@ -83,10 +100,11 @@ services:
     ports:
       - "9998:9998"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9998/version"]
+      test: [ "CMD-SHELL", "curl -sf http://localhost:9998/version || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
 volumes:
   documentdata:
