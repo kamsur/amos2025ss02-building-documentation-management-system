@@ -1063,42 +1063,41 @@ namespace BitAndBeam.Controllers
         //     public string? Description { get; set; }
         //     public List<Dictionary<string, string>>? Fields { get; set; }
         // }
-    }
-    
-    /// <summary>
-    /// Request model for document chatbot queries
-    /// </summary>
-    public class DocumentChatbotRequest
-    {
+        
         /// <summary>
-        /// User's input/question to ask about the document
+        /// Request model for document chatbot queries
         /// </summary>
-        public string UserInput { get; set; }
-    }
-    
-    /// <summary>
-    /// Response model for document chatbot queries
-    /// </summary>
-    public class DocumentChatbotResponse
-    {
+        public class DocumentChatbotRequest
+        {
+            /// <summary>
+            /// User's input/question to ask about the document
+            /// </summary>
+            public string UserInput { get; set; }
+        }
+        
         /// <summary>
-        /// The response from the chatbot
+        /// Response model for document chatbot queries
         /// </summary>
-        public string Response { get; set; }
-    }
-
-    /// <summary>
-    /// Query the chatbot about a specific document
-    /// </summary>
-    /// <param name="documentId">The ID of the document to query</param>
-    /// <param name="request">The user's input/question</param>
-    /// <param name="httpClientFactory">HTTP client factory for Ollama service</param>
-    /// <returns>The chatbot's response</returns>
-    [HttpPost("{documentId}/ask")]
-    [ProducesResponseType(typeof(DocumentChatbotResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public class DocumentChatbotResponse
+        {
+            /// <summary>
+            /// The response from the chatbot
+            /// </summary>
+            public string Response { get; set; }
+        }
+    
+        /// <summary>
+        /// Query the chatbot about a specific document
+        /// </summary>
+        /// <param name="documentId">The ID of the document to query</param>
+        /// <param name="request">The user's input/question</param>
+        /// <param name="httpClientFactory">HTTP client factory for Ollama service</param>
+        /// <returns>The chatbot's response</returns>
+        [HttpPost("{documentId}/ask")]
+        [ProducesResponseType(typeof(DocumentChatbotResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AskDocumentChatbot(int documentId, [FromBody] DocumentChatbotRequest request, [FromServices] IHttpClientFactory httpClientFactory)
     {
         // Validate the request
@@ -1223,5 +1222,3 @@ Please provide a concise and accurate answer based solely on the document conten
         }
     }
 }
-
-
