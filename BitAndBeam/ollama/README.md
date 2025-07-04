@@ -1,28 +1,39 @@
 # Ollama AI Setup
 
-This directory sets up a FastAPI-based microservice inside a Docker container that wraps the Ollama LLM engine.
-It provides a clean /ask endpoint to query the gemma3:1b model via HTTP (e.g., from Postman or your backend).
+This directory sets up a **Dockerized Ollama LLM engine** that can be used directly by your backend (e.g., C#) via REST API.
 
 ---
 
 ## ✅ Features
 
-- Dockerized Ollama LLM runtime with FastAPI wrapper
-- Automatically pulls and loads the `gemma3:1b` model
-- `/ask` endpoint to send prompts and get responses
-- Exposes:
-  - Ollama internal API on port `11434`
-  - FastAPI external API on port `8000`
-- Runs with no external APIs or API keys
+- Pure Dockerized Ollama LLM runtime (no Python or FastAPI layer)
+- Automatically pulls and loads the `gemma3:1b` model on container start
+- Exposes Ollama's REST API on port `11434`
+- Simple integration with your backend via HTTP (no extra API keys or wrappers)
+- Model can be easily changed by updating the Dockerfile or entrypoint script
 
 ---
 
 ## 🚀 How to Run
 
-To build and run this service using Docker,  
-please follow the instructions in the Docker setup guide:
+To build and run this service using Docker:
 
-🔗 [Ollama Docker Setup Guide](./README_DOCKER.md)
+```bash
+# Build (if using a custom Dockerfile)
+docker build -t ollama-custom ./ollama
+
+# Run
+docker run -d --name ollama -p 11434:11434 ollama-custom
+````
+
+Or, if using `docker-compose`:
+
+```bash
+docker-compose up -d ollama
+```
+
+The container will automatically pull and load the `gemma3:1b` model.
+You can access the Ollama REST API at `http://localhost:11434/`.
 
 ---
 
@@ -30,10 +41,8 @@ please follow the instructions in the Docker setup guide:
 
 ```
 ollama/
-├── app/
-│   ├── main.py              # FastAPI app with /ask endpoint
-│   └── requirements.txt     # Python dependencies
-├── Dockerfile               # Builds Ollama + FastAPI combo
+├── Dockerfile               # Builds Ollama container and pulls default model
+├── entrypoint.sh            # (if used) Pulls model on startup
 ├── README.md
 ├── README_DOCKER.md
 ```
