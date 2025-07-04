@@ -1134,13 +1134,14 @@ namespace BitAndBeam.Controllers
             string documentContent;
             try
             {
-                documentContent = await _tikaService.ExtractTextAsync(fullPath);
+                byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
+                documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName);
                 
                 // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
                 if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
                 {
                     _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
-                    documentContent = await _tikaService.ExtractTextWithOcrAsync(fullPath);
+                    documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true);
                 }
                 
                 if (string.IsNullOrWhiteSpace(documentContent))
