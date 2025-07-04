@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BUILD.ING.Services;
+using BitAndBeam.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BitAndBeam.Controllers
@@ -39,7 +39,7 @@ namespace BitAndBeam.Controllers
 
             try
             {
-                var rawResponse = await _ollamaService.GenerateAsync(request.Prompt);
+                var rawResponse = await _ollamaService.GenerateAsync(request.Prompt).ConfigureAwait(false);
                 stopwatch.Stop();
 
                 var ollamaResponse = JsonSerializer.Deserialize<OllamaResponse>(rawResponse, new JsonSerializerOptions
@@ -63,7 +63,7 @@ namespace BitAndBeam.Controllers
         {
             try
             {
-                var healthy = await _ollamaService.CheckHealthAsync();
+                var healthy = await _ollamaService.CheckHealthAsync().ConfigureAwait(false);
                 if (healthy)
                     return Ok(new { status = "ok" });
                 else
