@@ -497,6 +497,32 @@ export interface Document {
     'buildingDocumentRelations'?: Array<BuildingDocumentRelation> | null;
 }
 /**
+ * Request model for document chatbot queries
+ * @export
+ * @interface DocumentChatbotRequest
+ */
+export interface DocumentChatbotRequest {
+    /**
+     * User\'s input/question to ask about the document
+     * @type {string}
+     * @memberof DocumentChatbotRequest
+     */
+    'userInput'?: string | null;
+}
+/**
+ * Response model for document chatbot queries
+ * @export
+ * @interface DocumentChatbotResponse
+ */
+export interface DocumentChatbotResponse {
+    /**
+     * The response from the chatbot
+     * @type {string}
+     * @memberof DocumentChatbotResponse
+     */
+    'response'?: string | null;
+}
+/**
  * 
  * @export
  * @interface DocumentMetadataPatchRequest
@@ -1840,6 +1866,47 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary Query the chatbot about a specific document
+         * @param {number} documentId The ID of the document to query
+         * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDocumentsDocumentIdAskPost: async (documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'documentId' is not null or undefined
+            assertParamExists('apiDocumentsDocumentIdAskPost', 'documentId', documentId)
+            const localVarPath = `/api/Documents/{documentId}/ask`
+                .replace(`{${"documentId"}}`, encodeURIComponent(String(documentId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(documentChatbotRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2158,6 +2225,20 @@ export const DocumentsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Query the chatbot about a specific document
+         * @param {number} documentId The ID of the document to query
+         * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiDocumentsDocumentIdAskPost(documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DocumentChatbotResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDocumentsDocumentIdAskPost(documentId, documentChatbotRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DocumentsApi.apiDocumentsDocumentIdAskPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2273,6 +2354,17 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary Query the chatbot about a specific document
+         * @param {number} documentId The ID of the document to query
+         * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDocumentsDocumentIdAskPost(documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options?: any): AxiosPromise<DocumentChatbotResponse> {
+            return localVarFp.apiDocumentsDocumentIdAskPost(documentId, documentChatbotRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2362,6 +2454,19 @@ export class DocumentsApi extends BaseAPI {
      */
     public apiDocumentsCategoriesGet(options?: RawAxiosRequestConfig) {
         return DocumentsApiFp(this.configuration).apiDocumentsCategoriesGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Query the chatbot about a specific document
+     * @param {number} documentId The ID of the document to query
+     * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DocumentsApi
+     */
+    public apiDocumentsDocumentIdAskPost(documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options?: RawAxiosRequestConfig) {
+        return DocumentsApiFp(this.configuration).apiDocumentsDocumentIdAskPost(documentId, documentChatbotRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

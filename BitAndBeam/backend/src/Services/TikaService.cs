@@ -39,7 +39,9 @@ namespace BitAndBeam.Services
             try
             {
                 using var content = new ByteArrayContent(fileBytes);
-                content.Headers.Add("Content-Disposition", $"attachment; filename={fileName}");
+                // Encode the filename properly for Content-Disposition header
+                var encodedFileName = Uri.EscapeDataString(fileName);
+                content.Headers.Add("Content-Disposition", $"attachment; filename=\"{encodedFileName}\"");
 
                 // For Tika 3.x, most tuning can be done via server-side config.
                 // Remove legacy headers that are no longer supported to avoid 400/500 errors.
@@ -92,7 +94,9 @@ namespace BitAndBeam.Services
             try
             {
                 using var content = new ByteArrayContent(fileBytes);
-                content.Headers.Add("Content-Disposition", $"attachment; filename={fileName}");
+                // Encode the filename properly for Content-Disposition header
+                var encodedFileName = Uri.EscapeDataString(fileName);
+                content.Headers.Add("Content-Disposition", $"attachment; filename=\"{encodedFileName}\"");
 
                 var response = await _client.PutAsync("http://tika:9998/meta", content).ConfigureAwait(false);
 
