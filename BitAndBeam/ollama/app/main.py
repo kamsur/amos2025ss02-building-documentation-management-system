@@ -10,7 +10,7 @@ import asyncio
 OLLAMA_URL   = "http://localhost:11434/api/generate"
 # OLLAMA_MODEL = "gemma3:latest"          # change once, use everywhere
 OLLAMA_MODEL = "deepseek-r1:8b"
-UPSTREAM_TIMEOUT = 300                  # seconds
+UPSTREAM_TIMEOUT = 900                  # seconds
 
 # ──────────────────────────────────────────────────────────────────────────
 #  FastAPI app

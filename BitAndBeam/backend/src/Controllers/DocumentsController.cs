@@ -404,13 +404,14 @@ namespace BitAndBeam.Controllers
             if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
             {
                 // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
-                textForOllama = ProcessOcrOutput(textForOllama);
+                textForOllama = ExtractVisibleText(textForOllama);
             }
 
             // Clean the extracted text
-            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
+            var shortText = textForOllama;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = BuildPrompt(shortText, categoriesSchemaJson);
@@ -1061,19 +1062,35 @@ namespace BitAndBeam.Controllers
             """;
         }
 
-        private string ProcessOcrOutput(string ocrHtml)
+        private string ExtractVisibleText(string tikaHtml)
         {
             var doc = new HtmlAgilityPack.HtmlDocument();
-            doc.LoadHtml(ocrHtml);
+            doc.LoadHtml(tikaHtml);
 
-            var ocrText = doc.DocumentNode
-                .SelectNodes("//div[@class='ocr']")
-                ?.Select(node => node.InnerText.Trim())
-                .Where(text => !string.IsNullOrWhiteSpace(text))
-                .Aggregate((current, next) => current + " " + next);
+            // Remove unwanted elements like <script>, <style>, and <head>
+            var unwantedTags = new[] { "script", "style", "head", "meta", "link" };
+            foreach (var tag in unwantedTags)
+            {
+                var nodes = doc.DocumentNode.SelectNodes($"//{tag}");
+                if (nodes != null)
+                {
+                    foreach (var node in nodes)
+                        node.Remove();
+                }
+            }
 
-            return ocrText ?? ocrHtml.Trim();
+            // Extract all visible text from <body>
+            var bodyNode = doc.DocumentNode.SelectSingleNode("//body");
+            if (bodyNode == null)
+                return tikaHtml.Trim(); // fallback
+
+            var textNodes = bodyNode.Descendants()
+                .Where(n => n.NodeType == HtmlAgilityPack.HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
+                .Select(n => HtmlEntity.DeEntitize(n.InnerText.Trim()));
+
+            return string.Join(" ", textNodes);
         }
+
     }
 }
 
