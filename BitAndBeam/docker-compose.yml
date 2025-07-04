@@ -1,4 +1,64 @@
 services:
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ollama
+    ports:
+      - "11434:11434"   # Ollama internal API
+      - "8000:8000"    # FastAPI external endpoint
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # or some endpoint that signals Ollama is ready
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+    depends_on:
+      - postgres
+      - ollama
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
+      - Tika__ServerUrl=http://tika:9998
+    volumes:
+      - documentdata:/app/documents
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    environment:
+      - API_URL=http://localhost:5001
+
+  openapi-client:
+    build:
+      context: ./openapi-client
+      dockerfile: Dockerfile
+    container_name: openapi_generator
+    depends_on:
+      backend:
+        condition: service_started
+    volumes:
+      - ./frontend/src/api:/local/generated-sdk
+    environment:
+      - SWAGGER_URL=http://backend:5000
+      - BACKEND_URL=http://localhost:5001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://backend:5000/swagger/v1/swagger.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres:
     image: postgres:17
     container_name: bitandbeam_postgres
@@ -13,16 +73,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: bitandbeam
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5  
+
   tika:
     build:
       context: ./tika
       dockerfile: Dockerfile
-    #image: apache/tika
     container_name: bitandbeam_tika
     restart: always
     ports:
@@ -32,91 +87,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-        
-  ollama: 
-    build:
-      context: ./ollama
-      dockerfile: Dockerfile  
-    container_name: ollama
-    restart: always
-    ports:
-      - "11434:11434"   # Ollama internal API
-      - "8001:8000"    # FastAPI external endpoint
-    healthcheck:
-      #test: ["CMD", "curl", "-f", "http://localhost:8000/api/tags"]  # Check Ollama's FastAPI health endpoint
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || echo 'ok'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5001:5000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      tika:
-        condition: service_healthy
-      ollama:
-        condition: service_healthy
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
-      - Tika__ServerUrl=http://tika:9998
-    volumes:
-      - documentdata:/app/documents
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/healthz"]
-      #test: ["CMD", "curl", "-f", "http://localhost:5001"]
-      #test: ["CMD-SHELL", "dotnet System.Net.Http.HttpClient.dll http://localhost:5000/healthz || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    command: ["dotnet", "BitAndBeam.dll"]
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "8080:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    environment:
-      - API_URL=http://localhost:5001
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  openapi-client:
-    build:
-      context: ./openapi-client
-      dockerfile: Dockerfile
-    container_name: openapi_generator
-    depends_on:
-      backend:
-        condition: service_healthy
-    volumes:
-      - ./frontend/src/api:/local/generated-sdk
-    environment:
-      - SWAGGER_URL=http://backend:5000
-      - BACKEND_URL=http://localhost:5001
-    healthcheck:
-      #test: ["CMD", "curl", "-f", "http://backend:5000/swagger/v1/swagger.json"]
-      test: ["CMD-SHELL", "curl -f http://backend:5000/swagger/v1/swagger.json || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5 
-
-
-  
 
 volumes:
   documentdata:
