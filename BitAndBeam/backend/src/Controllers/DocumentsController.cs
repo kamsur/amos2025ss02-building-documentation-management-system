@@ -1114,57 +1114,54 @@ namespace BitAndBeam.Controllers
                 // Get the document from the database
                 var document = await _context.Documents
                     .FirstOrDefaultAsync(d => d.DocumentId == documentId && d.OrganizationId == orgId);
-            
-            // Check if the document exists
-            if (document == null)
-            {
-                return NotFound(new { error = $"Document with ID {documentId} not found." });
-            }
-            
-            // Get the document content
-            var uploadsPath = Path.Combine("/app/documents");
-            var fullPath = Path.Combine(uploadsPath, document.FileName);
-            
-            if (!System.IO.File.Exists(fullPath))
-            {
-                return NotFound(new { error = $"Document file not found on server." });
-            }
+                
+                // Check if the document exists
+                if (document == null)
+                {
+                    return NotFound(new { error = $"Document with ID {documentId} not found." });
+                }
+                
+                // Get the document content
+                var uploadsPath = Path.Combine("/app/documents");
+                var fullPath = Path.Combine(uploadsPath, document.FileName);
+                
+                if (!System.IO.File.Exists(fullPath))
+                {
+                    return NotFound(new { error = $"Document file not found on server." });
+                }
             
             // Get the document text content
             string documentContent;
-            
             try
             {
-                // Try to get the already extracted text from TikaService if available
-                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
-                documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName);
+                documentContent = await _tikaService.ExtractTextAsync(fullPath);
                 
-                // If text extraction failed, try OCR fallback
-                if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 50)
+                // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
+                if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
                 {
-                    documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true);
+                    _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
+                    documentContent = await _tikaService.ExtractTextWithOcrAsync(fullPath);
                 }
                 
-                // If still empty, return error
-                if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 50)
+                if (string.IsNullOrWhiteSpace(documentContent))
                 {
-                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Could not extract text content from document." });
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error extracting text for document {DocumentId}", documentId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error extracting text from document." });
+                _logger.LogError(ex, "❌ Failed to extract text from document {DocumentId}", documentId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
             }
             
-            // Truncate document content if too long
-            var maxContentLength = 8000; // Adjust based on model context window
-            var truncatedContent = documentContent.Length > maxContentLength 
-                ? documentContent.Substring(0, maxContentLength) 
-                : documentContent;
-            
-            // Construct the prompt for Ollama
-            var prompt = $@"You are a helpful assistant answering questions about document content. 
+                // Truncate document content if too long
+                var maxContentLength = 8000; // Adjust based on model context window
+                var truncatedContent = documentContent.Length > maxContentLength 
+                    ? documentContent.Substring(0, maxContentLength) 
+                    : documentContent;
+                
+                // Construct the prompt for Ollama
+                var prompt = $@"You are a helpful assistant answering questions about document content. 
 Use ONLY the information from the document content provided below to answer the question. 
 If the answer cannot be found in the document, say so clearly - do not make up information.
 
@@ -1176,49 +1173,49 @@ USER QUESTION:
 
 Please provide a concise and accurate answer based solely on the document content.";
             
-            try
-            {
-                // Create HTTP client for Ollama
-                var client = httpClientFactory.CreateClient("Ollama");
-                
-                // Prepare the request to Ollama
-                var payload = JsonSerializer.Serialize(new { prompt });
-                var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                
-                // Send the request to Ollama
-                var response = await client.PostAsync(
-                    "http://ollama:8000/api/Ollama/ask",
-                    content).ConfigureAwait(false);
-                
-                // Check if the request was successful
-                if (!response.IsSuccessStatusCode)
+                try
                 {
-                    _logger.LogWarning("⚠️ Ollama service failed (status {Code})", response.StatusCode);
-                    return StatusCode((int)response.StatusCode, new { error = "Ollama service error" });
+                    // Create HTTP client for Ollama
+                    var client = httpClientFactory.CreateClient("Ollama");
+                    
+                    // Prepare the request to Ollama
+                    var payload = JsonSerializer.Serialize(new { prompt });
+                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                    
+                    // Send the request to Ollama
+                    var response = await client.PostAsync(
+                        "http://ollama:8000/api/Ollama/ask",
+                        content).ConfigureAwait(false);
+                    
+                    // Check if the request was successful
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.LogWarning("⚠️ Ollama service failed (status {Code})", response.StatusCode);
+                        return StatusCode((int)response.StatusCode, new { error = "Ollama service error" });
+                    }
+                    
+                    // Parse the response
+                    var jsonStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
+                        jsonStr,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    // Return the response
+                    return Ok(new DocumentChatbotResponse
+                    {
+                        Response = ollamaResponse?.Response ?? "No response from the model"
+                    });
+            }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Error communicating with Ollama service for document {DocumentId}", documentId);
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error communicating with Ollama service." });
                 }
-                
-                // Parse the response
-                var jsonStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                    jsonStr,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                
-                // Return the response
-                return Ok(new DocumentChatbotResponse
-                {
-                    Response = ollamaResponse?.Response ?? "No response from the model"
-                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error communicating with Ollama service for document {DocumentId}", documentId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error communicating with Ollama service." });
+                _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}", documentId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An unexpected error occurred." });
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}", documentId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "An unexpected error occurred." });
-        }
     }
 }
