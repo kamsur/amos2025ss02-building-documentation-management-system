@@ -408,10 +408,9 @@ namespace BitAndBeam.Controllers
             }
 
             // Clean the extracted text
-            // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            var shortText = textForOllama.Length > 2_000 ? textForOllama[..2_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
-            var shortText = textForOllama;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = BuildPrompt(shortText, categoriesSchemaJson);
@@ -1088,7 +1087,9 @@ namespace BitAndBeam.Controllers
                 .Where(n => n.NodeType == HtmlAgilityPack.HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
                 .Select(n => HtmlEntity.DeEntitize(n.InnerText.Trim()));
 
-            return string.Join(" ", textNodes);
+            var cleanedText = System.Text.RegularExpressions.Regex.Replace(string.Join(" ", textNodes), @"\s+", " ");
+
+            return cleanedText;
         }
 
     }
