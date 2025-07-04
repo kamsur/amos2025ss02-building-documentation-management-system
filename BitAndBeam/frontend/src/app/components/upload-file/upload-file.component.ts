@@ -119,6 +119,7 @@ export class UploadFileComponent implements OnInit {
     }).then((response: AxiosResponse<any>) => {
       console.log('Upload successful', response.data);
       this.uploading = false;
+      this.uploadedDocument = response.data; // Store the full response for later use
       this.uploadedDocumentId = response.data.id || response.data.documentId;
       this.successMessage = `File "${file.name}" uploaded successfully!`;
 
