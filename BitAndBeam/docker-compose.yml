@@ -20,14 +20,23 @@ services:
     ports:
       - "5001:5000"
     depends_on:
-      - postgres
-      - ollama
+      postgres:
+        condition: service_healthy
+      tika:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
