@@ -895,30 +895,16 @@ Please provide a concise and accurate answer based solely on the document conten
                     // Create HTTP client for Ollama
                     var client = httpClientFactory.CreateClient("Ollama");
 
-                    // Prepare the request to Ollama
-                    var payload = JsonSerializer.Serialize(new { prompt });
-                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
-
                     // Send the request to Ollama
-                    var response = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
-
-                    // Check if the request was successful
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        _logger.LogWarning("⚠️ Ollama service failed (status {Code})", response.StatusCode);
-                        return StatusCode((int) response.StatusCode, new { error = "Ollama service error" });
-                    }
-
+                    var jsonResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
+                    
                     // Parse the response
-                    var jsonStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                        jsonStr,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     // Return the response
                     return Ok(new DocumentChatbotResponse
                     {
-                        Response = ollamaResponse?.Response ?? "No response from the model"
+                        Response = ollamaResponse?.Response
                     });
                 }
                 catch (Exception ex)
