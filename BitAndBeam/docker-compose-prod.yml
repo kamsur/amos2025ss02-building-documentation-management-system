@@ -5,14 +5,11 @@ services:
     image: ghcr.io/amosproj/bitandbeam-backend:latest
     restart: always
     ports:
-      - "5000:5000"  # Exposed to internet
+      - "5000:5000"
     depends_on:
-      postgres:
-        condition: service_healthy
-      ollama:
-        condition: service_healthy
-      tika:
-        condition: service_healthy
+      - postgres
+      - ollama
+      - tika
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
@@ -20,82 +17,65 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - Tika__ServerUrl=http://tika:9998
     volumes:
-      - documentdata:/app/documents
+      - documentdata:/app/documents:rw
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    command: ["dotnet", "BitAndBeam.dll"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
-      - web
       - internal
+      - web
 
   frontend:
     image: ghcr.io/amosproj/bitandbeam-frontend:latest
     restart: always
+    depends_on:
+      - backend
     environment:
       - API_URL=http://amos.b-iq.net:5000
-    depends_on:
-      backend:
-        condition: service_healthy
     ports:
-      - "80:80"  # Exposed to internet
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "80:80"
     networks:
       - web
-      - internal
-
-  ollama:
-    build:
-      context: ./ollama
-      dockerfile: Dockerfile
-    image: ghcr.io/amosproj/bitandbeam-ollama:latest
-    container_name: ollama
-    restart: always
-    ports:
-      - "11434:11434"  # External API
-      - "8000:8000"    # Also external
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || echo 'ok'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    networks:
-      - web
-      - internal
 
   postgres:
     image: postgres:17
     container_name: bitandbeam_postgres
     restart: always
     volumes:
-      - .:/app
       - pgdata:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bitandbeam
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=bitandbeam
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-    expose:
-      - "5432"  # Only exposed internally
     networks:
       - internal
 
+  ollama:
+    image: ghcr.io/amosproj/bitandbeam-ollama:latest
+    container_name: ollama
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - internal
+    ports:
+      - "8000:8000"
+    expose:
+      - "11434"
+
   tika:
-    build:
-      context: ./tika
-      dockerfile: Dockerfile
+    image: apache/tika
     container_name: bitandbeam_tika
     restart: always
     healthcheck:
@@ -103,10 +83,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    expose:
-      - "9998"
     networks:
       - internal
+    expose:
+      - "9998"
 
 volumes:
   documentdata:
