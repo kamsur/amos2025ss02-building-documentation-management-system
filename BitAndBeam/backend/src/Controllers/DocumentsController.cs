@@ -1039,7 +1039,8 @@ namespace BitAndBeam.Controllers
             public Dictionary<string, string?>? KeyInformation { get; set; }
         }
 
-        public class SuggestedAddress{
+        public class SuggestedAddress
+        {
             public string? Street { get; set; }
             public string? House_Number { get; set; }
             public string? Zip_Code { get; set; }
