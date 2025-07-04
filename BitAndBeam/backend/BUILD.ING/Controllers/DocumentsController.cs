@@ -20,14 +20,16 @@ namespace BUILD.ING.Controllers
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly TikaService _tikaService;
+        private readonly OllamaService _ollamaService;
         private readonly ILogger<DocumentsController> _logger;
 
-        public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, ILogger<DocumentsController> logger)
+        public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, OllamaService ollamaService, ILogger<DocumentsController> logger)
         {
             Console.WriteLine("🚀 DocumentsController loaded");
             _context = context;
             _env = env;
             _tikaService = tikaService;
+            _ollamaService = ollamaService;
             _logger = logger;
         }
 
@@ -50,12 +52,12 @@ namespace BUILD.ING.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> UploadDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
+        public async Task<IActionResult> UploadDocument(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File is required");
 
-            // ╭──────────────────────────── 1. save upload ───────────────────────────╮
+            // 1. Save upload
             var uploadsPath = Path.Combine("/app/documents");
             Directory.CreateDirectory(uploadsPath);
 
@@ -65,7 +67,7 @@ namespace BUILD.ING.Controllers
                 await file.CopyToAsync(fs).ConfigureAwait(false);
             }
 
-            // Reset the file stream position to zero before re-reading
+            // Read file bytes for Tika
             byte[] fileBytes;
             using (var ms = new MemoryStream())
             using (var fileStream = file.OpenReadStream())
@@ -74,16 +76,15 @@ namespace BUILD.ING.Controllers
                 fileBytes = ms.ToArray();
             }
 
-            // ╭──────────────────────────── 2. Tika extract ───────────────────────────╮
+            // 2. Tika extract
             string metadata = "{}";
             string textForOllama = string.Empty;
-
             try
             {
                 metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
                 textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
 
-                // ⚡ OCR fallback (Option B)
+                // OCR fallback
                 if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
                 {
                     textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName, true).ConfigureAwait(false);
@@ -96,7 +97,7 @@ namespace BUILD.ING.Controllers
                 _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
             }
 
-            // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
+            // 3. Build prompt
             var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
@@ -161,95 +162,76 @@ namespace BUILD.ING.Controllers
             Building? matchedBuilding = null;
             Dictionary<string, string?>? keyInformation = null;
 
-            // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
+            // 4. Call Ollama
             try
             {
-                var client = httpClientFactory.CreateClient("Ollama");
-                var payload = JsonSerializer.Serialize(new { prompt });
-                var resp = await client.PostAsync(
-                                "http://ollama:11434/api/generate",
-                                new StringContent(payload, Encoding.UTF8, "application/json"))
-                                        .ConfigureAwait(false);
+                var ollamaRawResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
+                _logger.LogInformation("OLLAMA response field:\n{0}", ollamaRawResponse);
 
-                if (resp.IsSuccessStatusCode)
+                if (!string.IsNullOrWhiteSpace(ollamaRawResponse))
                 {
-                    var jsonStr = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollama = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                                    jsonStr,
-                                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var cleanedJson = ollamaRawResponse
+                        .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                        .Replace("```", "", StringComparison.OrdinalIgnoreCase)
+                        .Trim();
 
-                    _logger.LogInformation("OLLAMA response field:\n{0}", ollama?.Response);
+                    int first = cleanedJson.IndexOf('{');
+                    int last = cleanedJson.LastIndexOf('}');
+                    if (first >= 0 && last > first)
+                        cleanedJson = cleanedJson[first..(last + 1)];
 
+                    _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
 
-                    if (!string.IsNullOrWhiteSpace(ollama?.Response))
+                    var root = JsonDocument.Parse(cleanedJson).RootElement;
+
+                    // A. ADDRESS
+                    if (root.TryGetProperty("address", out var addrObj) &&
+                        addrObj.ValueKind == JsonValueKind.Object)
                     {
-                        // ────────  Ollama JSON fence-strip  ────────────────
-                        var cleanedJson = ollama.Response
-                            .Replace("```json", "", StringComparison.OrdinalIgnoreCase) // remove fenced block tag
-                            .Replace("```", "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
-                            .Trim();                                                   // trim spaces / \n etc.
-
-                        int first = cleanedJson.IndexOf('{');
-                        int last = cleanedJson.LastIndexOf('}');
-                        if (first >= 0 && last > first)
-                            cleanedJson = cleanedJson[first..(last + 1)];
-
-                        _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
-
-                        var root = JsonDocument.Parse(cleanedJson).RootElement;
-
-                        // ------ A. ADDRESS -------
-                        if (root.TryGetProperty("address", out var addrObj) &&
-                            addrObj.ValueKind == JsonValueKind.Object)
+                        parsedAddress = new Dictionary<string, string>
                         {
-                            // nested form
-                            parsedAddress = new Dictionary<string, string>
-                            {
-                                ["street"] = addrObj.GetProperty("street").GetString() ?? "",
-                                ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
-                                ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
-                                ["city"] = addrObj.GetProperty("city").GetString() ?? ""
-                            };
-                        }
-                        else
+                            ["street"] = addrObj.GetProperty("street").GetString() ?? "",
+                            ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
+                            ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
+                            ["city"] = addrObj.GetProperty("city").GetString() ?? ""
+                        };
+                    }
+                    else
+                    {
+                        parsedAddress = new Dictionary<string, string>
                         {
-                            // flat fallback
-                            parsedAddress = new Dictionary<string, string>
-                            {
-                                ["street"] = root.TryGetProperty("street", out var s) ? s.GetString() ?? "" : "",
-                                ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString() ?? "" : "",
-                                ["zip_code"] = root.TryGetProperty("zip_code", out var z) ? z.GetString() ?? "" : "",
-                                ["city"] = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : ""
-                            };
-                        }
-                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
-                            parsedAddress = null;
+                            ["street"] = root.TryGetProperty("street", out var s) ? s.GetString() ?? "" : "",
+                            ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString() ?? "" : "",
+                            ["zip_code"] = root.TryGetProperty("zip_code", out var z) ? z.GetString() ?? "" : "",
+                            ["city"] = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : ""
+                        };
+                    }
+                    if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
+                        parsedAddress = null;
 
-                        // ------ B. CATEGORY -------
-                        if (root.TryGetProperty("category", out var catElem) &&
-                            catElem.ValueKind == JsonValueKind.String)
-                        {
-                            var cat = catElem.GetString();
-                            if (!string.IsNullOrWhiteSpace(cat) &&
-                                !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
-                                matchedCategory = cat.Trim();
-                        }
+                    // B. CATEGORY
+                    if (root.TryGetProperty("category", out var catElem) &&
+                        catElem.ValueKind == JsonValueKind.String)
+                    {
+                        var cat = catElem.GetString();
+                        if (!string.IsNullOrWhiteSpace(cat) &&
+                            !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
+                            matchedCategory = cat.Trim();
+                    }
 
-                        // ---------- C. KEY INFORMATION ----------
-                        if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
-                        {
-                            keyInformation = kiObj.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
-                        }
+                    // C. KEY INFORMATION
+                    if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+                    {
+                        keyInformation = kiObj.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
                     }
                 }
-                else _logger.LogWarning("⚠️ Ollama service failed (status {Code})", resp.StatusCode);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Ollama analysis failed");
             }
 
-            // ╭────────────── 5. try to map address → building ───────────╮
+            // 5. Try to map address → building
             if (parsedAddress != null)
             {
                 parsedAddress.TryGetValue("street", out var street);
@@ -287,7 +269,7 @@ namespace BUILD.ING.Controllers
                 }
             }
 
-            // ╭────────────── 6. Try to map matchedCategory (string) to actual category object ───────────╮
+            // 6. Try to map matchedCategory (string) to actual category object
             var allCategories = ReadCategories();
             var categoryMatch = allCategories.FirstOrDefault(c =>
                 string.Equals(c.Name?.Trim(), matchedCategory, StringComparison.OrdinalIgnoreCase));
@@ -297,14 +279,14 @@ namespace BUILD.ING.Controllers
                 matchedCategoryName = null;
             }
 
-            // ╭──────────────────────────── 7. persist ───────────────────────────────╮
+            // 7. persist
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
                 FileName = file.FileName,
                 FilePath = file.FileName,
                 FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-                FileSize = (int) file.Length,
+                FileSize = (int)file.Length,
                 UploadDate = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 Version = "1.0",
@@ -323,7 +305,7 @@ namespace BUILD.ING.Controllers
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            // ╭──────────────────────────── 8. response ──────────────────────────────╮
+            // 8. response
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
@@ -337,10 +319,10 @@ namespace BUILD.ING.Controllers
                                 ? parsedAddress
                                 : new Dictionary<string, string>
                                     {
-                                        { "street",       "Couldn't identify" },
-                                        { "house_number", "Couldn't identify" },
-                                        { "zip_code",     "Couldn't identify" },
-                                        { "city",         "Couldn't identify" }
+                                    { "street",       "Couldn't identify" },
+                                    { "house_number", "Couldn't identify" },
+                                    { "zip_code",     "Couldn't identify" },
+                                    { "city",         "Couldn't identify" }
                                     },
                 BuildingId = matchedBuilding?.BuildingId,
                 BuildingName = matchedBuilding?.Name,
