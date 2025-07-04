@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using BitAndBeam.Data;
 using BitAndBeam.Models;
 using BitAndBeam.Services;
