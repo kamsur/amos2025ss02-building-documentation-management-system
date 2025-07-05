@@ -97,13 +97,13 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['documentId'] && changes['documentId'].currentValue !== undefined) {
       this.documentId = changes['documentId'].currentValue;
-      console.log('🆕 documentId updated to:', this.documentId );
+      console.log('🆕 documentId updated to:', this.documentId);
     }
-
     if (changes['documentTitle'] && changes['documentTitle'].currentValue !== undefined) {
       this.documentTitle = changes['documentTitle'].currentValue;
     }
   }
+
 
 
 
@@ -169,8 +169,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    const documentId = this.documentId
-    console.log('👉 Document ID:', documentId);
+    console.log('👉 Document ID:', this.documentId);
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {
       return;
@@ -192,11 +191,11 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
       .slice(-10) // Get last 10 messages for context
       .map(msg => ({role: msg.sender, content: msg.text}));
 
-    if (documentId) {
+    if (this.documentId) {
       const request: DocumentChatbotRequest = {
         userInput: userMessage
       };
-      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(documentId, request)
+      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
         .then((res) => {
           this.messages.push({
             text: res?.data?.response ?? 'No response received.',
