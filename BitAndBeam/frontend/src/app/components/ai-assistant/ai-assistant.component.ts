@@ -117,17 +117,15 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
 
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['documentId'] && changes['documentId'].currentValue !== undefined) {
+    if (changes['documentId']) {
+      console.log('🪵 ngOnChanges -> documentId changed from', changes['documentId'].previousValue, 'to', changes['documentId'].currentValue);
       this.documentId = changes['documentId'].currentValue;
-      console.log('🆕 documentId updated to:', this.currentDocumentId);
     }
-    if (changes['documentTitle'] && changes['documentTitle'].currentValue !== undefined) {
+    if (changes['documentTitle']) {
+      console.log('🪵 ngOnChanges -> documentTitle changed from', changes['documentTitle'].previousValue, 'to', changes['documentTitle'].currentValue);
       this.documentTitle = changes['documentTitle'].currentValue;
     }
   }
-
-
-
 
 
   ngOnDestroy(): void {
@@ -185,14 +183,21 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
 
 
 
-  sendMessage(): void {
+  sendMessage = (): void => {
     setTimeout(() => {
-      console.log('📨 sendMessage triggered!');
-      console.log('👉 Input:', this.userInput);
-      const docId = this.documentId;
+      console.log('💡 AiAssistantComponent created with globalMode =', this.globalMode);
+      console.log('📦 Full component state on sendMessage():', {
+        _documentId: this._documentId,
+        documentId: this.documentId,
+        documentTitle: this.documentTitle,
+        userInput: this.userInput,
+        currentDocumentId: this.currentDocumentId,
+        selectedFile: this.buildingService.getSelectedFile?.(),
+      });
+
+      const docId = this._documentId;
       console.log('👉 documentId at send time:', docId);
       console.log('📎 buildingService.getSelectedFile result:', this.buildingService.getSelectedFile?.());
-
 
       if (!this.globalMode && !this.currentDocumentId) {
         this.handleError('❌ Cannot send message: No document selected.');
@@ -218,7 +223,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
       // Prepare the previous messages for context if needed
       const previousMessages = this.messages
         .slice(-10) // Get last 10 messages for context
-        .map(msg => ({role: msg.sender, content: msg.text}));
+        .map(msg => ({ role: msg.sender, content: msg.text }));
 
       if (this.currentDocumentId) {
         const request: DocumentChatbotRequest = {
@@ -241,9 +246,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
             this.isProcessing = false;
           });
 
-
       } else {
-        // Create Ollama request
         const ollamaRequest: OllamaRequest = {
           prompt: userMessage,
           context: {
@@ -251,8 +254,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
           }
         };
 
-
-        // Send to Ollama API
         this.getOllamaApi().apiOllamaAskPost(ollamaRequest)
           .then(response => {
             const responseData = response as any;
@@ -275,8 +276,8 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
       }
 
     }, 0);
+  };
 
-  }
 
   handleError(message: string): void {
     this.errorMessage = message;

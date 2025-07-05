@@ -137,9 +137,9 @@
   </div>
 </div>
 <app-ai-assistant
-  *ngIf="selectedFile"
+  *ngIf="selectedFile?.id && selectedFile?.name"
   [globalMode]="false"
-  [documentId]="selectedFile.id"
-  [documentTitle]="selectedFile.name">
+  [documentId]="selectedFile?.id"
+  [documentTitle]="selectedFile?.name">
 </app-ai-assistant>
 
