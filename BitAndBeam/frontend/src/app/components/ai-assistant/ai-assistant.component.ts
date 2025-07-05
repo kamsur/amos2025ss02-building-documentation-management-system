@@ -48,7 +48,8 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private themeService: ThemeService,
     private apiClientFactory: ApiClientFactory,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    private buildingService: BuildingService
   ) {
     // Don't create API client in constructor - create it when needed
 
