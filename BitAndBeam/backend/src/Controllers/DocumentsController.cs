@@ -138,69 +138,43 @@ namespace BitAndBeam.Controllers
                     var cleanedJson = innerResponseString
                         .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
                         .Replace("```", "", StringComparison.OrdinalIgnoreCase)
-                        .Trim();
-                    var client = httpClientFactory.CreateClient("Ollama");
-                    var payload = JsonSerializer.Serialize(new { prompt });
-                    var resp = await client.PostAsync(
-                                    "http://amos.b-iq.net:8000/api/Ollama/ask",
-                                    new StringContent(payload, Encoding.UTF8, "application/json"))
-                                            .ConfigureAwait(false);
+                        .Trim();                                                   // trim spaces / \n etc.
 
-                    if (resp.IsSuccessStatusCode)
+                    int first = cleanedJson.IndexOf('{');
+                    int last = cleanedJson.LastIndexOf('}');
+                    if (first >= 0 && last > first)
+                        cleanedJson = cleanedJson[first..(last + 1)];
+
+                    _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
+
+                    var root = JsonDocument.Parse(cleanedJson).RootElement;
+
+                    // ADDRESS
+                    if (root.TryGetProperty("address", out var addrObj) && addrObj.ValueKind == JsonValueKind.Object)
                     {
-                        var jsonStr = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        var ollama = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                                        jsonStr,
-                                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                        _logger.LogInformation("OLLAMA response field:\n{0}", ollama?.Response);
-
-
-                        if (!string.IsNullOrWhiteSpace(ollama?.Response))
+                        parsedAddress = new Dictionary<string, string>
                         {
-                            // ────────  Ollama JSON fence-strip  ────────────────
-                            var cleanedJson = ollama.Response
-                                .Replace("```json", "", StringComparison.OrdinalIgnoreCase) // remove fenced block tag
-                                .Replace("```", "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
-                                .Trim();                                                   // trim spaces / \n etc.
+                            ["street"] = addrObj.GetProperty("street").GetString() ?? "",
+                            ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
+                            ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
+                            ["city"] = addrObj.GetProperty("city").GetString() ?? ""
+                        };
+                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace)) parsedAddress = null;
+                    }
 
-                            int first = cleanedJson.IndexOf('{');
-                            int last = cleanedJson.LastIndexOf('}');
-                            if (first >= 0 && last > first)
-                                cleanedJson = cleanedJson[first..(last + 1)];
+                    // CATEGORY
+                    if (root.TryGetProperty("category", out var catElem) && catElem.ValueKind == JsonValueKind.String)
+                    {
+                        var cat = catElem.GetString();
+                        if (!string.IsNullOrWhiteSpace(cat) && !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
+                            matchedCategory = cat.Trim();
+                    }
 
-                            _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
-
-                            var root = JsonDocument.Parse(cleanedJson).RootElement;
-
-                            // ADDRESS
-                            if (root.TryGetProperty("address", out var addrObj) && addrObj.ValueKind == JsonValueKind.Object)
-                            {
-                                parsedAddress = new Dictionary<string, string>
-                                {
-                                    ["street"] = addrObj.GetProperty("street").GetString() ?? "",
-                                    ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
-                                    ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
-                                    ["city"] = addrObj.GetProperty("city").GetString() ?? ""
-                                };
-                                if (parsedAddress.Values.All(string.IsNullOrWhiteSpace)) parsedAddress = null;
-                            }
-
-                            // CATEGORY
-                            if (root.TryGetProperty("category", out var catElem) && catElem.ValueKind == JsonValueKind.String)
-                            {
-                                var cat = catElem.GetString();
-                                if (!string.IsNullOrWhiteSpace(cat) && !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
-                                    matchedCategory = cat.Trim();
-                            }
-
-                            // KEY INFORMATION
-                            if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
-                            {
-                                keyInformation = kiObj.EnumerateObject()
-                                    .ToDictionary(p => p.Name, p => p.Value.GetString());
-                            }
-                        }
+                    // KEY INFORMATION
+                    if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+                    {
+                        keyInformation = kiObj.EnumerateObject()
+                            .ToDictionary(p => p.Name, p => p.Value.GetString());
                     }
                 }
             }
