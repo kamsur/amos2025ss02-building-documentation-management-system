@@ -148,6 +148,9 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       .map(msg => ({role: msg.sender, content: msg.text}));
 
     if (this.documentId) {
+      const request: DocumentChatbotRequest = {
+        userInput: this.newMessage.trim()
+      };
       this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
         .then((res) => {
           this.messages.push({
