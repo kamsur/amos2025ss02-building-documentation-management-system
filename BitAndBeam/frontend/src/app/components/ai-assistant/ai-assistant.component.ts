@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, OnChanges, Input, SimpleChanges, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, Input, SimpleChanges, effect, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -28,7 +28,7 @@ interface ChatMessage {
   templateUrl: './ai-assistant.component.html',
   styleUrls: ['./ai-assistant.component.css']
 })
-export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
+export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , AfterViewInit{
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
   @Input() documentId?: number;
   @Input() documentTitle?: string;
@@ -76,21 +76,24 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
 
     // Load FontAwesome if not already loaded
     this.loadFontAwesome();
-    if (!this.documentId) {
-      const file = this.buildingService.getSelectedFile?.();
-      if (file) {
-        this.documentId = file.id;
-        this.documentTitle = file.name;
-        console.log('📄 Auto-bound documentId from BuildingService:', this.documentId);
-        console.log('📄 Auto-bound documentTitle from BuildingService:', this.documentTitle);
-      } else {
-        console.log('📄 No document context available. Assistant in general mode.');
-      }
-    } else {
-      console.log('📄 documentId (from input):', this.documentId);
-      console.log('📄 documentTitle (from input):', this.documentTitle);
-    }
+  }
 
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      if (!this.documentId) {
+        const file = this.buildingService.getSelectedFile?.();
+        if (file) {
+          this.documentId = file.id;
+          this.documentTitle = file.name;
+          console.log('📄 [AfterViewInit] Auto-bound documentId:', this.documentId);
+          console.log('📄 [AfterViewInit] Auto-bound documentTitle:', this.documentTitle);
+        } else {
+          console.log('📄 [AfterViewInit] No document context found.');
+        }
+      } else {
+        console.log('📄 [AfterViewInit] documentId already set:', this.documentId);
+      }
+    });
   }
 
 
@@ -164,12 +167,13 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   sendMessage(): void {
     console.log('📨 sendMessage triggered!');
     console.log('👉 Input:', this.userInput);
-    if (this.globalMode === false && this.documentId === undefined) {
-      this.handleError('❌ No document is currently selected.');
+    console.log('👉 documentId at send time:', this.documentId);
+
+    if (!this.globalMode && !this.documentId) {
+      this.handleError('❌ Cannot send message: No document selected.');
       return;
     }
 
-    console.log('👉 Document ID:', this.documentId);
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {
       return;
