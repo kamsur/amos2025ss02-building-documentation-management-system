@@ -77,9 +77,15 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['documentId']) {
-      console.log('🆕 documentId updated to:', changes['documentId'].currentValue);
+      this.documentId = changes['documentId'].currentValue;
+      console.log('🆕 documentId updated to:', this.documentId);
+    }
+
+    if (changes['documentTitle']) {
+      this.documentTitle = changes['documentTitle'].currentValue;
     }
   }
+
 
 
   ngOnDestroy(): void {
