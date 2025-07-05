@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, Input, SimpleChanges, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -27,7 +27,7 @@ interface ChatMessage {
   templateUrl: './ai-assistant.component.html',
   styleUrls: ['./ai-assistant.component.css']
 })
-export class AiAssistantComponent implements OnInit, OnDestroy {
+export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
   @Input() documentId?: number;
   @Input() documentTitle?: string;
@@ -74,6 +74,13 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     // Load FontAwesome if not already loaded
     this.loadFontAwesome();
   }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['documentId']) {
+      console.log('🆕 documentId updated to:', changes['documentId'].currentValue);
+    }
+  }
+
 
   ngOnDestroy(): void {
     if (this.themeSubscription) {
