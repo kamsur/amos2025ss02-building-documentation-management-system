@@ -1066,7 +1066,7 @@ namespace BitAndBeam.Controllers
             var doc = new HtmlAgilityPack.HtmlDocument();
             doc.LoadHtml(tikaHtml);
 
-            // Remove unwanted elements like <script>, <style>, and <head>
+            // Remove unwanted elements
             var unwantedTags = new[] { "script", "style", "head", "meta", "link" };
             foreach (var tag in unwantedTags)
             {
@@ -1078,20 +1078,26 @@ namespace BitAndBeam.Controllers
                 }
             }
 
-            // Extract all visible text from <body>
+            // Extract visible text from <body>
             var bodyNode = doc.DocumentNode.SelectSingleNode("//body");
             if (bodyNode == null)
                 return tikaHtml.Trim(); // fallback
 
             var textNodes = bodyNode.Descendants()
-                .Where(n => n.NodeType == HtmlAgilityPack.HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
+                .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
                 .Select(n => HtmlEntity.DeEntitize(n.InnerText.Trim()));
 
-            var cleanedText = System.Text.RegularExpressions.Regex.Replace(string.Join(" ", textNodes), @"\s+", " ");
+            // Join all text nodes with a space
+            var rawText = string.Join(" ", textNodes);
 
-            return cleanedText;
+            // Replace all \n with a space
+            rawText = rawText.Replace("\n", " ");
+
+            // Collapse multiple spaces/tabs into a single space
+            var cleanedText = Regex.Replace(rawText, @"[ \t]+", " ");
+
+            return cleanedText.Trim();
         }
-
     }
 }
 
