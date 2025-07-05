@@ -45,6 +45,8 @@ amos2025ss02-building-documentation-management-system.sln
 BitAndBeam/backend/src/bin/
 BitAndBeam/backend/src/obj/
 BitAndBeam/backend/src/.vs/
+BitAndBeam/backend/src/Scripts/obj/
+BitAndBeam/backend/src/Scripts/bin/
 
 # General
 *.log
