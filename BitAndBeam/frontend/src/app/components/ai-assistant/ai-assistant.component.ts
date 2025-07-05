@@ -28,7 +28,7 @@ interface ChatMessage {
   templateUrl: './ai-assistant.component.html',
   styleUrls: ['./ai-assistant.component.css']
 })
-export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , AfterViewInit{
+export class AiAssistantComponent implements OnInit, OnDestroy {
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
   @Input() documentId?: number;
   @Input() documentTitle?: string;

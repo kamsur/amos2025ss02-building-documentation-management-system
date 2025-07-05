@@ -351,22 +351,7 @@
     font-size: 20px;
   }
 }
-.doc-context-banner {
-  background-color: #eef4f7;
-  color: #2d3748;
-  font-size: 13px;
-  padding: 8px 16px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.dark-mode .doc-context-banner {
-  background-color: #2d3748;
-  color: #e2e8f0;
-  border-bottom: 1px solid #4a5568;
-}
 /* Spinner (reused from upload styles) */
 .spinner {
   display: inline-block;
@@ -392,6 +377,39 @@
   color: var(--text-secondary, #666);
   margin-bottom: 0.5rem;
 }
+.document-context-message {
+  background-color: var(--ai-msg-bg, #f0f0f0);
+  color: var(--text-dark, #2d3748);
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin: 8px 16px -4px 16px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 85%;
+  align-self: flex-start;
+  word-break: break-word;
+}
+
+.document-context-message .label {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.document-context-message .filename {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.dark-mode .document-context-message {
+  background-color: var(--ai-msg-bg-dark, #2d3748);
+  color: var(--text-light, #e2e8f0);
+}
+
 
 
 
