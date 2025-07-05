@@ -8,20 +8,21 @@
 
     <div class="assistant-header">
       <div class="header-left">
-        <i class="fa fa-robot"></i>
-        <div class="header-info">
+        <div class="header-title">
+          <i class="fa fa-robot"></i>
           <h3>AI Assistant</h3>
-          <div *ngIf="documentTitle" class="document-context-message" [title]="documentTitle">
-            <i class="fa fa-info-circle"></i>
-            <span class="doc-label">Currently chatting about:</span>
-            <span class="doc-name">{{ documentTitle }}</span>
-          </div>
+        </div>
+        <div *ngIf="documentTitle" class="document-context-message" [title]="documentTitle">
+          <i class="fa fa-info-circle"></i>
+          <span class="doc-label">Currently chatting about:</span>
+          <span class="doc-name">{{ documentTitle }}</span>
         </div>
       </div>
       <button class="close-btn" (click)="hideChat()" title="Minimize">
         <i class="fa fa-minus"></i>
       </button>
     </div>
+
 
     <!-- Chat messages - scrollable -->
     <div class="chat-content">
