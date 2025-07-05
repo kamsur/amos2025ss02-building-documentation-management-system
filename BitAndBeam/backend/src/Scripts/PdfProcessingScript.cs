@@ -8,12 +8,16 @@ using System.Threading.Tasks;
 using HtmlAgilityPack;
 using System.Linq; // Added for LINQ support
 using System.Text.RegularExpressions; // Added for Regex support
+using System.Text.Json.Serialization; // Added for JsonPropertyName attribute
 
 #nullable enable // Enable nullable reference types
 
 class PdfProcessingScript
 {
-    private static readonly HttpClient _httpClient = new HttpClient();
+    private static readonly HttpClient _httpClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromMinutes(8) // Increase timeout to 5 minutes
+    };
 
     static async Task Main(string[] args)
     {
@@ -70,6 +74,59 @@ class PdfProcessingScript
         string prompt = BuildPrompt(shortText, categoriesSchemaJson);
         string promptPath = "C:\\Users\\Kazi\\Downloads\\prompt.txt";
         await File.WriteAllTextAsync(promptPath, prompt);
+
+        // Contact Ollama server
+        string ollamaUrl = "http://amos.b-iq.net:11434/api/generate";
+        string ollamaRawResponse = string.Empty;
+        string cleanedJson = string.Empty;
+        try
+        {
+            var ollamaRequest = new
+            {
+                model = "gemma3:4b",
+                prompt = prompt,
+                stream = false
+            };
+
+            var requestContent = new StringContent(JsonSerializer.Serialize(ollamaRequest), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(ollamaUrl, requestContent);
+            response.EnsureSuccessStatusCode();
+
+            ollamaRawResponse = await response.Content.ReadAsStringAsync();
+
+            // Save raw response
+            string ollamaRawResponsePath = "C:\\Users\\Kazi\\Downloads\\ollama_raw_response.txt";
+            await File.WriteAllTextAsync(ollamaRawResponsePath, ollamaRawResponse);
+
+            // Clean the JSON response
+            var ollamaJsonDoc = JsonDocument.Parse(ollamaRawResponse);
+            var ollamaRoot = ollamaJsonDoc.RootElement;
+
+            if (ollamaRoot.TryGetProperty("response", out var responseElem))
+            {
+                var innerResponseString = responseElem.GetString();
+
+                cleanedJson = innerResponseString
+                    .Replace("```json", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    .Replace("```", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    .Trim();
+
+                int first = cleanedJson.IndexOf('{');
+                int last = cleanedJson.LastIndexOf('}');
+                if (first >= 0 && last > first)
+                    cleanedJson = cleanedJson[first..(last + 1)];
+            }
+
+            // Save cleaned response
+            string cleanedJsonPath = "C:\\Users\\Kazi\\Downloads\\ollama_cleaned_response.txt";
+            await File.WriteAllTextAsync(cleanedJsonPath, cleanedJson);
+
+            Console.WriteLine("✅ Ollama responses saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Ollama request failed: {ex.Message}");
+        }
 
         Console.WriteLine("✅ Outputs saved successfully.");
     }
@@ -239,8 +296,25 @@ class PdfProcessingScript
 
     public class DocumentCategory
     {
-        public string? Name { get; set; }
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
         public string? Description { get; set; }
-        public List<Dictionary<string, string>>? Fields { get; set; }
+
+        [JsonPropertyName("fields")]
+        public List<DocumentCategoryField> Fields { get; set; } = new();
+    }
+
+    public class DocumentCategoryField
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("mandatory")]
+        public bool Mandatory { get; set; }
     }
 }
