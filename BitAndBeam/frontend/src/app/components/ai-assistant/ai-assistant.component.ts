@@ -70,12 +70,14 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
   }
 
   get currentDocumentId(): number | undefined {
-    return this.documentId ?? this.buildingService.getSelectedFile?.()?.id;
+    return this._documentId ?? this.buildingService.getSelectedFile?.()?.id;
   }
 
 
 
+
   ngOnInit(): void {
+    console.log('💥 AiAssistantComponent created');
     console.log('🧠 AI Assistant initialized with:');
     console.log('📄 documentId:', this.currentDocumentId);
     console.log('📄 documentTitle:', this.documentTitle);
@@ -130,6 +132,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
   ngOnDestroy(): void {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
+      console.log('💥 AiAssistantComponent destroyed');
     }
   }
 
@@ -180,10 +183,11 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
   }
 
 
+
   sendMessage(): void {
     console.log('📨 sendMessage triggered!');
     console.log('👉 Input:', this.userInput);
-    const docId = this.currentDocumentId;
+    const docId = this._documentId;
     console.log('👉 documentId at send time:', docId);
     console.log('📎 buildingService.getSelectedFile result:', this.buildingService.getSelectedFile?.());
 
