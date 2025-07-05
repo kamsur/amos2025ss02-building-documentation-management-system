@@ -154,7 +154,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
         .then((res) => {
           this.messages.push({
-            text: res?.response ?? 'No response received.',
+            text: res?.data?.response ?? 'No response received.',
             sender: 'assistant',
             timestamp: new Date()
           });
