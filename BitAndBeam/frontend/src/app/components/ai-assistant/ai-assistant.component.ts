@@ -140,36 +140,57 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     // Prepare the previous messages for context if needed
     const previousMessages = this.messages
       .slice(-10) // Get last 10 messages for context
-      .map(msg => ({ role: msg.sender, content: msg.text }));
+      .map(msg => ({role: msg.sender, content: msg.text}));
 
-    // Create Ollama request
-    const ollamaRequest: OllamaRequest = {
-      prompt: userMessage,
-      context: {
-        conversation: previousMessages
-      }
-    };
-
-    // Send to Ollama API
-    this.getOllamaApi().apiOllamaAskPost(ollamaRequest)
-      .then(response => {
-        const responseData = response as any;
-        if (responseData && responseData.data && responseData.data.response) {
+    if (this.documentId) {
+      this.getOllamaApi().httpClient.post(
+        `/api/documents/${this.documentId}/ask`,
+        {userInput: userMessage}
+      ).toPromise()
+        .then((res: any) => {
           this.messages.push({
-            text: responseData.data.response,
+            text: res?.response ?? 'No response received.',
             sender: 'assistant',
             timestamp: new Date()
           });
-        } else {
-          this.handleError('Received an empty response from the AI');
+          this.isProcessing = false;
+        })
+        .catch((error: unknown) => {
+          console.error('Error with document-based chat:', error);
+          this.handleError('Failed to get answer for this document.');
+          this.isProcessing = false;
+        });
+    } else {
+      // Create Ollama request
+      const ollamaRequest: OllamaRequest = {
+        prompt: userMessage,
+        context: {
+          conversation: previousMessages
         }
-        this.isProcessing = false;
-      })
-      .catch(error => {
-        console.error('Error calling Ollama API:', error);
-        this.handleError('Failed to get a response from the AI assistant');
-        this.isProcessing = false;
-      });
+      };
+
+
+      // Send to Ollama API
+      this.getOllamaApi().apiOllamaAskPost(ollamaRequest)
+        .then(response => {
+          const responseData = response as any;
+          if (responseData && responseData.data && responseData.data.response) {
+            this.messages.push({
+              text: responseData.data.response,
+              sender: 'assistant',
+              timestamp: new Date()
+            });
+          } else {
+            this.handleError('Received an empty response from the AI');
+          }
+          this.isProcessing = false;
+        })
+        .catch(error => {
+          console.error('Error calling Ollama API:', error);
+          this.handleError('Failed to get a response from the AI assistant');
+          this.isProcessing = false;
+        });
+    }
   }
 
   handleError(message: string): void {
