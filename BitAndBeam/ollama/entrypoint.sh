@@ -10,7 +10,7 @@ sleep 10
 ollama pull gemma3:4b
 
 # Create custom model with 16384 context tokens
-ollama create gemma3-4b-16k -f /app/Modelfile
+ollama create gemma3-4b-8k -f /app/Modelfile
 
 # Keep container alive
 wait
