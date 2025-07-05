@@ -32,6 +32,11 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   @Input() documentId?: number;
   @Input() documentTitle?: string;
 
+
+  private internalDocumentId?: number;
+  private internalDocumentTitle?: string;
+
+
   messages: ChatMessage[] = [];
   userInput = '';
   errorMessage = '';
@@ -57,6 +62,8 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.internalDocumentId = this.documentId;
+    this.internalDocumentTitle = this.documentTitle;
     console.log('🧠 AI Assistant initialized with:');
     console.log('📄 documentId:', this.documentId);
     console.log('📄 documentTitle:', this.documentTitle);
@@ -144,7 +151,9 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   sendMessage(): void {
     console.log('📨 sendMessage triggered!');
     console.log('👉 Input:', this.userInput);
-    console.log('👉 Document ID:', this.documentId);
+
+    const documentId = this.internalDocumentId;
+    console.log('👉 Document ID:', documentId);
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {
       return;
@@ -166,11 +175,11 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
       .slice(-10) // Get last 10 messages for context
       .map(msg => ({role: msg.sender, content: msg.text}));
 
-    if (this.documentId) {
+    if (documentId) {
       const request: DocumentChatbotRequest = {
         userInput: userMessage
       };
-      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
+      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(documentId, request)
         .then((res) => {
           this.messages.push({
             text: res?.data?.response ?? 'No response received.',
