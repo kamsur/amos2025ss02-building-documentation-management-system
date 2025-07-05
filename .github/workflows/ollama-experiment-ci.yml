@@ -7,7 +7,7 @@ on:
       - llm-experiment
     paths:
       - 'BitAndBeam/ollama/**'
-      - '.github/workflows/ollama-ci.yml'
+      # - '.github/workflows/ollama-ci.yml'
   # workflow_call:
   #   outputs:
   #     ollama_built:

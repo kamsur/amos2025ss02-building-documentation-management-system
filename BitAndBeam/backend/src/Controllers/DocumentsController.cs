@@ -109,7 +109,7 @@ namespace BitAndBeam.Controllers
             }
 
             // Clean the extracted text
-            var shortText = textForOllama.Length > 2_000 ? textForOllama[..2_000] : textForOllama;
+            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());

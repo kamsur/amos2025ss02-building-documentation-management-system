@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y dos2unix && apt-get clean
 WORKDIR /app
 
 # Copy files
-COPY Modelfile /app/Modelfile
+# COPY Modelfile /app/Modelfile
 COPY entrypoint.sh /entrypoint.sh
 
 # Convert entrypoint script to LF and make executable
