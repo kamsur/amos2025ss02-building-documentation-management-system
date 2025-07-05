@@ -19,9 +19,9 @@ interface ChatMessage {
   selector: 'app-ai-assistant',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    HttpClientModule, 
+    CommonModule,
+    FormsModule,
+    HttpClientModule,
     MarkdownBoldPipe
   ],
   templateUrl: './ai-assistant.component.html',
@@ -29,7 +29,9 @@ interface ChatMessage {
 })
 export class AiAssistantComponent implements OnInit, OnDestroy {
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
-  
+  @Input() documentId?: number;
+  @Input() documentTitle?: string;
+
   messages: ChatMessage[] = [];
   userInput = '';
   errorMessage = '';
@@ -37,17 +39,17 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   isProcessing = false;
   isDarkMode = false;
   isAuthenticated = false;
-  
+
   private themeSubscription: Subscription | null = null;
   private ollamaApi: OllamaApi | null = null;
-  
+
   constructor(
     private themeService: ThemeService,
     private apiClientFactory: ApiClientFactory,
     private sessionService: SessionService
   ) {
     // Don't create API client in constructor - create it when needed
-    
+
     // Watch for authentication state changes using effect
     effect(() => {
       this.isAuthenticated = this.sessionService.isAuthenticated();
@@ -58,18 +60,18 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
     });
-    
+
     // Initialize with current theme and auth state
     this.isDarkMode = this.themeService.isDarkMode();
     this.isAuthenticated = this.sessionService.isAuthenticated();
 
     // Always start with chat interface hidden after page load/reload/redirect
     this.showChatInterface = false;
-    
+
     // Load FontAwesome if not already loaded
     this.loadFontAwesome();
   }
-  
+
   ngOnDestroy(): void {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
@@ -90,7 +92,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   toggleChat(): void {
     this.showChatInterface = !this.showChatInterface;
   }
-  
+
   // Load FontAwesome icons for the chat interface
   private loadFontAwesome(): void {
     if (!document.getElementById('font-awesome-css')) {
@@ -114,7 +116,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       // Create API client with current token
       this.ollamaApi = this.apiClientFactory.create<OllamaApi>(OllamaApi);
     }
-    
+
     return this.ollamaApi;
   }
 
@@ -143,7 +145,7 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     // Create Ollama request
     const ollamaRequest: OllamaRequest = {
       prompt: userMessage,
-      context: { 
+      context: {
         conversation: previousMessages
       }
     };
