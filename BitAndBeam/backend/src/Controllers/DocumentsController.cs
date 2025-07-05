@@ -105,7 +105,7 @@ namespace BitAndBeam.Controllers
             You are an intelligent document analyzer.
 
             Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
-            
+
             Your answer MUST include the following top-level fields: "address", "category", and "key_information".
 
             **Example format:**
@@ -129,7 +129,7 @@ namespace BitAndBeam.Controllers
             }
 
             **TASK A** → Extract an **address** if present.
-            Look for labels like: 
+            Look for labels like:
             "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
             or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
 
@@ -137,15 +137,15 @@ namespace BitAndBeam.Controllers
 
             **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
             For every field in the selected category's 'fields' array:
-            • Use the field's **name** as the JSON key.  
-            • Try to extract the corresponding value from the document; if not found, set it to null.  
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
             • Only include the fields declared for that category — no extra keys.
 
             **Rules**
-            
-            • Every value must be a JSON string or null — no units, no comments.  
-            • Output MUST be valid JSON that parses with 'JSON.parse()'.  
-            • If any field cannot be detected, output it with a null value.  
+
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
             • Do **not** wrap the answer in markdown or code fences.
 
             **categories_schema**:
@@ -869,8 +869,8 @@ namespace BitAndBeam.Controllers
                     : documentContent;
 
                 // Construct the prompt for Ollama
-                var prompt = $@"You are a helpful assistant answering questions about document content. 
-Use ONLY the information from the document content provided below to answer the question. 
+                var prompt = $@"You are a helpful assistant answering questions about document content.
+Use ONLY the information from the document content provided below to answer the question.
 If the answer cannot be found in the document, say so clearly - do not make up information.
 
 DOCUMENT CONTENT:
@@ -886,32 +886,16 @@ Please provide a concise and accurate answer based solely on the document conten
                     // Create HTTP client for Ollama
                     var client = httpClientFactory.CreateClient("Ollama");
 
-                    // Prepare the request to Ollama
-                    var payload = JsonSerializer.Serialize(new { prompt });
-                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
-
                     // Send the request to Ollama
-                    var response = await client.PostAsync(
-                        "http://ollama:8000/api/Ollama/ask",
-                        content).ConfigureAwait(false);
-
-                    // Check if the request was successful
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        _logger.LogWarning("⚠️ Ollama service failed (status {Code})", response.StatusCode);
-                        return StatusCode((int) response.StatusCode, new { error = "Ollama service error" });
-                    }
+                    var jsonResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
 
                     // Parse the response
-                    var jsonStr = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                        jsonStr,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     // Return the response
                     return Ok(new DocumentChatbotResponse
                     {
-                        Response = ollamaResponse?.Response ?? "No response from the model"
+                        Response = ollamaResponse?.Response
                     });
                 }
                 catch (Exception ex)
