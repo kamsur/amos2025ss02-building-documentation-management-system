@@ -59,12 +59,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
     });
   }
 
-  get currentDocumentId(): number | undefined {
-    return this._documentId ?? this.buildingService.getSelectedFile?.()?.id;
-  }
-
-
-
 
   ngOnInit(): void {
     this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
