@@ -128,6 +128,76 @@ class PdfProcessingScript
             Console.WriteLine($"❌ Ollama request failed: {ex.Message}");
         }
 
+        // Parse and save address, category, and key information
+        try
+        {
+            // Assuming the cleaned JSON is in a known format and contains the necessary information
+            using var jsonDoc = JsonDocument.Parse(cleanedJson);
+            var root = jsonDoc.RootElement;
+
+            // ADDRESS
+            var parsedAddress = new Dictionary<string, string>();
+            if (root.TryGetProperty("address", out var addrObj) && addrObj.ValueKind == JsonValueKind.Object)
+            {
+                parsedAddress = new Dictionary<string, string>
+                {
+                    ["street"] = addrObj.GetProperty("street").GetString() ?? "",
+                    ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
+                    ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
+                    ["city"] = addrObj.GetProperty("city").GetString() ?? ""
+                };
+                if (parsedAddress.Values.All(string.IsNullOrWhiteSpace)) parsedAddress = null;
+            }
+
+            // CATEGORY
+            string matchedCategory = root.GetProperty("category").GetString() ?? string.Empty;
+            if (root.TryGetProperty("category", out var catElem) && catElem.ValueKind == JsonValueKind.String)
+            {
+                var cat = catElem.GetString();
+                if (!string.IsNullOrWhiteSpace(cat) && !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
+                    matchedCategory = cat.Trim();
+            }
+
+            // KEY INFORMATION
+            var keyInformation = new Dictionary<string, string>();
+            if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+            {
+                keyInformation = kiObj.EnumerateObject()
+                    .ToDictionary(p => p.Name, p => p.Value.ValueKind == JsonValueKind.String
+                        ? p.Value.GetString() ?? string.Empty
+                        : p.Value.ToString());
+            }
+
+            // Save parsed address
+            if (parsedAddress != null)
+            {
+                string parsedAddressPath = "C:\\Users\\Kazi\\Downloads\\parsed_address.txt";
+                var addressContent = string.Join(Environment.NewLine, parsedAddress.Select(kv => $"{kv.Key}: {kv.Value}"));
+                await File.WriteAllTextAsync(parsedAddressPath, addressContent);
+            }
+
+            // Save matched category
+            if (!string.IsNullOrWhiteSpace(matchedCategory))
+            {
+                string matchedCategoryPath = "C:\\Users\\Kazi\\Downloads\\matched_category.txt";
+                await File.WriteAllTextAsync(matchedCategoryPath, matchedCategory);
+            }
+
+            // Save key information
+            if (keyInformation != null)
+            {
+                string keyInformationPath = "C:\\Users\\Kazi\\Downloads\\key_information.txt";
+                var keyInfoContent = string.Join(Environment.NewLine, keyInformation.Select(kv => $"{kv.Key}: {kv.Value}"));
+                await File.WriteAllTextAsync(keyInformationPath, keyInfoContent);
+            }
+
+            Console.WriteLine("✅ Parsed address, category, and key information saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Parsing or saving address, category, or key information failed: {ex.Message}");
+        }
+
         Console.WriteLine("✅ Outputs saved successfully.");
     }
 

@@ -176,7 +176,9 @@ namespace BitAndBeam.Controllers
                     if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
                     {
                         keyInformation = kiObj.EnumerateObject()
-                            .ToDictionary(p => p.Name, p => p.Value.GetString());
+                            .ToDictionary(p => p.Name, p => p.Value.ValueKind == JsonValueKind.String
+                                ? p.Value.GetString() ?? string.Empty
+                                : p.Value.ToString());
                     }
                 }
             }
