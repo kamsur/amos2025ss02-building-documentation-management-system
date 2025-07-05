@@ -11,10 +11,12 @@
         <i class="fa fa-robot"></i>
         <h3>AI Assistant</h3>
       </div>
-      <div *ngIf="documentTitle" class="doc-context-banner">
-        <i class="fa fa-file-alt"></i>
-        <span>Currently chatting about: <strong>{{ documentTitle }}</strong></span>
+      <div *ngIf="documentTitle" class="document-context-message">
+        <i class="fa fa-info-circle"></i>
+        <span class="label">Currently chatting about:</span>
+        <span class="filename" title="{{ documentTitle }}">{{ documentTitle }}</span>
       </div>
+
       <button class="close-btn" (click)="hideChat()" title="Minimize">
         <i class="fa fa-minus"></i>
       </button>
