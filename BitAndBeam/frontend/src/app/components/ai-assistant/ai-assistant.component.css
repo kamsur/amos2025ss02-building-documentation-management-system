@@ -83,41 +83,19 @@
 /* Assistant header */
 .assistant-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: flex-start; /* ✅ Keep this to align title + doc name to top */
   padding: 12px 16px;
   background: var(--accent-color, #45c3b8);
   color: white;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
 }
-
-.document-context-message {
+.header-left {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  background-color: transparent;
-  color: white;
-  font-weight: 500;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  align-items: flex-start;
+  gap: 10px; /* ✅ Adds space between 🤖 and the title block */
 }
 
-.document-context-message .doc-name {
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90px;
-  display: inline-block;
-}
-
-.document-context-message .fa-info-circle {
-  font-size: 13px;
-}
 
 .header-title {
   display: flex;
@@ -130,6 +108,49 @@
   font-size: 18px;
   font-weight: 600;
 }
+
+/* New container to group title and document context */
+.header-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+
+/* Refined inline document label under title */
+.document-context-message {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* ✅ More space between info icon and label */
+  font-size: 12px;
+  color: white;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px; /* ✅ Allow full width below AI Assistant */
+}
+
+
+.document-context-message .fa-info-circle {
+  font-size: 12px;
+  margin-right: 2px; /* ✅ Add space to right of icon */
+}
+
+.document-context-message .doc-label {
+  flex-shrink: 0; /* ✅ Prevent truncation of label */
+}
+
+.document-context-message .doc-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: 100px; /* ✅ Adjust to your needs */
+}
+
+
 
 .close-btn {
   background: none;

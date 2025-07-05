@@ -7,17 +7,17 @@
        [class.global-mode]="globalMode">
 
     <div class="assistant-header">
-      <div class="header-title">
+      <div class="header-left">
         <i class="fa fa-robot"></i>
-        <h3>AI Assistant</h3>
+        <div class="header-info">
+          <h3>AI Assistant</h3>
+          <div *ngIf="documentTitle" class="document-context-message" [title]="documentTitle">
+            <i class="fa fa-info-circle"></i>
+            <span class="doc-label">Currently chatting about:</span>
+            <span class="doc-name">{{ documentTitle }}</span>
+          </div>
+        </div>
       </div>
-      <!-- Integrate the document info here -->
-      <div *ngIf="documentTitle" class="document-context-message">
-        <i class="fa fa-info-circle"></i>
-        <span class="doc-label">Currently chatting about:</span>
-        <span class="doc-name" [title]="documentTitle">{{ documentTitle }}</span>
-      </div>
-
       <button class="close-btn" (click)="hideChat()" title="Minimize">
         <i class="fa fa-minus"></i>
       </button>
@@ -50,7 +50,6 @@
     <!-- Spinner while loading -->
     <div *ngIf="isProcessing" class="spinner" style="align-self: center; margin: 8px auto;"></div>
     <div *ngIf="isProcessing" class="thinking-text">Thinking...</div>
-
 
     <!-- Chat input -->
     <div class="chat-input-container">
