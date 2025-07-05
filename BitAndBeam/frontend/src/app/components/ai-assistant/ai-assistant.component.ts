@@ -7,7 +7,7 @@ import { ThemeService } from '../../services/theme.service';
 import { SessionService } from '../../services/session.service';
 import { Subscription } from 'rxjs';
 import { ApiClientFactory } from '../../services/api-client.factory';
-import { OllamaApi, OllamaRequest } from '../../../api';
+import { OllamaApi, OllamaRequest, DocumentChatbotRequest , DocumentsApi } from '../../../api';
 
 interface ChatMessage {
   text: string;
@@ -120,6 +120,11 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
     return this.ollamaApi;
   }
 
+  private getDocumentsApi(): DocumentsApi {
+    return this.apiClientFactory.create(DocumentsApi);
+  }
+
+
   sendMessage(): void {
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {
@@ -143,11 +148,8 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
       .map(msg => ({role: msg.sender, content: msg.text}));
 
     if (this.documentId) {
-      this.getOllamaApi().httpClient.post(
-        `/api/documents/${this.documentId}/ask`,
-        {userInput: userMessage}
-      ).toPromise()
-        .then((res: any) => {
+      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
+        .then((res) => {
           this.messages.push({
             text: res?.response ?? 'No response received.',
             sender: 'assistant',
@@ -156,10 +158,11 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
           this.isProcessing = false;
         })
         .catch((error: unknown) => {
-          console.error('Error with document-based chat:', error);
+          console.error('Error asking document question:', error);
           this.handleError('Failed to get answer for this document.');
           this.isProcessing = false;
         });
+
     } else {
       // Create Ollama request
       const ollamaRequest: OllamaRequest = {
