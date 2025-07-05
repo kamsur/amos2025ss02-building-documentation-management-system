@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 # Install Ollama dependencies
-RUN apt-get update && apt-get install -y curl gnupg && \
+RUN apt-get update && apt-get install -y curl gnupg procps && \
     curl -fsSL https://ollama.com/install.sh | sh && \
     apt-get clean
 
