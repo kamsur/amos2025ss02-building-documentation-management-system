@@ -5,6 +5,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { MarkdownBoldPipe } from '../../pipes/markdown-bold.pipe';
 import { ThemeService } from '../../services/theme.service';
 import { SessionService } from '../../services/session.service';
+import { BuildingService } from '../../services/building.service';
 import { Subscription } from 'rxjs';
 import { ApiClientFactory } from '../../services/api-client.factory';
 import { OllamaApi, OllamaRequest, DocumentChatbotRequest , DocumentsApi } from '../../../api';
@@ -146,6 +147,10 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   sendMessage(): void {
     console.log('📨 sendMessage triggered!');
     console.log('👉 Input:', this.userInput);
+    if (this.globalMode === false && this.documentId === undefined) {
+      this.handleError('❌ No document is currently selected.');
+      return;
+    }
 
     const documentId = this.documentId
     console.log('👉 Document ID:', documentId);
