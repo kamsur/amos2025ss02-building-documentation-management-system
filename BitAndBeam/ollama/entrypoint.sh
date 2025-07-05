@@ -6,11 +6,11 @@ ollama serve &
 # Wait for it to be ready
 sleep 10
 
-# Remove all existing models
-ollama list --quiet | xargs -r -n 1 ollama rm
+# # Remove all existing models
+# ollama list --quiet | xargs -r -n 1 ollama rm
 
-echo "Remaining models:"
-ollama list
+# echo "Remaining models:"
+# ollama list
 
 # Pull base model
 ollama pull gemma3:4b
