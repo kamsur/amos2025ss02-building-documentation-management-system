@@ -13,7 +13,7 @@ sleep 10
 # ollama list
 
 # Pull base model
-ollama pull deepseek-r1:8b
+ollama pull gemma3:4b
 
 # Create custom model with 8192 context tokens
 # ollama create gemma3-4b-8k -f /app/Modelfile
