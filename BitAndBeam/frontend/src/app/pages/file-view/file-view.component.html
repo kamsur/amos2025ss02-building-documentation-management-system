@@ -53,7 +53,6 @@
               </svg>
             </button>
           </div>
-
           <div class="metadata-content">
             <div class="metadata-item">
               <label for="building-select"><strong>Building:</strong></label>
@@ -62,41 +61,65 @@
                 <option *ngFor="let b of buildings" [ngValue]="b.id">{{ b.name }}</option>
               </select>
             </div>
-          <div class="metadata-item">
-            <label for="category-select"><strong>Category:</strong></label>
-            <select id="category-select" [(ngModel)]="selectedCategoryName">
-              <option [ngValue]="null">No Category</option>
-              <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
-            </select>
-          </div>
-
-          <div *ngIf="parsedMetadata.length > 0">
-            <h3>📄 Document Information</h3>
-            <table>
-              <tr *ngFor="let item of parsedMetadata">
-                <td><strong>{{ item.label }}:</strong></td>
-                <td>{{ item.value }}</td>
-              </tr>
-            </table>
-          </div>
-          <div class="metadata-section">
-            <h3>Extracted Key Information</h3>
-
-            <div *ngIf="keyInformation.length > 0; else noKeyInfo">
-              <div *ngFor="let item of keyInformation">
-                <strong>{{ item.label }}:</strong> {{ item.value }}
+            <div class="metadata-item">
+              <label for="category-select"><strong>Category:</strong></label>
+              <select id="category-select" [(ngModel)]="selectedCategoryName" (change)="onCategoryChange()" (ngModelChange)="hasChanges = true">
+                <option [ngValue]="null">No Category</option>
+                <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
+              </select>
+            </div>
+            <div *ngIf="parsedMetadata.length > 0">
+              <h3>📄 Metadata</h3>
+              <table>
+                <tr *ngFor="let item of parsedMetadata">
+                  <td><strong>{{ item.label }}:</strong></td>
+                  <td>{{ item.value }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="ollama-info" *ngIf="keyInfo">
+              <h3>Extracted Information</h3>
+              <!-- B. Category -->
+              <div *ngIf="selectedCategoryName">
+                <h4>Detected Category</h4>
+                <p>{{ selectedCategoryName }}</p>
+              </div>
+              <!-- C. Key Information -->
+              <div>
+                <h4> Key Information</h4>
+                <ng-container *ngIf="keyInformation.length > 0; else noKeyInfo">
+                  <ul>
+                    <li *ngFor="let item of keyInformation">
+                      <strong>{{ item.label }}:</strong>
+                      <input type="text" [(ngModel)]="item.value" (ngModelChange)="hasChanges = true"/>
+                    </li>
+                  </ul>
+                </ng-container>
+                <ng-template #noKeyInfo>
+                  <p>No key information found.</p>
+                </ng-template>
               </div>
             </div>
-
-            <ng-template #noKeyInfo>
-              <p style="color: gray; font-style: italic;">
-                No extracted key information found or extraction failed.
-              </p>
-            </ng-template>
-          </div>
-
+            <!-- A. Suggested Address -->
+              <div *ngIf="keyInfo.suggestedAddress">
+                <h4>Suggested Address</h4>
+                <ul>
+                  <li><strong>Street:</strong>
+                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.street" />
+                  </li>
+                  <li><strong>House Number:</strong>
+                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.house_number" />
+                  </li>
+                  <li><strong>ZIP Code:</strong>
+                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.zip_code" />
+                  </li>
+                  <li><strong>City:</strong>
+                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.city" />
+                  </li>
+                </ul>
+              </div>
             <div class="meta-actions">
-              <button class="save-btn" (click)="saveMetadataChanges()" [disabled]="loading">
+              <button class="save-btn" (click)="saveMetadataChanges()" [disabled]="!hasChanges || loading">
                 {{ loading ? 'Saving...' : 'Save Changes' }}
               </button>
               <button class="download-btn" (click)="downloadFile()">Download</button>

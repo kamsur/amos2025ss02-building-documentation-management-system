@@ -76,8 +76,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
-  padding: 1.5rem 1.5rem 0 1.5rem;
-  margin: 0 -1.5rem 1rem -1.5rem;
+  padding: 0.5rem 1.5rem 0 1.5rem;
 }
 
 .metadata-panel.collapsed .metadata-panel-header {
@@ -120,7 +119,9 @@
 }
 
 .metadata-content {
-  transition: opacity 0.3s ease;
+  overflow-y: auto;
+  padding-bottom: 100px; /* makes space for buttons at bottom */
+  max-height: calc(100vh - 60px); /* adjust this as needed */
 }
 
 .metadata-panel.collapsed .metadata-content {
@@ -171,10 +172,11 @@
 }
 
 .meta-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
+  position: sticky;
+  bottom: 0;
+  background-color: var(--bg-secondary);
+  padding: 1rem 0 3rem;
+  z-index: 10;
 }
 
 .meta-actions button {
@@ -194,6 +196,17 @@
 .meta-actions button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.ollama-section {
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.metadata-content h4 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .edit-btn {

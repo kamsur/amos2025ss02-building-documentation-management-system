@@ -43,6 +43,7 @@ export class FileViewComponent {
   keyInformation: { label: string; value: string | null }[] = [];
   loadingKeyInfo: boolean = false;
   keyInfo: any = null;
+  hasChanges: boolean = false;
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
@@ -140,7 +141,7 @@ export class FileViewComponent {
           if (doc.keyInformation) {
             this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
               label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),  // Pretty label
-              value: value ? String(value) : 'N/A'
+              value: value !== null ? String(value) : 'N/A'  // Force even nulls to show
             }));
           } else {
               this.keyInformation = [];
@@ -181,6 +182,35 @@ export class FileViewComponent {
           suggestedAddress: data.suggestedAddress,
           rawMetadata: data.metadata,
         };
+        //safely fallback if address is missing
+        if (!this.keyInfo.suggestedAddress) {
+          this.keyInfo.suggestedAddress = {
+            street: '',
+            house_number: '',
+            zip_code: '',
+            city: ''
+          };
+        }
+        // ✅ If no keyInformation found but category is selected, generate empty key fields
+        if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
+            this.selectedCategoryName && this.categories.length > 0) {
+          const match = this.categories.find(c => c.name === this.selectedCategoryName);
+          if (match && Array.isArray(match.fields)) {
+            this.keyInformation = match.fields.map(f => ({
+              label: f.name,
+              value: ''
+            }));
+          }
+        } else {
+          this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
+            label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            value: value !== null ? String(value) : 'N/A'
+          }));
+        }
+        if (!this.keyInformation.length && this.selectedCategoryName) {
+          this.onCategoryChange();
+        }
+
         this.loadingKeyInfo = false;
       },
       error: (err) => {
@@ -211,19 +241,39 @@ export class FileViewComponent {
     this.loading = true;
     this.toastMessage = '';
 
-    const patchRequest: DocumentMetadataPatchRequest = {
+    // 🟡 AUTO-GENERATE blank key info if none is loaded but category is selected
+    if ((!this.keyInformation || this.keyInformation.length === 0) &&
+        this.selectedCategoryName && this.categories.length > 0) {
+      const match = this.categories.find(c => c.name === this.selectedCategoryName);
+      if (match && Array.isArray(match.fields) && match.fields.length > 0) {
+        this.keyInformation = match.fields.map(f => ({
+          label: f.name,   // assumes each field object has a 'name'
+          value: ''        // user can edit this later
+        }));
+      }
+    }
+
+    const patchRequest: DocumentMetadataPatchRequest & {
+      keyInformation?: any;
+    } = {
       buildingId: this.selectedBuildingId,
-      categoryName: this.selectedCategoryName ?? undefined
+      categoryName: this.selectedCategoryName ?? undefined,
+      keyInformation: Object.fromEntries(
+        this.keyInformation.map(k => [k.label.toLowerCase().replace(/ /g, '_'), k.value])
+      )
     };
 
+    console.log('📦 Patch request payload:', patchRequest);
     const documentsApi = this.apiFactory.create(DocumentsApi);
     documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
       .then(() => {
         this.toastMessage = '✅ Metadata updated successfully.';
+        this.hasChanges = false;
         this.sidebarRefreshService.triggerRefresh();
 
         // ✅ After save, reload document to update UI
         this.loadDocument(this.selectedFile!.id);
+        this.fetchKeyInfo(this.selectedFile!.id);
 
         setTimeout(() => this.toastMessage = '', 4000);
       })
@@ -233,6 +283,15 @@ export class FileViewComponent {
       .finally(() => {
         this.loading = false;
       });
+  }
+  onCategoryChange(): void {
+    const selected = this.categories.find(c => c.name === this.selectedCategoryName);
+    if (selected && Array.isArray(selected.fields)) {
+      this.keyInformation = selected.fields.map(field => ({
+        label: field.name,
+        value: ''
+      }));
+    }
   }
 
   toggleMetadataPanel(): void {

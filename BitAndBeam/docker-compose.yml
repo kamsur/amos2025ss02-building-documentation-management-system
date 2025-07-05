@@ -1,17 +1,20 @@
 services:
-  # ollama:
-  #   build:
-  #     context: ./ollama
-  #     dockerfile: Dockerfile
-  #   container_name: ollama
-  #   ports:
-  #     - "11434:11434"   # Ollama internal API
-  #     - "8000:8000"    # FastAPI external endpoint
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # or some endpoint that signals Ollama is ready
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollamadata:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 
   backend:
     build:
@@ -89,5 +92,6 @@ services:
       retries: 5
 
 volumes:
+  ollamadata:
   documentdata:
   pgdata:

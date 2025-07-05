@@ -9,6 +9,7 @@ RUN apt-get update \
        tesseract-ocr-eng \
        tesseract-ocr-deu \
        tesseract-ocr-fra \
+       curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
