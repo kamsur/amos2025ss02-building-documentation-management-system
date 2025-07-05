@@ -3,9 +3,11 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using BitAndBeam.Data;
 using BitAndBeam.Models;
 using BitAndBeam.Services;
+using HtmlAgilityPack; // Ensure this package is installed
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
