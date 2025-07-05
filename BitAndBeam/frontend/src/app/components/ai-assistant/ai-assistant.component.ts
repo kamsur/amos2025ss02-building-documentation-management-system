@@ -76,7 +76,23 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
 
     // Load FontAwesome if not already loaded
     this.loadFontAwesome();
+    if (!this.documentId) {
+      const file = this.buildingService.getSelectedFile?.();
+      if (file) {
+        this.documentId = file.id;
+        this.documentTitle = file.name;
+        console.log('📄 Auto-bound documentId from BuildingService:', this.documentId);
+        console.log('📄 Auto-bound documentTitle from BuildingService:', this.documentTitle);
+      } else {
+        console.log('📄 No document context available. Assistant in general mode.');
+      }
+    } else {
+      console.log('📄 documentId (from input):', this.documentId);
+      console.log('📄 documentTitle (from input):', this.documentTitle);
+    }
+
   }
+
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['documentId'] && changes['documentId'].currentValue !== undefined) {
