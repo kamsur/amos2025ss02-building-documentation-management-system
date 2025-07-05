@@ -92,8 +92,8 @@
 }
 .header-left {
   display: flex;
-  align-items: flex-start;
-  gap: 10px; /* ✅ Adds space between 🤖 and the title block */
+  align-items: flex-start; /* Align icon + text to top */
+  gap: 10px;               /* ✅ Add spacing between 🤖 and text */
 }
 
 
@@ -120,15 +120,12 @@
 /* Refined inline document label under title */
 .document-context-message {
   display: flex;
-  align-items: center;
-  gap: 6px; /* ✅ More space between info icon and label */
+  flex-direction: column;     /* ✅ Stack label and filename vertically */
+  align-items: flex-start;
+  gap: 4px;
   font-size: 12px;
   color: white;
   margin-top: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 240px; /* ✅ Allow full width below AI Assistant */
 }
 
 
@@ -143,11 +140,8 @@
 
 .document-context-message .doc-name {
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-  max-width: 100px; /* ✅ Adjust to your needs */
+  white-space: normal;       /* ✅ Allow line wrapping */
+  word-break: break-word;    /* ✅ Break long filenames if needed */
 }
 
 
