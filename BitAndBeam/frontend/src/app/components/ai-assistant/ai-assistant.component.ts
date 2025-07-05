@@ -57,6 +57,9 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('🧠 AI Assistant initialized with:');
+    console.log('📄 documentId:', this.documentId);
+    console.log('📄 documentTitle:', this.documentTitle);
     this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
     });
@@ -126,6 +129,9 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
 
 
   sendMessage(): void {
+    console.log('📨 sendMessage triggered!');
+    console.log('👉 Input:', this.userInput);
+    console.log('👉 Document ID:', this.documentId);
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {
       return;
@@ -158,6 +164,8 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
             sender: 'assistant',
             timestamp: new Date()
           });
+          console.log('📎 Sending document request with ID:', this.documentId);
+          console.log('📥 Response from document ask:', res);
           this.isProcessing = false;
         })
         .catch((error: unknown) => {
