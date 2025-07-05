@@ -11,10 +11,11 @@
         <i class="fa fa-robot"></i>
         <h3>AI Assistant</h3>
       </div>
+      <!-- Integrate the document info here -->
       <div *ngIf="documentTitle" class="document-context-message">
         <i class="fa fa-info-circle"></i>
-        <span class="label">Currently chatting about:</span>
-        <span class="filename" title="{{ documentTitle }}">{{ documentTitle }}</span>
+        <span class="doc-label">Currently chatting about:</span>
+        <span class="doc-name" [title]="documentTitle">{{ documentTitle }}</span>
       </div>
 
       <button class="close-btn" (click)="hideChat()" title="Minimize">

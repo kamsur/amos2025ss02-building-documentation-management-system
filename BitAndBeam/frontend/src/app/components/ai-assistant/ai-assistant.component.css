@@ -83,11 +83,40 @@
 /* Assistant header */
 .assistant-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
   background: var(--accent-color, #45c3b8);
   color: white;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.document-context-message {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  background-color: transparent;
+  color: white;
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-context-message .doc-name {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+  display: inline-block;
+}
+
+.document-context-message .fa-info-circle {
+  font-size: 13px;
 }
 
 .header-title {
@@ -377,38 +406,8 @@
   color: var(--text-secondary, #666);
   margin-bottom: 0.5rem;
 }
-.document-context-message {
-  background-color: var(--ai-msg-bg, #f0f0f0);
-  color: var(--text-dark, #2d3748);
-  padding: 10px 14px;
-  border-radius: 12px;
-  margin: 8px 16px -4px 16px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 85%;
-  align-self: flex-start;
-  word-break: break-word;
-}
+.
 
-.document-context-message .label {
-  font-weight: 500;
-  opacity: 0.9;
-}
-
-.document-context-message .filename {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 150px;
-}
-
-.dark-mode .document-context-message {
-  background-color: var(--ai-msg-bg-dark, #2d3748);
-  color: var(--text-light, #e2e8f0);
-}
 
 
 
