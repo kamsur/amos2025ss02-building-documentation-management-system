@@ -30,7 +30,17 @@ interface ChatMessage {
 })
 export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , AfterViewInit{
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
-  @Input() documentId?: number;
+  private _documentId?: number;
+
+  @Input()
+  set documentId(value: number | undefined) {
+    this._documentId = value;
+    console.log('🆕 documentId setter called with:', value);
+  }
+  get documentId(): number | undefined {
+    return this._documentId;
+  }
+
   @Input() documentTitle?: string;
 
 
@@ -59,9 +69,15 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
     });
   }
 
+  get currentDocumentId(): number | undefined {
+    return this.documentId ?? this.buildingService.getSelectedFile?.()?.id;
+  }
+
+
+
   ngOnInit(): void {
     console.log('🧠 AI Assistant initialized with:');
-    console.log('📄 documentId:', this.documentId);
+    console.log('📄 documentId:', this.currentDocumentId);
     console.log('📄 documentTitle:', this.documentTitle);
     this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
@@ -80,7 +96,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
 
   ngAfterViewInit(): void {
     setTimeout(() => {
-      if (!this.documentId) {
+      if (!this.currentDocumentId) {
         const file = this.buildingService.getSelectedFile?.();
         if (file) {
           this.documentId = file.id;
@@ -100,7 +116,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['documentId'] && changes['documentId'].currentValue !== undefined) {
       this.documentId = changes['documentId'].currentValue;
-      console.log('🆕 documentId updated to:', this.documentId);
+      console.log('🆕 documentId updated to:', this.currentDocumentId);
     }
     if (changes['documentTitle'] && changes['documentTitle'].currentValue !== undefined) {
       this.documentTitle = changes['documentTitle'].currentValue;
@@ -167,9 +183,13 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
   sendMessage(): void {
     console.log('📨 sendMessage triggered!');
     console.log('👉 Input:', this.userInput);
-    console.log('👉 documentId at send time:', this.documentId);
+    const docId = this.currentDocumentId;
+    console.log('👉 documentId at send time:', docId);
+    console.log('📎 buildingService.getSelectedFile result:', this.buildingService.getSelectedFile?.());
 
-    if (!this.globalMode && !this.documentId) {
+
+
+    if (!this.globalMode && !this.currentDocumentId) {
       this.handleError('❌ Cannot send message: No document selected.');
       return;
     }
@@ -195,11 +215,11 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
       .slice(-10) // Get last 10 messages for context
       .map(msg => ({role: msg.sender, content: msg.text}));
 
-    if (this.documentId) {
+    if (this.currentDocumentId) {
       const request: DocumentChatbotRequest = {
         userInput: userMessage
       };
-      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
+      this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.currentDocumentId, request)
         .then((res) => {
           this.messages.push({
             text: res?.data?.response ?? 'No response received.',
