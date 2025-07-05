@@ -97,24 +97,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
     this.loadFontAwesome();
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      if (!this.currentDocumentId) {
-        const file = this.buildingService.getSelectedFile?.();
-        if (file) {
-          this.documentId = file.id;
-          this.documentTitle = file.name;
-          console.log('📄 [AfterViewInit] Auto-bound documentId:', this.documentId);
-          console.log('📄 [AfterViewInit] Auto-bound documentTitle:', this.documentTitle);
-        } else {
-          console.log('📄 [AfterViewInit] No document context found.');
-        }
-      } else {
-        console.log('📄 [AfterViewInit] documentId already set:', this.documentId);
-      }
-    });
-  }
-
   ngOnDestroy(): void {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
