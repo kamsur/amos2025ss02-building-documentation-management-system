@@ -30,18 +30,7 @@ interface ChatMessage {
 })
 export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , AfterViewInit{
   @Input() globalMode: boolean = false; // Whether this is the global floating widget
-  private _documentId?: number;
-
-  @Input()
-  set documentId(value: number | undefined) {
-    console.log('⚡️ setter set to:', value, 'at', new Date().toISOString());
-    this._documentId = value;
-  }
-
-  get documentId(): number | undefined {
-    return this._documentId;
-  }
-
+  @Input() documentId?: number;
   @Input() documentTitle?: string;
 
 
