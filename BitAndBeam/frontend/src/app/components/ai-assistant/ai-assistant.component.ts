@@ -33,10 +33,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   @Input() documentTitle?: string;
 
 
-  private internalDocumentId?: number;
-  private internalDocumentTitle?: string;
-
-
   messages: ChatMessage[] = [];
   userInput = '';
   errorMessage = '';
@@ -62,8 +58,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.internalDocumentId = this.documentId;
-    this.internalDocumentTitle = this.documentTitle;
     console.log('🧠 AI Assistant initialized with:');
     console.log('📄 documentId:', this.documentId);
     console.log('📄 documentTitle:', this.documentTitle);
@@ -83,15 +77,16 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['documentId']) {
+    if (changes['documentId'] && changes['documentId'].currentValue !== undefined) {
       this.documentId = changes['documentId'].currentValue;
-      console.log('🆕 documentId updated to:', this.documentId);
+      console.log('🆕 documentId updated to:', this.documentId );
     }
 
-    if (changes['documentTitle']) {
+    if (changes['documentTitle'] && changes['documentTitle'].currentValue !== undefined) {
       this.documentTitle = changes['documentTitle'].currentValue;
     }
   }
+
 
 
 
@@ -152,7 +147,7 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy {
     console.log('📨 sendMessage triggered!');
     console.log('👉 Input:', this.userInput);
 
-    const documentId = this.internalDocumentId;
+    const documentId = this.documentId
     console.log('👉 Document ID:', documentId);
     const userMessage = this.userInput.trim();
     if (!userMessage || this.isProcessing) {

@@ -74,6 +74,7 @@ export class FileViewComponent {
     });
   }
 
+
   loadDocument(id: number){
     this.buildingService.getDocumentById(id).subscribe({
       next: (doc: ApiDocument) => {
