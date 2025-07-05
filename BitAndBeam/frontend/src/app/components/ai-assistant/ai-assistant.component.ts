@@ -39,7 +39,6 @@ export class AiAssistantComponent implements OnInit, OnDestroy {
   isProcessing = false;
   isDarkMode = false;
   isAuthenticated = false;
-  newMessage: string = '';
 
   private themeSubscription: Subscription | null = null;
   private ollamaApi: OllamaApi | null = null;
