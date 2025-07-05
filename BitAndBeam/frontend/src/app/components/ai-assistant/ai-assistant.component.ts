@@ -202,8 +202,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
             this.isProcessing = false;
           });
       }
-
-    }, 0);
   };
 
 
