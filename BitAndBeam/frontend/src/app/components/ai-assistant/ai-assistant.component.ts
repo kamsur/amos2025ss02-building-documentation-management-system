@@ -132,26 +132,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
 
 
   sendMessage = (): void => {
-    setTimeout(() => {
-      console.log('💡 AiAssistantComponent created with globalMode =', this.globalMode);
-      console.log('📦 Full component state on sendMessage():', {
-        _documentId: this._documentId,
-        documentId: this.documentId,
-        documentTitle: this.documentTitle,
-        userInput: this.userInput,
-        currentDocumentId: this.currentDocumentId,
-        selectedFile: this.buildingService.getSelectedFile?.(),
-      });
-
-      const docId = this._documentId;
-      console.log('👉 documentId at send time:', docId);
-      console.log('📎 buildingService.getSelectedFile result:', this.buildingService.getSelectedFile?.());
-
-      if (!this.globalMode && !this.currentDocumentId) {
-        this.handleError('❌ Cannot send message: No document selected.');
-        return;
-      }
-
       const userMessage = this.userInput.trim();
       if (!userMessage || this.isProcessing) {
         return;
@@ -173,11 +153,11 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
         .slice(-10) // Get last 10 messages for context
         .map(msg => ({ role: msg.sender, content: msg.text }));
 
-      if (this.currentDocumentId) {
+      if (this.documentId) {
         const request: DocumentChatbotRequest = {
           userInput: userMessage
         };
-        this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.currentDocumentId, request)
+        this.getDocumentsApi().apiDocumentsDocumentIdAskPost(this.documentId, request)
           .then((res) => {
             this.messages.push({
               text: res?.data?.response ?? 'No response received.',
