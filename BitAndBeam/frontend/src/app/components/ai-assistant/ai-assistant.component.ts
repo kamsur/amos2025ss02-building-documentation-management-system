@@ -115,19 +115,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
     });
   }
 
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['documentId']) {
-      console.log('🪵 ngOnChanges -> documentId changed from', changes['documentId'].previousValue, 'to', changes['documentId'].currentValue);
-      this.documentId = changes['documentId'].currentValue;
-    }
-    if (changes['documentTitle']) {
-      console.log('🪵 ngOnChanges -> documentTitle changed from', changes['documentTitle'].previousValue, 'to', changes['documentTitle'].currentValue);
-      this.documentTitle = changes['documentTitle'].currentValue;
-    }
-  }
-
-
   ngOnDestroy(): void {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
