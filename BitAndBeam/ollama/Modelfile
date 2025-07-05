@@ -1,2 +1,2 @@
-FROM gemma3:12b-it-qat
+FROM gemma3:4b-it-qat
 PARAMETER num_ctx 16384
