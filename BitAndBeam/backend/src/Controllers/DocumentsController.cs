@@ -881,6 +881,67 @@ Please provide a concise and accurate answer based solely on the document conten
 
         private string BuildPrompt(string extractedText, string categoriesSchemaJson)
         {
+            // return $$"""
+            // You are an intelligent document analyzer.
+
+            // Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            // Your answer MUST include the following top-level fields: "address", "category", and "key_information".
+
+            // **Example format:**
+
+            // {
+            //     "address": {
+            //         "street":"<string|null>",
+            //         "house_number":"<string|null>",
+            //         "zip_code":"<string|null>",
+            //         "city":"<string|null>"
+            //     },
+            //     "category":"Energieausweis",
+            //     "key_information": {
+            //         "Art des Ausweises": "<string|null>",
+            //         "Ausstellungsdatum": "<string|null>",
+            //         "Gültigkeit (Ablaufdatum)": "<string|null>",
+            //         "Registriernummer des Ausweises": "<string|null>",
+            //         "Gebäudetyp": "<string|null>",
+            //         "Adresse": "<string|null>",
+            //         "Baujahr Gebäude": "<string|null>",
+            //         "Gebäudenutzfläche": "<string|null>",
+            //         "Wesentliche Energieträger für Heizung": "<string|null>",
+            //         "Treibhausgasemissionen": "<string|null>",
+            //         "Endenergiebedarf": "<string|null>",
+            //         "Primärenergiebedarf Ist-Wert": "<string|null>"
+            //     }
+            // }
+
+            // **TASK A** → Extract an **address** if present.
+            // Look for labels like:
+            // "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
+            // or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
+
+            // **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
+
+            // **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
+            // For every field in the selected category's 'fields' array:
+            // • Use the field's **name** as the JSON key.
+            // • Try to extract the corresponding value from the document; if not found, set it to null.
+            // • Only include the fields declared for that category — no extra keys.
+
+            // **Rules**
+
+            // • Every value must be a JSON string or null — no units, no comments.
+            // • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            // • If any field cannot be detected, output it with a null value.
+            // • Do **not** wrap the answer in markdown or code fences.
+
+            // **categories_schema**:
+
+            // {{categoriesSchemaJson}}
+
+            // **Extracted Text**:
+
+            // {{extractedText}}
+            // """;
             return $$"""
             You are an intelligent document analyzer for documents in German language, related to buildings.
 
@@ -889,11 +950,10 @@ Please provide a concise and accurate answer based solely on the document conten
             1. **Address**: Extract the address if present. Look for labels like:
                - "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Postanschrift".
                - Field names such as "Straße", "Haus-Nr.", "PLZ", "Ort".
-               - The field values in "Extracted Text" can be different from "Example Output" given below.
 
             2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema", that describes the document. If no category fits, return `null`.
 
-            3. **Key Information**: From the provided "Extracted Text", extract only the fields defined in the 'fields' array of the selected category, in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in "Extracted Text". The values in "Extracted Text" can be different from given "Example Output". If a value cannot be found, set it to `null`.
+            3. **Key Information**: From the provided "Extracted Text", extract only the fields defined in the 'fields' array of the selected category, in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in "Extracted Text". If a value cannot be found, set it to `null`.
 
             **Rules**:
             - Analyze the document step-by-step, first the address, then the category, and finally the key information.
@@ -902,28 +962,28 @@ Please provide a concise and accurate answer based solely on the document conten
             - Do not include extra keys or comments.
             - Do not create information that is not present in "Extracted Text" and do not modify the "categories_schema" provided below.
 
-            **Example Output**:
+            **Example Format**:
             {
                 "address": {
-                    "street": "Musterstraße",
-                    "house_number": "123",
-                    "zip_code": "12345",
-                    "city": "Berlin"
+                    "street": "<string|null>",
+                    "house_number": "<string|null>",
+                    "zip_code": "<string|null>",
+                    "city": "<string|null>"
                 },
-                "category": "Energieausweis",
+                "category": "<string|null>",
                 "key_information": {
-                    "Art des Ausweises": "Bedarfsausweis",
-                    "Ausstellungsdatum": "2023-01-01",
-                    "Gültigkeit (Ablaufdatum)": "2033-01-01",
-                    "Registriernummer des Ausweises": "DE-123456789",
-                    "Gebäudetyp": "Wohngebäude",
-                    "Adresse": "Musterstraße 123, 12345 Berlin",
-                    "Baujahr Gebäude": "1990",
-                    "Gebäudenutzfläche": "150",
-                    "Wesentliche Energieträger für Heizung": "Gas",
-                    "Treibhausgasemissionen": "20",
-                    "Endenergiebedarf": "120",
-                    "Primärenergiebedarf Ist-Wert": "140"
+                    "Art des Ausweises": "<string|null>",
+                    "Ausstellungsdatum": "<string|null>",
+                    "Gültigkeit (Ablaufdatum)": "<string|null>",
+                    "Registriernummer des Ausweises": "<string|null>",
+                    "Gebäudetyp": "<string|null>",
+                    "Adresse": "<string|null>",
+                    "Baujahr Gebäude": "<string|null>",
+                    "Gebäudenutzfläche": "<string|null>",
+                    "Wesentliche Energieträger für Heizung": "<string|null>",
+                    "Treibhausgasemissionen": "<string|null>",
+                    "Endenergiebedarf": "<string|null>",
+                    "Primärenergiebedarf Ist-Wert": "<string|null>"
                 }
             }
 
