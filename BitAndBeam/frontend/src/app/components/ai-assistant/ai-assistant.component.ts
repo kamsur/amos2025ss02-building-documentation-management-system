@@ -78,10 +78,6 @@ export class AiAssistantComponent implements OnInit, OnChanges, OnDestroy , Afte
 
 
   ngOnInit(): void {
-    console.log('💥 AiAssistantComponent created');
-    console.log('🧠 AI Assistant initialized with:');
-    console.log('📄 documentId:', this.currentDocumentId);
-    console.log('📄 documentTitle:', this.documentTitle);
     this.themeSubscription = this.themeService.darkMode$.subscribe(isDark => {
       this.isDarkMode = isDark;
     });
