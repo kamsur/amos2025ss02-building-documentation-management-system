@@ -119,7 +119,7 @@ namespace BitAndBeam.Controllers
             using (var stream = new FileStream(promptPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
             using (var writer = new StreamWriter(stream))
             {
-                await writer.WriteAsync(prompt);
+                await writer.WriteAsync(prompt).ConfigureAwait(false);
             }
 
 
@@ -161,7 +161,7 @@ namespace BitAndBeam.Controllers
                     using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
                     using (var cleanedWriter = new StreamWriter(cleanedStream))
                     {
-                        await cleanedWriter.WriteAsync(cleanedJson);
+                        await cleanedWriter.WriteAsync(cleanedJson).ConfigureAwait(false);
                     }
 
                     var root = JsonDocument.Parse(cleanedJson).RootElement;
@@ -214,7 +214,7 @@ namespace BitAndBeam.Controllers
                         {
                             var tempTxtPath = Path.Combine(textOutputDir, "key_information_temp.txt");
                             var lines = keyInformationTemp.Select(kv => $"{kv.Key}: {kv.Value}");
-                            await System.IO.File.WriteAllLinesAsync(tempTxtPath, lines);
+                            await System.IO.File.WriteAllLinesAsync(tempTxtPath, lines).ConfigureAwait(false);
                         }
                     }
                 }
@@ -289,20 +289,20 @@ namespace BitAndBeam.Controllers
             {
                 var keyInfoJsonPath = Path.Combine(textOutputDir, "key_information.json");
                 var keyInfoJson = JsonSerializer.Serialize(keyInformation, new JsonSerializerOptions { WriteIndented = true });
-                await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson);
+                await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson).ConfigureAwait(false);
             }
             // Save parsedAddress as JSON to /app/documents2/parsed_address.json
             if (parsedAddress != null && parsedAddress.Count > 0)
             {
                 var addressJsonPath = Path.Combine(textOutputDir, "parsed_address.json");
                 var addressJson = JsonSerializer.Serialize(parsedAddress, new JsonSerializerOptions { WriteIndented = true });
-                await System.IO.File.WriteAllTextAsync(addressJsonPath, addressJson);
+                await System.IO.File.WriteAllTextAsync(addressJsonPath, addressJson).ConfigureAwait(false);
             }
             // Save matchedCategory as plain text to /app/documents2/matched_category.txt
             if (!string.IsNullOrWhiteSpace(matchedCategory))
             {
                 var categoryTxtPath = Path.Combine(textOutputDir, "matched_category.txt");
-                await System.IO.File.WriteAllTextAsync(categoryTxtPath, matchedCategory);
+                await System.IO.File.WriteAllTextAsync(categoryTxtPath, matchedCategory).ConfigureAwait(false);
             }
 
             // 8. response
@@ -1001,7 +1001,7 @@ Please provide a concise and accurate answer based solely on the document conten
 
             {{extractedText}}
             """;
-            
+
             // return $$"""
             // You are an intelligent document analyzer for documents in German language, related to buildings.
 

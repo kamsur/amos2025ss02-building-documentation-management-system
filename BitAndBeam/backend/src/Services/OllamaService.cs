@@ -35,16 +35,16 @@ namespace BitAndBeam.Services
             using (var modelStream = new FileStream(modelPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
             using (var modelWriter = new StreamWriter(modelStream))
             {
-                await modelWriter.WriteAsync(_model);
+                await modelWriter.WriteAsync(_model).ConfigureAwait(false);
             }
 
             var json = JsonSerializer.Serialize(payload);
-            
+
             var payloadPath = Path.Combine(textOutputDir, "request_payload.json");
             using (var payloadStream = new FileStream(payloadPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
             using (var payloadWriter = new StreamWriter(payloadStream))
             {
-                await payloadWriter.WriteAsync(json);
+                await payloadWriter.WriteAsync(json).ConfigureAwait(false);
             }
             var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -53,7 +53,7 @@ namespace BitAndBeam.Services
             using (var ctStream = new FileStream(contentTypePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
             using (var ctWriter = new StreamWriter(ctStream))
             {
-                await ctWriter.WriteAsync(httpContent.Headers.ContentType?.ToString() ?? "");
+                await ctWriter.WriteAsync(httpContent.Headers.ContentType?.ToString() ?? "").ConfigureAwait(false);
             }
 
             var response = await _httpClient.PostAsync($"{_ollamaBaseUrl}/api/generate", httpContent).ConfigureAwait(false);
@@ -65,7 +65,7 @@ namespace BitAndBeam.Services
             using (var rawStream = new FileStream(rawResponsePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
             using (var rawWriter = new StreamWriter(rawStream))
             {
-                await rawWriter.WriteAsync(rawResponse);
+                await rawWriter.WriteAsync(rawResponse).ConfigureAwait(false);
             }
             return rawResponse;
         }
