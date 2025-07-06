@@ -22,6 +22,11 @@ import { AiAssistantComponent } from '../../components/ai-assistant/ai-assistant
   styleUrls: ['./file-view.component.css'],
   imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule, AiAssistantComponent]
 })
+
+/**
+ * Handles file viewing, document preview (PDF/Image),
+ * category-based metadata parsing and editing, and saving to backend.
+ */
 export class FileViewComponent {
 
   selectedFile: DocumentItem | null = null;
