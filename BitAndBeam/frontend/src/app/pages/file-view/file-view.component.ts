@@ -200,7 +200,10 @@ export class FileViewComponent {
     });
   }
 
-  // ✅ New method: fetch key information
+  /**
+ * Loads extracted key information from backend.
+ * If none is found, auto-generates empty key fields based on category.
+ */
   fetchKeyInfo(id: number) {
     this.loadingKeyInfo = true;
     const token = this.session.getToken();
@@ -230,10 +233,7 @@ export class FileViewComponent {
             this.selectedCategoryName && this.categories.length > 0) {
           const match = this.categories.find(c => c.name === this.selectedCategoryName);
           if (match && Array.isArray(match.fields)) {
-            this.keyInformation = match.fields.map(f => ({
-              label: f.name,
-              value: ''
-            }));
+            this.keyInformation = this.generateKeyInfoFromCategory(match);
           }
         } else {
           this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
