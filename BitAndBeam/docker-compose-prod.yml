@@ -16,6 +16,7 @@ services:
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents:rw
+      - documents2data:/app/documents2:rw
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -91,6 +92,7 @@ services:
 volumes:
   ollamadata:
   documentdata:
+  documents2data:
   pgdata:
 
 networks:
