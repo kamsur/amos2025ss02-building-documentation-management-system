@@ -82,7 +82,18 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
-      next: (data) => this.categories = data,
+      next: (data) => {
+        this.categories = data;
+
+      // 🔧 Add suggested category if missing
+      if (this.selectedCategoryName && !this.categories.some(c => c.name === this.selectedCategoryName)) {
+        this.categories.unshift({
+          name: this.selectedCategoryName,
+          description: '(automatically suggested)',
+          fields: []
+        });
+      }
+    },
       error: (err) => console.error('Failed to fetch categories', err)
     });
   }
