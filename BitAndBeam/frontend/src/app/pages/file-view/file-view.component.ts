@@ -318,13 +318,14 @@ export class FileViewComponent {
         this.loading = false;
       });
   }
+  /**
+ * Resets key fields when category is changed,
+ * initializes touchedFields map for validation.
+ */
   onCategoryChange(): void {
     const selected = this.categories.find(c => c.name === this.selectedCategoryName);
     if (selected && Array.isArray(selected.fields)) {
-      this.keyInformation = selected.fields.map(field => ({
-        label: field.name,
-        value: ''
-      }));
+      this.keyInformation = this.generateKeyInfoFromCategory(selected);
     }
   }
 
