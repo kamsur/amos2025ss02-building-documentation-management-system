@@ -31,6 +31,7 @@ services:
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents
+      - documents2data:/app/documents2
 
   frontend:
     build:
@@ -94,4 +95,5 @@ services:
 volumes:
   ollamadata:
   documentdata:
+  documents2data:
   pgdata:

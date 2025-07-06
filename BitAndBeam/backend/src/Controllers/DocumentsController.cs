@@ -110,16 +110,25 @@ namespace BitAndBeam.Controllers
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
-            // Convert categoriesSchemaJson to remove all double quotes and make it flat text
-            var flatCategoriesSchema = categoriesSchemaJson.Replace("\"", "");
+            var prompt = BuildPrompt(shortText, categoriesSchemaJson);
+            prompt = prompt.Replace("\r\n", "\n"); // Normalize
+            // Ensure the directory exists for storing text files
+            var textOutputDir = "/app/documents2";
+            Directory.CreateDirectory(textOutputDir);
+            var promptPath = Path.Combine(textOutputDir, "prompt.txt");
+            using (var stream = new FileStream(promptPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var writer = new StreamWriter(stream))
+            {
+                await writer.WriteAsync(prompt);
+            }
 
-            var prompt = BuildPrompt(shortText, flatCategoriesSchema);
+
 
             // -- Initialize result fields
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
             Building? matchedBuilding = null;
-            Dictionary<string, string?>? keyInformation = null;
+            Dictionary<string, string?> keyInformation = new();
 
             // 4. Ollama call
             try
@@ -148,6 +157,13 @@ namespace BitAndBeam.Controllers
 
                     _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
 
+                    var cleanedJsonPath = Path.Combine(textOutputDir, "cleaned_ollama_response.json");
+                    using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                    using (var cleanedWriter = new StreamWriter(cleanedStream))
+                    {
+                        await cleanedWriter.WriteAsync(cleanedJson);
+                    }
+
                     var root = JsonDocument.Parse(cleanedJson).RootElement;
 
                     // ADDRESS
@@ -174,16 +190,31 @@ namespace BitAndBeam.Controllers
                     // KEY INFORMATION
                     if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
                     {
+                        // Create a temp list to store all key-value pairs (even duplicates)
+                        var keyInformationTemp = new List<(string Key, string? Value)>();
                         foreach (var property in kiObj.EnumerateObject())
                         {
-                            // Skip duplicate keys - only keep the first occurrence
+                            string value = property.Value.ValueKind switch
+                            {
+                                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
+                                JsonValueKind.Number => property.Value.GetRawText(),
+                                JsonValueKind.True => "true",
+                                JsonValueKind.False => "false",
+                                JsonValueKind.Null => null,
+                                _ => property.Value.ToString()
+                            };
+                            keyInformationTemp.Add((property.Name, value));
                             if (!keyInformation.ContainsKey(property.Name))
                             {
-                                string value = property.Value.ValueKind == JsonValueKind.String
-                                    ? property.Value.GetString() ?? string.Empty
-                                    : property.Value.ToString();
                                 keyInformation[property.Name] = value;
                             }
+                        }
+                        // Save key_information_temp.txt (all key-value pairs, one per line)
+                        if (keyInformationTemp.Count > 0)
+                        {
+                            var tempTxtPath = Path.Combine(textOutputDir, "key_information_temp.txt");
+                            var lines = keyInformationTemp.Select(kv => $"{kv.Key}: {kv.Value}");
+                            await System.IO.File.WriteAllLinesAsync(tempTxtPath, lines);
                         }
                     }
                 }
@@ -252,6 +283,27 @@ namespace BitAndBeam.Controllers
 
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            // After filling keyInformation, save it as JSON to /app/documents2/key_information.json
+            if (keyInformation != null && keyInformation.Count > 0)
+            {
+                var keyInfoJsonPath = Path.Combine(textOutputDir, "key_information.json");
+                var keyInfoJson = JsonSerializer.Serialize(keyInformation, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson);
+            }
+            // Save parsedAddress as JSON to /app/documents2/parsed_address.json
+            if (parsedAddress != null && parsedAddress.Count > 0)
+            {
+                var addressJsonPath = Path.Combine(textOutputDir, "parsed_address.json");
+                var addressJson = JsonSerializer.Serialize(parsedAddress, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(addressJsonPath, addressJson);
+            }
+            // Save matchedCategory as plain text to /app/documents2/matched_category.txt
+            if (!string.IsNullOrWhiteSpace(matchedCategory))
+            {
+                var categoryTxtPath = Path.Combine(textOutputDir, "matched_category.txt");
+                await System.IO.File.WriteAllTextAsync(categoryTxtPath, matchedCategory);
+            }
 
             // 8. response
             var baseUrl = $"{Request.Scheme}://{Request.Host}";

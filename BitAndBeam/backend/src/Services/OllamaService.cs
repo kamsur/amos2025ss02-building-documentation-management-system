@@ -28,13 +28,46 @@ namespace BitAndBeam.Services
                 prompt = prompt,
                 stream = false
             };
+            Console.WriteLine($"🧠 Using model: {_model}");
+            var textOutputDir = "/app/documents2";
+            Directory.CreateDirectory(textOutputDir);
+            var modelPath = Path.Combine(textOutputDir, "model.txt");
+            using (var modelStream = new FileStream(modelPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var modelWriter = new StreamWriter(modelStream))
+            {
+                await modelWriter.WriteAsync(_model);
+            }
 
             var json = JsonSerializer.Serialize(payload);
+            
+            var payloadPath = Path.Combine(textOutputDir, "request_payload.json");
+            using (var payloadStream = new FileStream(payloadPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var payloadWriter = new StreamWriter(payloadStream))
+            {
+                await payloadWriter.WriteAsync(json);
+            }
             var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // Save Content-Type header to /app/documents2/request_content_type.txt
+            var contentTypePath = Path.Combine(textOutputDir, "request_content_type.txt");
+            using (var ctStream = new FileStream(contentTypePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var ctWriter = new StreamWriter(ctStream))
+            {
+                await ctWriter.WriteAsync(httpContent.Headers.ContentType?.ToString() ?? "");
+            }
 
             var response = await _httpClient.PostAsync($"{_ollamaBaseUrl}/api/generate", httpContent).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            var rawResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            // Save rawResponse to /app/documents2/ollama_raw_response.json
+            var rawResponsePath = Path.Combine(textOutputDir, "ollama_raw_response.json");
+            using (var rawStream = new FileStream(rawResponsePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var rawWriter = new StreamWriter(rawStream))
+            {
+                await rawWriter.WriteAsync(rawResponse);
+            }
+            return rawResponse;
         }
 
         public async Task<bool> CheckHealthAsync()
