@@ -175,7 +175,8 @@
 }
 
 .meta-actions {
-  position: sticky;
+  flex-shrink: 0;
+  /* Optional: add your padding and background for the button area */
   bottom: 0;
   background-color: var(--bg-secondary);
   padding: 1rem 0 3rem 0;
