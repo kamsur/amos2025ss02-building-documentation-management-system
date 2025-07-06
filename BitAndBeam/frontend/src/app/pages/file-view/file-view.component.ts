@@ -268,7 +268,10 @@ export class FileViewComponent {
     });
   }
 
-  // ✅ New method: update building/category
+  /**
+ * Builds patch request and sends metadata updates to backend.
+ * Regenerates view after successful save.
+ */
   saveMetadataChanges(): void {
     if (!this.selectedFile?.id) return;
 
@@ -280,10 +283,7 @@ export class FileViewComponent {
         this.selectedCategoryName && this.categories.length > 0) {
       const match = this.categories.find(c => c.name === this.selectedCategoryName);
       if (match && Array.isArray(match.fields) && match.fields.length > 0) {
-        this.keyInformation = match.fields.map(f => ({
-          label: f.name,   // assumes each field object has a 'name'
-          value: ''        // user can edit this later
-        }));
+        this.keyInformation = this.generateKeyInfoFromCategory(match);
       }
     }
 
