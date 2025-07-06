@@ -102,19 +102,18 @@ namespace BitAndBeam.Controllers
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
             // Extract OCR text from HTML if applicable
-            if (!string.IsNullOrWhiteSpace(textForOllama) && textForOllama.Contains("<div class=\"ocr\">"))
-            {
-                // textForOllama = OcrHtmlExtractor.ExtractOcrText(textForOllama);
-                textForOllama = ExtractVisibleText(textForOllama);
-            }
+            textForOllama = ExtractVisibleText(textForOllama);
 
             // Clean the extracted text
-            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            var shortText = textForOllama.Length > 3_000 ? textForOllama[..3_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
-            var prompt = BuildPrompt(shortText, categoriesSchemaJson);
+            // Convert categoriesSchemaJson to remove all double quotes and make it flat text
+            var flatCategoriesSchema = categoriesSchemaJson.Replace("\"", "");
+
+            var prompt = BuildPrompt(shortText, flatCategoriesSchema);
 
             // -- Initialize result fields
             Dictionary<string, string>? parsedAddress = null;
@@ -175,10 +174,17 @@ namespace BitAndBeam.Controllers
                     // KEY INFORMATION
                     if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
                     {
-                        keyInformation = kiObj.EnumerateObject()
-                            .ToDictionary(p => p.Name, p => p.Value.ValueKind == JsonValueKind.String
-                                ? p.Value.GetString() ?? string.Empty
-                                : p.Value.ToString());
+                        foreach (var property in kiObj.EnumerateObject())
+                        {
+                            // Skip duplicate keys - only keep the first occurrence
+                            if (!keyInformation.ContainsKey(property.Name))
+                            {
+                                string value = property.Value.ValueKind == JsonValueKind.String
+                                    ? property.Value.GetString() ?? string.Empty
+                                    : property.Value.ToString();
+                                keyInformation[property.Name] = value;
+                            }
+                        }
                     }
                 }
             }
@@ -883,118 +889,105 @@ Please provide a concise and accurate answer based solely on the document conten
 
         private string BuildPrompt(string extractedText, string categoriesSchemaJson)
         {
-            // return $$"""
-            // You are an intelligent document analyzer.
-
-            // Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
-
-            // Your answer MUST include the following top-level fields: "address", "category", and "key_information".
-
-            // **Example format:**
-
-            // {
-            //     "address": {
-            //         "street":"<string|null>",
-            //         "house_number":"<string|null>",
-            //         "zip_code":"<string|null>",
-            //         "city":"<string|null>"
-            //     },
-            //     "category":"Energieausweis",
-            //     "key_information": {
-            //         "Art des Ausweises": "<string|null>",
-            //         "Ausstellungsdatum": "<string|null>",
-            //         "Gültigkeit (Ablaufdatum)": "<string|null>",
-            //         "Registriernummer des Ausweises": "<string|null>",
-            //         "Gebäudetyp": "<string|null>",
-            //         "Adresse": "<string|null>",
-            //         "Baujahr Gebäude": "<string|null>",
-            //         "Gebäudenutzfläche": "<string|null>",
-            //         "Wesentliche Energieträger für Heizung": "<string|null>",
-            //         "Treibhausgasemissionen": "<string|null>",
-            //         "Endenergiebedarf": "<string|null>",
-            //         "Primärenergiebedarf Ist-Wert": "<string|null>"
-            //     }
-            // }
-
-            // **TASK A** → Extract an **address** if present.
-            // Look for labels like:
-            // "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
-            // or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
-
-            // **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
-
-            // **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
-            // For every field in the selected category's 'fields' array:
-            // • Use the field's **name** as the JSON key.
-            // • Try to extract the corresponding value from the document; if not found, set it to null.
-            // • Only include the fields declared for that category — no extra keys.
-
-            // **Rules**
-
-            // • Every value must be a JSON string or null — no units, no comments.
-            // • Output MUST be valid JSON that parses with 'JSON.parse()'.
-            // • If any field cannot be detected, output it with a null value.
-            // • Do **not** wrap the answer in markdown or code fences.
-
-            // **categories_schema**:
-
-            // {{categoriesSchemaJson}}
-
-            // **Extracted Text**:
-
-            // {{extractedText}}
-            // """;
             return $$"""
-            You are an intelligent document analyzer for documents in German language, related to buildings.
+            You are an intelligent document analyzer.
 
-            Given the "Extracted Text" and a "categories_schema" (including field definitions) from a German document, your task is to carefully analyze "Extracted Text" and extract the following information in a strict JSON format:
+            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
 
-            1. **Address**: Extract the address if present. Look for labels like:
-               - "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Postanschrift".
-               - Field names such as "Straße", "Haus-Nr.", "PLZ", "Ort".
+            Your answer MUST include the following top-level fields: "address", "category", and "key_information".
 
-            2. **Category**: Choose the SINGLE best-matching category from the provided "categories_schema", that describes the document. If no category fits, return `null`.
+            **Example format:**
 
-            3. **Key Information**: From the provided "Extracted Text", extract only the fields defined in the 'fields' array of the selected category, in the provided "categories_schema". Use the field's **name** as the JSON key. Find the value of the field in "Extracted Text". If a value cannot be found, set it to `null`.
-
-            **Rules**:
-            - Analyze the document step-by-step, first the address, then the category, and finally the key information.
-            - Every value must be a JSON string or `null`.
-            - Output MUST be valid JSON that parses with 'JSON.parse()'.
-            - Do not include extra keys or comments.
-            - Do not create information that is not present in "Extracted Text" and do not modify the "categories_schema" provided below.
-
-            **Example Format**:
             {
-                "address": {
-                    "street": "<string|null>",
-                    "house_number": "<string|null>",
-                    "zip_code": "<string|null>",
-                    "city": "<string|null>"
+                \"address\": {
+                    \"street\": \"<string|null>\",
+                    \"house_number\": \"<string|null>\",
+                    \"zip_code\": \"<string|null>\",
+                    \"city\": \"<string|null>\"
                 },
-                "category": "<string|null>",
-                "key_information": {
-                    "Art des Ausweises": "<string|null>",
-                    "Ausstellungsdatum": "<string|null>",
-                    "Gültigkeit (Ablaufdatum)": "<string|null>",
-                    "Registriernummer des Ausweises": "<string|null>",
-                    "Gebäudetyp": "<string|null>",
-                    "Adresse": "<string|null>",
-                    "Baujahr Gebäude": "<string|null>",
-                    "Gebäudenutzfläche": "<string|null>",
-                    "Wesentliche Energieträger für Heizung": "<string|null>",
-                    "Treibhausgasemissionen": "<string|null>",
-                    "Endenergiebedarf": "<string|null>",
-                    "Primärenergiebedarf Ist-Wert": "<string|null>"
+                "\category\": \"<string|null>\",
+                "\key_information\": {
+                    "\Art des Ausweises\": \"<string|null>\",
+                    \"Ausstellungsdatum\": \"<string|null>\",
+                    \"Gültigkeit (Ablaufdatum)\": \"<string|null>\",
+                    \"Registriernummer des Ausweises\": \"<string|null>\",
+                    \"Baujahr Gebäude\": \"<string|null>\",
                 }
             }
 
+            **TASK A** → Extract an **address** if present.
+            Look for labels like:
+            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
+            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
+
+            **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
+
+            **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
+            • Only include the fields declared for that category — no extra keys.
+
+            **Rules**
+
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
+            • Do **not** wrap the answer in markdown or code fences.
+
             **categories_schema**:
+
             {{categoriesSchemaJson}}
 
             **Extracted Text**:
+
             {{extractedText}}
             """;
+            
+            // return $$"""
+            // You are an intelligent document analyzer for documents in German language, related to buildings.
+
+            // Given the **Extracted Text** and a **categories_schema** (including field definitions) from a German document, your task is to carefully analyze **Extracted Text** and extract the following information in a strict JSON format:
+
+            // 1. **Address**: Extract the address if present. Look for labels like:
+            //    - 'Adresse', 'Anschrift', 'Standort', 'Objektadresse', 'Gebäudeadresse', 'Hausanschrift', 'Liegenschaft', 'Postanschrift'.
+            //    - Field names such as 'Straße', 'Haus-Nr.', 'PLZ', 'Ort'.
+
+            // 2. **Category**: Choose the SINGLE best-matching category from the provided **categories_schema**, that describes the document. If no category fits, return `null`.
+
+            // 3. **Key Information**: From the provided **Extracted Text**, extract only the fields defined in the 'fields' array of the selected category, in the provided **categories_schema**. Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. If a value cannot be found, set it to `null`.
+
+            // **Rules**:
+            // - Analyze the document step-by-step, first the address, then the category, and finally the key information.
+            // - Every value must be a JSON string or `null`.
+            // - Output MUST be valid JSON that parses with 'JSON.parse()'.
+            // - Do not include extra keys or comments.
+            // - Do not create information that is not present in **Extracted Text** and do not modify the **categories_schema** provided below.
+
+            // **Example Format**:
+            // {
+            //     \"address\": {
+            //         \"street\": \"<string|null>\",
+            //         \"house_number\": \"<string|null>\",
+            //         \"zip_code\": \"<string|null>\",
+            //         \"city\": \"<string|null>\"
+            //     },
+            //     "\category\": \"<string|null>\",
+            //     "\key_information\": {
+            //         "\Art des Ausweises\": \"<string|null>\",
+            //         \"Ausstellungsdatum\": \"<string|null>\",
+            //         \"Gültigkeit (Ablaufdatum)\": \"<string|null>\",
+            //         \"Registriernummer des Ausweises\": \"<string|null>\",
+            //         \"Baujahr Gebäude\": \"<string|null>\",
+            //     }
+            // }
+
+            // **categories_schema**:
+            // {{categoriesSchemaJson}}
+
+            // **Extracted Text**:
+            // {{extractedText}}
+            // """;
         }
 
         private string ExtractVisibleText(string tikaHtml)
