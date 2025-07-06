@@ -353,5 +353,60 @@ export class FileViewComponent {
     this.imageZoom = 1;
     this.pdfZoom = 1;
   }
+ /**
+ * Checks if a given field label is marked as mandatory
+ * in the selected category's field list.
+ */
+  isFieldRequired(label: string): boolean {
+    const category = this.categories.find(c => c.name === this.selectedCategoryName);
+    return !!category?.fields?.find(f => f.name === label && f.mandatory);
+  }
 
+  /**
+ * Tries to guess the input type for a field based on its label.
+ */
+  getInputType(label: string): string {
+    const lower = label.toLowerCase();
+    if (lower.includes('datum') || lower.includes('date')) return 'date';
+    if (lower.includes('zahl') || lower.includes('nummer') || lower.includes('anzahl')) return 'number';
+    return 'text';
+  }
+  
+  /**
+ * Compares the current form state with the original state to determine
+ * if changes were actually made (used to toggle Save button).
+ */
+  checkForChanges(): void {
+    const currentInfo = Object.fromEntries(
+      this.keyInformation.map(k => [k.label.toLowerCase().replace(/ /g, '_'), k.value || ''])
+    );
+
+    const categoryChanged = this.selectedCategoryName !== this.originalCategoryName;
+    const buildingChanged = this.selectedBuildingId !== this.originalBuildingId;
+
+    const metadataChanged = Object.keys(currentInfo).some(key =>
+      currentInfo[key] !== this.originalKeyInformation[key]
+    );
+
+    this.hasChanges = categoryChanged || buildingChanged || metadataChanged;
+  }
+
+  /**
+ * Generates empty key information fields from a category,
+ * and initializes touched state for validation tracking.
+ */
+  private generateKeyInfoFromCategory(category: Category): { label: string; value: string }[] {
+    this.touchedFields = {};
+    if (!Array.isArray(category.fields)) {
+      return [];
+    }
+
+    return category.fields.map(field => {
+      this.touchedFields[field.name] = false;
+      return {
+        label: field.name,
+        value: ''
+      };
+    });
+  }
 }
