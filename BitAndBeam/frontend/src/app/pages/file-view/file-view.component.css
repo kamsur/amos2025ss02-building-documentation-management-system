@@ -53,11 +53,13 @@
 }
 
 .metadata-panel {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  height: 100%;
   background-color: var(--bg-secondary);
   padding: 1.5rem;
   border-left: 1px solid var(--border-color);
-  overflow-y: auto;
   position: relative;
   transition: all 0.3s ease;
   min-width: 280px;
