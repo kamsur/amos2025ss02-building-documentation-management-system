@@ -896,22 +896,28 @@ Please provide a concise and accurate answer based solely on the document conten
 
             Your answer MUST include the following top-level fields: "address", "category", and "key_information".
 
-            **Example format:**
-
+            **Example Format**:
             {
-                \"address\": {
-                    \"street\": \"<string|null>\",
-                    \"house_number\": \"<string|null>\",
-                    \"zip_code\": \"<string|null>\",
-                    \"city\": \"<string|null>\"
+                "address": {
+                    "street": "<string|null>",
+                    "house_number": "<string|null>",
+                    "zip_code": "<string|null>",
+                    "city": "<string|null>"
                 },
-                "\category\": \"<string|null>\",
-                "\key_information\": {
-                    "\Art des Ausweises\": \"<string|null>\",
-                    \"Ausstellungsdatum\": \"<string|null>\",
-                    \"Gültigkeit (Ablaufdatum)\": \"<string|null>\",
-                    \"Registriernummer des Ausweises\": \"<string|null>\",
-                    \"Baujahr Gebäude\": \"<string|null>\",
+                "category": "<string|null>",
+                "key_information": {
+                    "Art des Ausweises": "<string|null>",
+                    "Ausstellungsdatum": "<string|null>",
+                    "Gültigkeit (Ablaufdatum)": "<string|null>",
+                    "Registriernummer des Ausweises": "<string|null>",
+                    "Gebäudetyp": "<string|null>",
+                    "Adresse": "<string|null>",
+                    "Baujahr Gebäude": "<string|null>",
+                    "Gebäudenutzfläche": "<string|null>",
+                    "Wesentliche Energieträger für Heizung": "<string|null>",
+                    "Treibhausgasemissionen": "<string|null>",
+                    "Endenergiebedarf": "<string|null>",
+                    "Primärenergiebedarf Ist-Wert": "<string|null>"
                 }
             }
 
