@@ -51,10 +51,23 @@ export class FileViewComponent {
   loadingKeyInfo: boolean = false;
   keyInfo: any = null;
   hasChanges: boolean = false;
+  // 🟡 Tracks if a field has been touched for validation feedback
+  touchedFields: { [label: string]: boolean } = {};
+
+  originalKeyInformation: { [key: string]: string } = {};
+  originalCategoryName: string | null = null;
+  originalBuildingId: number | null = null;
+
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
               private session: SessionService) {}
+  
+  /**
+ * On component init:
+ * - Watch route for document ID
+ * - Fetch buildings, categories, and selected document data
+ */
   ngOnInit(): void {
     // Watch for route param changes
     this.route.paramMap.subscribe(paramMap => {
