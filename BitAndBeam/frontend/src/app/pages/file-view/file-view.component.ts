@@ -92,7 +92,10 @@ export class FileViewComponent {
     });
   }
 
-
+  /**
+ * Loads document by ID from backend, sets preview,
+ * parses metadata, and initializes document state.
+ */
   loadDocument(id: number){
     this.buildingService.getDocumentById(id).subscribe({
       next: (doc: ApiDocument) => {
@@ -153,6 +156,16 @@ export class FileViewComponent {
           };
           this.selectedBuildingId = doc.buildingId ?? null;
           this.selectedCategoryName = doc.categoryName ?? null;
+
+          this.originalCategoryName = this.selectedCategoryName;
+          this.originalBuildingId = this.selectedBuildingId;
+
+          this.originalKeyInformation = {};
+          if (doc.keyInformation) {
+            Object.entries(doc.keyInformation).forEach(([key, value]) => {
+              this.originalKeyInformation[key.toLowerCase()] = value !== null ? String(value) : '';
+            });
+          }
 
           // ✅ Add document's category to the list if it doesn't exist
           if (doc.categoryName && !this.categories.some(c => c.name === doc.categoryName)) {
