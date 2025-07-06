@@ -284,3 +284,9 @@
   border-radius: 8px;
 }
 
+.validation-message {
+  margin-top: 4px;
+  font-size: 12px;
+  color: red;
+}
+
