@@ -65,6 +65,10 @@ namespace BitAndBeam.Controllers
             var uploadsPath = Path.Combine("/app/documents");
             Directory.CreateDirectory(uploadsPath);
 
+            // Ensure the directory exists for storing text files
+            var textOutputDir = "/app/documents2";
+            Directory.CreateDirectory(textOutputDir);
+
             var fullPath = Path.Combine(uploadsPath, file.FileName);
             using (var fs = new FileStream(fullPath, FileMode.Create))
             {
@@ -105,22 +109,12 @@ namespace BitAndBeam.Controllers
             textForOllama = ExtractVisibleText(textForOllama);
 
             // Clean the extracted text
-            var shortText = textForOllama.Length > 3_000 ? textForOllama[..3_000] : textForOllama;
+            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = BuildPrompt(shortText, categoriesSchemaJson);
-            prompt = prompt.Replace("\r\n", "\n"); // Normalize
-            // Ensure the directory exists for storing text files
-            var textOutputDir = "/app/documents2";
-            Directory.CreateDirectory(textOutputDir);
-            var promptPath = Path.Combine(textOutputDir, "prompt.txt");
-            using (var stream = new FileStream(promptPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
-            using (var writer = new StreamWriter(stream))
-            {
-                await writer.WriteAsync(prompt).ConfigureAwait(false);
-            }
 
 
 
@@ -881,30 +875,29 @@ namespace BitAndBeam.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
                 }
 
+                documentContent = ExtractVisibleText(documentContent);
                 // Truncate document content if too long
-                var maxContentLength = 8000; // Adjust based on model context window
+                var maxContentLength = 6000; // Adjust based on model context window
                 var truncatedContent = documentContent.Length > maxContentLength
                     ? documentContent.Substring(0, maxContentLength)
                     : documentContent;
 
                 // Construct the prompt for Ollama
-                var prompt = $@"You are a helpful assistant answering questions about document content.
-Use ONLY the information from the document content provided below to answer the question.
-If the answer cannot be found in the document, say so clearly - do not make up information.
+                var prompt = $$"""
+                You are a helpful assistant answering questions about contents of document.
+                Use ONLY the information from the **DOCUMENT CONTENT** provided below, to provide a concise and accurate answer to the **USER QUESTION**.
+                If the answer cannot be found in the document, say so clearly - do not create new information.
+                
+                **DOCUMENT CONTENT**:
+                {{truncatedContent}}
 
-DOCUMENT CONTENT:
-{truncatedContent}
+                **USER QUESTION**:
+                {{request.UserInput}}
 
-USER QUESTION:
-{request.UserInput}
-
-Please provide a concise and accurate answer based solely on the document content.";
+                """;
 
                 try
                 {
-                    // Create HTTP client for Ollama
-                    var client = httpClientFactory.CreateClient("Ollama");
-
                     // Send the request to Ollama
                     var jsonResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
 
@@ -949,18 +942,9 @@ Please provide a concise and accurate answer based solely on the document conten
                 },
                 "category": "<string|null>",
                 "key_information": {
-                    "Art des Ausweises": "<string|null>",
-                    "Ausstellungsdatum": "<string|null>",
-                    "Gültigkeit (Ablaufdatum)": "<string|null>",
-                    "Registriernummer des Ausweises": "<string|null>",
-                    "Gebäudetyp": "<string|null>",
-                    "Adresse": "<string|null>",
-                    "Baujahr Gebäude": "<string|null>",
-                    "Gebäudenutzfläche": "<string|null>",
-                    "Wesentliche Energieträger für Heizung": "<string|null>",
-                    "Treibhausgasemissionen": "<string|null>",
-                    "Endenergiebedarf": "<string|null>",
-                    "Primärenergiebedarf Ist-Wert": "<string|null>"
+                    "Field 1": "<string|null>",
+                    "Field 2": "<string|null>",
+                    "Field 3": "<string|null>"
                 }
             }
 
@@ -1037,6 +1021,66 @@ Please provide a concise and accurate answer based solely on the document conten
             // **Extracted Text**:
             // {{extractedText}}
             // """;
+        }
+
+        private string BuildPromptForCategory(string extractedText, string categoriesSchemaJson, string categoryName)
+        {
+            // Parse the categoriesSchemaJson to extract the fields for the given categoryName
+            using var doc = JsonDocument.Parse(categoriesSchemaJson);
+            var root = doc.RootElement;
+            var categories = root.GetProperty("categories");
+            JsonElement? category = null;
+            foreach (var cat in categories.EnumerateArray())
+            {
+                if (cat.TryGetProperty("name", out var nameProp) && nameProp.GetString() == categoryName)
+                {
+                    category = cat;
+                    break;
+                }
+            }
+            if (category == null)
+            {
+                throw new ArgumentException($"Category '{categoryName}' not found in categories schema.");
+            }
+            // Extract the fields array for the category
+            var fields = category.Value.GetProperty("fields");
+            // Build a list of field names for the prompt example
+            var fieldNames = fields.EnumerateArray().Select(f => f.GetProperty("name").GetString()).ToList();
+            // Build the example JSON for key_information
+            var keyInfoExample = string.Join(",\n        ", fieldNames.Select(fn => $"\"{fn}\": \"<string|null>\""));
+            // Compose the prompt
+            return $$"""
+            You are an intelligent document analyzer.
+
+            Given the **extracted text** and a **category schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            Your answer MUST include the following top-level field: "key_information".
+
+            **Example Format**:
+            {
+                "key_information": {
+                    {keyInfoExample}
+                }
+            }
+
+            **TASK** → For the category "{categoryName}", extract the **key information** fields defined for that category in "category_schema" and return them under "key_information".
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
+            • Only include the fields declared for that category — no extra keys.
+
+            **Rules**
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
+            • Do **not** wrap the answer in markdown or code fences.
+
+            **category_schema**:
+            {category.Value}
+
+            **Extracted Text**:
+            {extractedText}
+            """;
         }
 
         private string ExtractVisibleText(string tikaHtml)

@@ -22,6 +22,16 @@ namespace BitAndBeam.Services
 
         public async Task<string> GenerateAsync(string prompt)
         {
+            prompt = prompt.Replace("\r\n", "\n"); // Normalize
+            var textOutputDir = "/app/documents2";
+            // Ensure the directory exists for storing text files
+            Directory.CreateDirectory(textOutputDir);
+            var promptPath = Path.Combine(textOutputDir, "prompt.txt");
+            using (var stream = new FileStream(promptPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            using (var writer = new StreamWriter(stream))
+            {
+                await writer.WriteAsync(prompt).ConfigureAwait(false);
+            }
             var payload = new
             {
                 model = _model,
@@ -29,8 +39,6 @@ namespace BitAndBeam.Services
                 stream = false
             };
             Console.WriteLine($"🧠 Using model: {_model}");
-            var textOutputDir = "/app/documents2";
-            Directory.CreateDirectory(textOutputDir);
             var modelPath = Path.Combine(textOutputDir, "model.txt");
             using (var modelStream = new FileStream(modelPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
             using (var modelWriter = new StreamWriter(modelStream))
