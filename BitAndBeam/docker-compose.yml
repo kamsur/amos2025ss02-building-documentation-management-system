@@ -1,19 +1,19 @@
 services:
-  ollama:
-    build:
-      context: ./ollama
-      dockerfile: Dockerfile
-    container_name: ollama
-    restart: always
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollamadata:/root/.ollama
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # ollama:
+  #   build:
+  #     context: ./ollama
+  #     dockerfile: Dockerfile
+  #   container_name: ollama
+  #   restart: always
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollamadata:/root/.ollama
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:11434"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
 
   backend:
@@ -24,13 +24,14 @@ services:
       - "5001:5000"
     depends_on:
       - postgres
-      - ollama
+      # - ollama
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=bitandbeam;Username=postgres;Password=postgres
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents
+      - documents2data:/app/documents2
 
   frontend:
     build:
@@ -92,6 +93,7 @@ services:
       retries: 5
 
 volumes:
-  ollamadata:
+  # ollamadata:
   documentdata:
+  documents2data:
   pgdata:

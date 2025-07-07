@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     image: ghcr.io/amosproj/bitandbeam-backend:latest
@@ -8,7 +6,7 @@ services:
       - "5000:5000"
     depends_on:
       - postgres
-      - ollama
+      # - ollama
       - tika
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -18,6 +16,7 @@ services:
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents:rw
+      - documents2data:/app/documents2:rw
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -93,6 +92,7 @@ services:
 volumes:
   ollamadata:
   documentdata:
+  documents2data:
   pgdata:
 
 networks:

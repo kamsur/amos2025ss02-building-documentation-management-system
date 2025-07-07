@@ -1,13 +1,13 @@
-name: Start Ollama Service Only
+name: Start Ollama Service Only for experimentation
 
 on:
   # workflow_dispatch:
   push:
     branches:
-      - main
+      - llm-experiment
     paths:
       - 'BitAndBeam/ollama/**'
-      - '.github/workflows/ollama-ci.yml'
+      # - '.github/workflows/ollama-ci.yml'
   # workflow_call:
   #   outputs:
   #     ollama_built:

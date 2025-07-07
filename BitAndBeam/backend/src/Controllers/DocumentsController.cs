@@ -3,9 +3,11 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using BitAndBeam.Data;
 using BitAndBeam.Models;
 using BitAndBeam.Services;
+using HtmlAgilityPack; // Ensure this package is installed
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -63,6 +65,10 @@ namespace BitAndBeam.Controllers
             var uploadsPath = Path.Combine("/app/documents");
             Directory.CreateDirectory(uploadsPath);
 
+            // Ensure the directory exists for storing text files
+            var textOutputDir = "/app/documents2";
+            Directory.CreateDirectory(textOutputDir);
+
             var fullPath = Path.Combine(uploadsPath, file.FileName);
             using (var fs = new FileStream(fullPath, FileMode.Create))
             {
@@ -98,70 +104,25 @@ namespace BitAndBeam.Controllers
                 _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
             }
 
-            // 3. Build prompt for Ollama
-            var shortText = textForOllama.Length > 2000 ? textForOllama[..2000] : textForOllama;
+            // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
+            // Extract OCR text from HTML if applicable
+            textForOllama = ExtractVisibleText(textForOllama);
+
+            // Clean the extracted text
+            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
+            // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
-            var prompt = $$"""
-            You are an intelligent document analyzer.
 
-            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+            var prompt = BuildPrompt(shortText, categoriesSchemaJson);
 
-            Your answer MUST include the following top-level fields: "address", "category", and "key_information".
 
-            **Example format:**
-
-            {
-                "address": {
-                    "street":"<string|null>",
-                    "house_number":"<string|null>",
-                    "zip_code":"<string|null>",
-                    "city":"<string|null>"
-                },
-                "category":"Energy Consumption Reports",
-                "key_information": {
-                    "report_period":"<string|null>",
-                    "total_energy_kwh":"<string|null>",
-                    "energy_source":"<string|null>",
-                    "benchmark":"<string|null>",
-                    "author":"<string|null>",
-                    "issue_date":"<string|null>"
-                }
-            }
-
-            **TASK A** → Extract an **address** if present.
-            Look for labels like:
-            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
-            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
-
-            **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
-
-            **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
-            For every field in the selected category's 'fields' array:
-            • Use the field's **name** as the JSON key.
-            • Try to extract the corresponding value from the document; if not found, set it to null.
-            • Only include the fields declared for that category — no extra keys.
-
-            **Rules**
-
-            • Every value must be a JSON string or null — no units, no comments.
-            • Output MUST be valid JSON that parses with 'JSON.parse()'.
-            • If any field cannot be detected, output it with a null value.
-            • Do **not** wrap the answer in markdown or code fences.
-
-            **categories_schema**:
-
-            {{categoriesSchemaJson}}
-
-            **Extracted Text**:
-
-            {{shortText}}
-            """;
 
             // -- Initialize result fields
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
             Building? matchedBuilding = null;
-            Dictionary<string, string?>? keyInformation = null;
+            Dictionary<string, string?> keyInformation = new();
 
             // 4. Ollama call
             try
@@ -181,7 +142,7 @@ namespace BitAndBeam.Controllers
                     var cleanedJson = innerResponseString
                         .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
                         .Replace("```", "", StringComparison.OrdinalIgnoreCase)
-                        .Trim();
+                        .Trim();                                                   // trim spaces / \n etc.
 
                     int first = cleanedJson.IndexOf('{');
                     int last = cleanedJson.LastIndexOf('}');
@@ -189,6 +150,13 @@ namespace BitAndBeam.Controllers
                         cleanedJson = cleanedJson[first..(last + 1)];
 
                     _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
+
+                    var cleanedJsonPath = Path.Combine(textOutputDir, "cleaned_ollama_response.json");
+                    using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                    using (var cleanedWriter = new StreamWriter(cleanedStream))
+                    {
+                        await cleanedWriter.WriteAsync(cleanedJson).ConfigureAwait(false);
+                    }
 
                     var root = JsonDocument.Parse(cleanedJson).RootElement;
 
@@ -216,8 +184,32 @@ namespace BitAndBeam.Controllers
                     // KEY INFORMATION
                     if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
                     {
-                        keyInformation = kiObj.EnumerateObject()
-                            .ToDictionary(p => p.Name, p => p.Value.GetString());
+                        // Create a temp list to store all key-value pairs (even duplicates)
+                        var keyInformationTemp = new List<(string Key, string? Value)>();
+                        foreach (var property in kiObj.EnumerateObject())
+                        {
+                            string value = property.Value.ValueKind switch
+                            {
+                                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
+                                JsonValueKind.Number => property.Value.GetRawText(),
+                                JsonValueKind.True => "true",
+                                JsonValueKind.False => "false",
+                                JsonValueKind.Null => null,
+                                _ => property.Value.ToString()
+                            };
+                            keyInformationTemp.Add((property.Name, value));
+                            if (!keyInformation.ContainsKey(property.Name))
+                            {
+                                keyInformation[property.Name] = value;
+                            }
+                        }
+                        // Save key_information_temp.txt (all key-value pairs, one per line)
+                        if (keyInformationTemp.Count > 0)
+                        {
+                            var tempTxtPath = Path.Combine(textOutputDir, "key_information_temp.txt");
+                            var lines = keyInformationTemp.Select(kv => $"{kv.Key}: {kv.Value}");
+                            await System.IO.File.WriteAllLinesAsync(tempTxtPath, lines).ConfigureAwait(false);
+                        }
                     }
                 }
             }
@@ -285,6 +277,27 @@ namespace BitAndBeam.Controllers
 
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
+
+            // After filling keyInformation, save it as JSON to /app/documents2/key_information.json
+            if (keyInformation != null && keyInformation.Count > 0)
+            {
+                var keyInfoJsonPath = Path.Combine(textOutputDir, "key_information.json");
+                var keyInfoJson = JsonSerializer.Serialize(keyInformation, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson).ConfigureAwait(false);
+            }
+            // Save parsedAddress as JSON to /app/documents2/parsed_address.json
+            if (parsedAddress != null && parsedAddress.Count > 0)
+            {
+                var addressJsonPath = Path.Combine(textOutputDir, "parsed_address.json");
+                var addressJson = JsonSerializer.Serialize(parsedAddress, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(addressJsonPath, addressJson).ConfigureAwait(false);
+            }
+            // Save matchedCategory as plain text to /app/documents2/matched_category.txt
+            if (!string.IsNullOrWhiteSpace(matchedCategory))
+            {
+                var categoryTxtPath = Path.Combine(textOutputDir, "matched_category.txt");
+                await System.IO.File.WriteAllTextAsync(categoryTxtPath, matchedCategory).ConfigureAwait(false);
+            }
 
             // 8. response
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -862,30 +875,29 @@ namespace BitAndBeam.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
                 }
 
+                documentContent = ExtractVisibleText(documentContent);
                 // Truncate document content if too long
-                var maxContentLength = 8000; // Adjust based on model context window
+                var maxContentLength = 6000; // Adjust based on model context window
                 var truncatedContent = documentContent.Length > maxContentLength
                     ? documentContent.Substring(0, maxContentLength)
                     : documentContent;
 
                 // Construct the prompt for Ollama
-                var prompt = $@"You are a helpful assistant answering questions about document content.
-Use ONLY the information from the document content provided below to answer the question.
-If the answer cannot be found in the document, say so clearly - do not make up information.
+                var prompt = $$"""
+                You are a helpful assistant answering questions about contents of document.
+                Use ONLY the information from the **DOCUMENT CONTENT** provided below, to provide a concise and accurate answer to the **USER QUESTION**.
+                If the answer cannot be found in the document, say so clearly - do not create new information.
+                
+                **DOCUMENT CONTENT**:
+                {{truncatedContent}}
 
-DOCUMENT CONTENT:
-{truncatedContent}
+                **USER QUESTION**:
+                {{request.UserInput}}
 
-USER QUESTION:
-{request.UserInput}
-
-Please provide a concise and accurate answer based solely on the document content.";
+                """;
 
                 try
                 {
-                    // Create HTTP client for Ollama
-                    var client = httpClientFactory.CreateClient("Ollama");
-
                     // Send the request to Ollama
                     var jsonResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
 
@@ -909,6 +921,204 @@ Please provide a concise and accurate answer based solely on the document conten
                 _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}: {ErrorMessage}", documentId, ex.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"An unexpected error occurred: {ex.Message}" });
             }
+        }
+
+        private string BuildPrompt(string extractedText, string categoriesSchemaJson)
+        {
+            return $$"""
+            You are an intelligent document analyzer.
+
+            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            Your answer MUST include the following top-level fields: "address", "category", and "key_information".
+
+            **Example Format**:
+            {
+                "address": {
+                    "street": "<string|null>",
+                    "house_number": "<string|null>",
+                    "zip_code": "<string|null>",
+                    "city": "<string|null>"
+                },
+                "category": "<string|null>",
+                "key_information": {
+                    "Field 1": "<string|null>",
+                    "Field 2": "<string|null>",
+                    "Field 3": "<string|null>"
+                }
+            }
+
+            **TASK A** → Extract an **address** if present.
+            Look for labels like:
+            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
+            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
+
+            **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
+
+            **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
+            • Only include the fields declared for that category — no extra keys.
+
+            **Rules**
+
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
+            • Do **not** wrap the answer in markdown or code fences.
+
+            **categories_schema**:
+
+            {{categoriesSchemaJson}}
+
+            **Extracted Text**:
+
+            {{extractedText}}
+            """;
+
+            // return $$"""
+            // You are an intelligent document analyzer for documents in German language, related to buildings.
+
+            // Given the **Extracted Text** and a **categories_schema** (including field definitions) from a German document, your task is to carefully analyze **Extracted Text** and extract the following information in a strict JSON format:
+
+            // 1. **Address**: Extract the address if present. Look for labels like:
+            //    - 'Adresse', 'Anschrift', 'Standort', 'Objektadresse', 'Gebäudeadresse', 'Hausanschrift', 'Liegenschaft', 'Postanschrift'.
+            //    - Field names such as 'Straße', 'Haus-Nr.', 'PLZ', 'Ort'.
+
+            // 2. **Category**: Choose the SINGLE best-matching category from the provided **categories_schema**, that describes the document. If no category fits, return `null`.
+
+            // 3. **Key Information**: From the provided **Extracted Text**, extract only the fields defined in the 'fields' array of the selected category, in the provided **categories_schema**. Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. If a value cannot be found, set it to `null`.
+
+            // **Rules**:
+            // - Analyze the document step-by-step, first the address, then the category, and finally the key information.
+            // - Every value must be a JSON string or `null`.
+            // - Output MUST be valid JSON that parses with 'JSON.parse()'.
+            // - Do not include extra keys or comments.
+            // - Do not create information that is not present in **Extracted Text** and do not modify the **categories_schema** provided below.
+
+            // **Example Format**:
+            // {
+            //     \"address\": {
+            //         \"street\": \"<string|null>\",
+            //         \"house_number\": \"<string|null>\",
+            //         \"zip_code\": \"<string|null>\",
+            //         \"city\": \"<string|null>\"
+            //     },
+            //     "\category\": \"<string|null>\",
+            //     "\key_information\": {
+            //         "\Art des Ausweises\": \"<string|null>\",
+            //         \"Ausstellungsdatum\": \"<string|null>\",
+            //         \"Gültigkeit (Ablaufdatum)\": \"<string|null>\",
+            //         \"Registriernummer des Ausweises\": \"<string|null>\",
+            //         \"Baujahr Gebäude\": \"<string|null>\",
+            //     }
+            // }
+
+            // **categories_schema**:
+            // {{categoriesSchemaJson}}
+
+            // **Extracted Text**:
+            // {{extractedText}}
+            // """;
+        }
+
+        private string BuildPromptForCategory(string extractedText, string categoriesSchemaJson, string categoryName)
+        {
+            // Parse the categoriesSchemaJson to extract the fields for the given categoryName
+            using var doc = JsonDocument.Parse(categoriesSchemaJson);
+            var root = doc.RootElement;
+            var categories = root.GetProperty("categories");
+            JsonElement? category = null;
+            foreach (var cat in categories.EnumerateArray())
+            {
+                if (cat.TryGetProperty("name", out var nameProp) && nameProp.GetString() == categoryName)
+                {
+                    category = cat;
+                    break;
+                }
+            }
+            if (category == null)
+            {
+                throw new ArgumentException($"Category '{categoryName}' not found in categories schema.");
+            }
+            // Extract the fields array for the category
+            var fields = category.Value.GetProperty("fields");
+            // Build a list of field names for the prompt example
+            var fieldNames = fields.EnumerateArray().Select(f => f.GetProperty("name").GetString()).ToList();
+            // Build the example JSON for key_information
+            var keyInfoExample = string.Join(",\n        ", fieldNames.Select(fn => $"\"{fn}\": \"<string|null>\""));
+            // Compose the prompt
+            return $$"""
+            You are an intelligent document analyzer.
+
+            Given the **extracted text** and a **category schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            Your answer MUST include the following top-level field: "key_information".
+
+            **Example Format**:
+            {
+                "key_information": {
+                    {keyInfoExample}
+                }
+            }
+
+            **TASK** → For the category "{categoryName}", extract the **key information** fields defined for that category in "category_schema" and return them under "key_information".
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
+            • Only include the fields declared for that category — no extra keys.
+
+            **Rules**
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
+            • Do **not** wrap the answer in markdown or code fences.
+
+            **category_schema**:
+            {category.Value}
+
+            **Extracted Text**:
+            {extractedText}
+            """;
+        }
+
+        private string ExtractVisibleText(string tikaHtml)
+        {
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            doc.LoadHtml(tikaHtml);
+
+            // Remove unwanted elements
+            var unwantedTags = new[] { "script", "style", "head", "meta", "link" };
+            foreach (var tag in unwantedTags)
+            {
+                var nodes = doc.DocumentNode.SelectNodes($"//{tag}");
+                if (nodes != null)
+                {
+                    foreach (var node in nodes)
+                        node.Remove();
+                }
+            }
+
+            // Extract visible text from <body>
+            var bodyNode = doc.DocumentNode.SelectSingleNode("//body");
+            if (bodyNode == null)
+                return tikaHtml.Trim(); // fallback
+
+            var textNodes = bodyNode.Descendants()
+                .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
+                .Select(n => HtmlEntity.DeEntitize(n.InnerText.Trim()));
+
+            // Join all text nodes with a space
+            var rawText = string.Join(" ", textNodes);
+
+            // Replace all \n with a space
+            rawText = rawText.Replace("\n", " ");
+
+            // Collapse multiple spaces/tabs into a single space
+            var cleanedText = Regex.Replace(rawText, @"[ \t]+", " ");
+
+            return cleanedText.Trim();
         }
     }
 }
