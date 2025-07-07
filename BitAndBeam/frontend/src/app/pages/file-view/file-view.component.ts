@@ -12,13 +12,15 @@ import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
 import { FormsModule } from '@angular/forms';
 import { HttpClient , HttpHeaders} from '@angular/common/http';
 import { SessionService } from '../../services/session.service'; //
+import { AiAssistantComponent } from '../../components/ai-assistant/ai-assistant.component';
+
 
 @Component({
   standalone: true,
   selector: 'app-file-view',
   templateUrl: './file-view.component.html',
   styleUrls: ['./file-view.component.css'],
-  imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule]
+  imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule, AiAssistantComponent]
 })
 export class FileViewComponent {
 
@@ -71,6 +73,7 @@ export class FileViewComponent {
       this.loadDocument(id);
     });
   }
+
 
   loadDocument(id: number){
     this.buildingService.getDocumentById(id).subscribe({
@@ -150,7 +153,7 @@ export class FileViewComponent {
           const fileType = (doc.fileType ?? '').toLowerCase();
           this.isPdf = fileType === 'pdf';
           this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
-          
+
           // ✅ Fetch key info
           this.fetchKeyInfo(id);
 

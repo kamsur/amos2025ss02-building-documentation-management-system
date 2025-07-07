@@ -53,11 +53,13 @@
 }
 
 .metadata-panel {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  height: 100%;
   background-color: var(--bg-secondary);
   padding: 1.5rem;
   border-left: 1px solid var(--border-color);
-  overflow-y: auto;
   position: relative;
   transition: all 0.3s ease;
   min-width: 280px;
@@ -119,9 +121,10 @@
 }
 
 .metadata-content {
+  flex: 1 1 auto;    /* Fills up remaining vertical space */
   overflow-y: auto;
-  padding-bottom: 100px; /* makes space for buttons at bottom */
-  max-height: calc(100vh - 60px); /* adjust this as needed */
+  padding-bottom: 0px; /* makes space for buttons at bottom */
+  max-height: none; /* adjust this as needed */
 }
 
 .metadata-panel.collapsed .metadata-content {
@@ -172,10 +175,11 @@
 }
 
 .meta-actions {
-  position: sticky;
+  flex-shrink: 0;
+  /* Optional: add your padding and background for the button area */
   bottom: 0;
   background-color: var(--bg-secondary);
-  padding: 1rem 0 3rem;
+  padding: 1rem 0 3rem 0;
   z-index: 10;
 }
 
@@ -238,12 +242,12 @@
 
 /* ✅ Save button style */
 .save-btn {
-  background-color: #0077cc;
+  background-color: #28a745; /* ✅ Green */;
   color: white;
 }
 
 .save-btn:hover {
-  background-color: #005fa3;
+  background-color: #218838; /* ✅ Darker green on hover */
 }
 
 /* ✅ Toast Notification */
