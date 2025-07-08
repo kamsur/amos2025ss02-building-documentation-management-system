@@ -1157,7 +1157,10 @@ namespace BitAndBeam.Controllers
             """;
         }
 
-        private string BuildPromptForCategory(string extractedText, string categoriesSchemaJson, string categoryName)
+        /// <summary>
+        /// Builds the prompt for extracting key information for a specific category
+        /// </summary>
+        private string BuildKeyInformationPrompt(string extractedText, string categoriesSchemaJson, string categoryName)
         {
             // Parse the categoriesSchemaJson to extract the fields for the given categoryName
             using var doc = JsonDocument.Parse(categoriesSchemaJson);
@@ -1176,44 +1179,48 @@ namespace BitAndBeam.Controllers
             {
                 throw new ArgumentException($"Category '{categoryName}' not found in categories schema.");
             }
+            
             // Extract the fields array for the category
             var fields = category.Value.GetProperty("fields");
             // Build a list of field names for the prompt example
             var fieldNames = fields.EnumerateArray().Select(f => f.GetProperty("name").GetString()).ToList();
             // Build the example JSON for key_information
             var keyInfoExample = string.Join(",\n        ", fieldNames.Select(fn => $"\"{fn}\": \"<string|null>\""));
+            
             // Compose the prompt
             return $$"""
-            You are an intelligent document analyzer.
+            You are an intelligent document analyzer specialized in extracting key information from German documents.
 
-            Given the **extracted text** and a **category schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+            Given the **extracted text** from a German document and the specific **category schema** for "{{categoryName}}", your task is to extract the key information fields in a strict JSON format.
 
             Your answer MUST include the following top-level field: "key_information".
 
             **Example Format**:
             {
                 "key_information": {
-                    {keyInfoExample}
+                    {{keyInfoExample}}
                 }
             }
 
-            **TASK** → For the category "{categoryName}", extract the **key information** fields defined for that category in "category_schema" and return them under "key_information".
-            For every field in the selected category's 'fields' array:
+            **TASK** → For the category "{{categoryName}}", extract the **key information** fields defined in the category schema and return them under "key_information".
+            For every field in the category's 'fields' array:
             • Use the field's **name** as the JSON key.
             • Try to extract the corresponding value from the document; if not found, set it to null.
-            • Only include the fields declared for that category — no extra keys.
+            • Only include the fields declared for this category — no extra keys.
+            • Look for field values in various formats: labels, tables, forms, free text.
 
             **Rules**
             • Every value must be a JSON string or null — no units, no comments.
             • Output MUST be valid JSON that parses with 'JSON.parse()'.
             • If any field cannot be detected, output it with a null value.
             • Do **not** wrap the answer in markdown or code fences.
+            • Be thorough in searching for field values throughout the entire document text.
 
-            **category_schema**:
-            {category.Value}
+            **category_schema for "{{categoryName}}"**:
+            {{category.Value}}
 
             **Extracted Text**:
-            {extractedText}
+            {{extractedText}}
             """;
         }
 
