@@ -943,6 +943,7 @@ namespace BitAndBeam.Controllers
             return File(fileBytes, contentType);
         }
 
+        // Request/Response Models
         public class DocumentMetadataPatchRequest
         {
             public string? CategoryName { get; set; }
@@ -961,13 +962,25 @@ namespace BitAndBeam.Controllers
             public string CategoryName { get; set; } = string.Empty;
         }
 
+        /// <summary>
+        /// Request model for document chatbot queries
+        /// </summary>
         public class DocumentChatbotRequest
         {
+            /// <summary>
+            /// User's input/question to ask about the document
+            /// </summary>
             public string UserInput { get; set; }
         }
 
+        /// <summary>
+        /// Response model for document chatbot queries
+        /// </summary>
         public class DocumentChatbotResponse
         {
+            /// <summary>
+            /// The response from the chatbot
+            /// </summary>
             public string Response { get; set; }
         }
 
