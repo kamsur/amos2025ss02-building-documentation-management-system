@@ -18,6 +18,8 @@ export class DocumentMetadataPopupComponent implements OnInit {
   @Input() documentId: number | null = null;
   @Input() documentName: string = '';
   @Input() documentData: DocumentResponse | null = null;
+  @Input() suggestedCategoryName: string | null = null; // Add input for suggested category
+  @Input() suggestedBuildingId: number | null = null; // Add input for suggested building
   @Output() closePopup = new EventEmitter<void>();
   @Output() saveMetadata = new EventEmitter<{categoryName: string | null, buildingId: number | null}>();
 
@@ -35,6 +37,9 @@ export class DocumentMetadataPopupComponent implements OnInit {
   notificationType: 'success' | 'error' = 'success';
   notificationTimeout: any = null;
 
+  // Loading state for key information extraction
+  isExtractingKeyInfo: boolean = false;
+
   constructor(
     private buildingService: BuildingService,
     private categoryService: CategoryService,
@@ -50,35 +55,64 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
 
   setInitialValues(): void {
-    // If documentData is provided and has a buildingId, preselect that building
-    if (this.documentData && this.documentData.buildingId !== undefined) {
-      this.selectedBuildingId = this.documentData.buildingId;
-    } else {
-      // Otherwise preselect "No Building"
-      this.selectedBuildingId = null;
+    console.log('🔍 Setting initial values:');
+    console.log('📋 DocumentData:', this.documentData);
+    console.log('🏷️ SuggestedCategoryName:', this.suggestedCategoryName);
+    console.log('🏢 SuggestedBuildingId:', this.suggestedBuildingId);
+
+    // Priority 1: Use suggested values from upload response (for new uploads)
+    if (this.suggestedCategoryName !== null && this.suggestedCategoryName !== undefined) {
+      this.selectedCategoryName = this.suggestedCategoryName;
+      console.log('✅ Using suggested category:', this.suggestedCategoryName);
+    } 
+    // Priority 2: Use existing document data (for editing existing documents)
+    else if (this.documentData?.categoryName !== null && this.documentData?.categoryName !== undefined) {
+      this.selectedCategoryName = this.documentData.categoryName;
+      console.log('✅ Using existing document category:', this.documentData.categoryName);
+    } 
+    // Priority 3: No category selected
+    else {
+      this.selectedCategoryName = null;
+      console.log('⚪ No category pre-selected');
     }
 
-    // If documentData has a categoryName, preselect that category
-    if (this.documentData && this.documentData.categoryName !== undefined) {
-      this.selectedCategoryName = this.documentData.categoryName;
+    // Similar logic for building
+    if (this.suggestedBuildingId !== null && this.suggestedBuildingId !== undefined) {
+      this.selectedBuildingId = this.suggestedBuildingId;
+      console.log('✅ Using suggested building ID:', this.suggestedBuildingId);
+    } 
+    else if (this.documentData?.buildingId !== null && this.documentData?.buildingId !== undefined) {
+      this.selectedBuildingId = this.documentData.buildingId;
+      console.log('✅ Using existing document building ID:', this.documentData.buildingId);
+    } 
+    else {
+      this.selectedBuildingId = null;
+      console.log('⚪ No building pre-selected');
     }
   }
 
   loadBuildings(): void {
     this.buildingService.getBuildings().subscribe({
-      next: (data) => this.buildings = data,
+      next: (data) => {
+        this.buildings = data;
+        console.log('🏢 Loaded buildings:', data.length);
+      },
       error: (err) => console.error('Failed to fetch buildings', err)
     });
   }
 
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
-      next: (data) => this.categories = data,
+      next: (data) => {
+        this.categories = data;
+        console.log('🏷️ Loaded categories:', data.length);
+      },
       error: (err) => console.error('Failed to fetch categories', err)
     });
   }
 
   onCategoryChange(value: string | null): void {
+    console.log('🔄 Category changed to:', value);
     if (value === this.OTHER_CATEGORY_OPTION) {
       this.isOtherCategory = true;
       this.selectedCategoryName = null;
@@ -119,37 +153,79 @@ export class DocumentMetadataPopupComponent implements OnInit {
       return;
     }
 
-    // Determine categoryName based on selection; null if manual input selected
+    // Determine categoryName based on selection
     const categoryName: string | null = this.isOtherCategory ? this.otherCategoryName : this.selectedCategoryName;
 
+    console.log('💾 Saving with category:', categoryName, 'and building:', this.selectedBuildingId);
+
+    // First update the document metadata
     this.updateDocumentMetadata(this.documentId!, categoryName, this.selectedBuildingId);
   }
 
-
   private updateDocumentMetadata(documentId: number, categoryName: string | null, buildingId: number | null): void {
-    // ✅ Rewritten: use only the OpenAPI client for PATCH (removed categoryService.assignDocumentCategory)
     const patchRequest: DocumentMetadataPatchRequest = {
-      categoryName: null,
-      buildingId
+      categoryName: categoryName,
+      buildingId: buildingId
     };
+
+    console.log('🔄 Sending PATCH request:', patchRequest);
 
     const documentsApi = this.apiFactory.create(DocumentsApi);
 
     documentsApi.apiDocumentsIdPatch(documentId, patchRequest).then(response => {
-      // ✅ Emit metadata saved event
-      this.saveMetadata.emit({ categoryName, buildingId });
-      this.sidebarRefreshService.triggerRefresh(); // ✅ Refresh sidebar
       console.log('✅ Document metadata updated:', response.data);
-
-      // Show success notification and close immediately
-      this.showSuccessNotification('Metadata updated successfully');
-      this.onClose(); // Close popup immediately after successful submission
+      
+      // If a category was selected, trigger key information extraction
+      if (categoryName && categoryName.trim()) {
+        this.extractKeyInformation(documentId, categoryName);
+      } else {
+        // No category selected, just close the popup
+        this.completeSave(categoryName, buildingId);
+      }
     }).catch(error => {
       console.error('❌ Failed to update document metadata', error);
       this.showErrorNotification('Failed to update document metadata');
     });
   }
 
+  private extractKeyInformation(documentId: number, categoryName: string): void {
+    console.log('🔍 Extracting key information for category:', categoryName);
+    this.isExtractingKeyInfo = true;
+    
+    // Show loading notification
+    this.showSuccessNotification('Extracting key information...');
+
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    
+    // Call the extract-key-information endpoint
+    documentsApi.apiDocumentsIdExtractKeyInformationPost(documentId, { categoryName: categoryName })
+      .then(response => {
+        console.log('✅ Key information extracted:', response.data);
+        this.isExtractingKeyInfo = false;
+        this.completeSave(categoryName, this.selectedBuildingId);
+      })
+      .catch(error => {
+        console.error('❌ Failed to extract key information', error);
+        this.isExtractingKeyInfo = false;
+        // Still complete the save even if key extraction fails
+        this.showErrorNotification('Document saved but key information extraction failed');
+        this.completeSave(categoryName, this.selectedBuildingId);
+      });
+  }
+
+  private completeSave(categoryName: string | null, buildingId: number | null): void {
+    // Emit metadata saved event
+    this.saveMetadata.emit({ categoryName, buildingId });
+    this.sidebarRefreshService.triggerRefresh(); // Refresh sidebar
+    
+    // Show final success notification and close
+    this.showSuccessNotification('Document saved successfully');
+    
+    // Close popup after a short delay to show the success message
+    setTimeout(() => {
+      this.onClose();
+    }, 1500);
+  }
 
   /**
    * Show a success notification
@@ -175,6 +251,15 @@ export class DocumentMetadataPopupComponent implements OnInit {
     this.notificationTimeout = setTimeout(() => {
       this.showNotification = false;
     }, 5000);
+  }
+
+  /**
+   * Get building name by ID for display purposes
+   */
+  getBuildingName(buildingId: number | null): string {
+    if (!buildingId) return 'Unknown Building';
+    const building = this.buildings.find(b => b.id === buildingId);
+    return building ? building.name : `Building #${buildingId}`;
   }
 
   /**
