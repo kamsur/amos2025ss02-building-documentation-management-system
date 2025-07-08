@@ -22,6 +22,11 @@ import { AiAssistantComponent } from '../../components/ai-assistant/ai-assistant
   styleUrls: ['./file-view.component.css'],
   imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule, AiAssistantComponent]
 })
+
+/**
+ * Handles file viewing, document preview (PDF/Image),
+ * category-based metadata parsing and editing, and saving to backend.
+ */
 export class FileViewComponent {
 
   selectedFile: DocumentItem | null = null;
@@ -46,10 +51,23 @@ export class FileViewComponent {
   loadingKeyInfo: boolean = false;
   keyInfo: any = null;
   hasChanges: boolean = false;
+  // 🟡 Tracks if a field has been touched for validation feedback
+  touchedFields: { [label: string]: boolean } = {};
+
+  originalKeyInformation: { [key: string]: string } = {};
+  originalCategoryName: string | null = null;
+  originalBuildingId: number | null = null;
+
 
   constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
   private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
               private session: SessionService) {}
+  
+  /**
+ * On component init:
+ * - Watch route for document ID
+ * - Fetch buildings, categories, and selected document data
+ */
   ngOnInit(): void {
     // Watch for route param changes
     this.route.paramMap.subscribe(paramMap => {
@@ -74,7 +92,10 @@ export class FileViewComponent {
     });
   }
 
-
+  /**
+ * Loads document by ID from backend, sets preview,
+ * parses metadata, and initializes document state.
+ */
   loadDocument(id: number){
     this.buildingService.getDocumentById(id).subscribe({
       next: (doc: ApiDocument) => {
@@ -136,6 +157,16 @@ export class FileViewComponent {
           this.selectedBuildingId = doc.buildingId ?? null;
           this.selectedCategoryName = doc.categoryName ?? null;
 
+          this.originalCategoryName = this.selectedCategoryName;
+          this.originalBuildingId = this.selectedBuildingId;
+
+          this.originalKeyInformation = {};
+          if (doc.keyInformation) {
+            Object.entries(doc.keyInformation).forEach(([key, value]) => {
+              this.originalKeyInformation[key.toLowerCase()] = value !== null ? String(value) : '';
+            });
+          }
+
           // ✅ Add document's category to the list if it doesn't exist
           if (doc.categoryName && !this.categories.some(c => c.name === doc.categoryName)) {
             this.categories.push({ name: doc.categoryName } as Category);
@@ -169,7 +200,10 @@ export class FileViewComponent {
     });
   }
 
-  // ✅ New method: fetch key information
+  /**
+ * Loads extracted key information from backend.
+ * If none is found, auto-generates empty key fields based on category.
+ */
   fetchKeyInfo(id: number) {
     this.loadingKeyInfo = true;
     const token = this.session.getToken();
@@ -199,10 +233,7 @@ export class FileViewComponent {
             this.selectedCategoryName && this.categories.length > 0) {
           const match = this.categories.find(c => c.name === this.selectedCategoryName);
           if (match && Array.isArray(match.fields)) {
-            this.keyInformation = match.fields.map(f => ({
-              label: f.name,
-              value: ''
-            }));
+            this.keyInformation = this.generateKeyInfoFromCategory(match);
           }
         } else {
           this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
@@ -237,7 +268,10 @@ export class FileViewComponent {
     });
   }
 
-  // ✅ New method: update building/category
+  /**
+ * Builds patch request and sends metadata updates to backend.
+ * Regenerates view after successful save.
+ */
   saveMetadataChanges(): void {
     if (!this.selectedFile?.id) return;
 
@@ -249,10 +283,7 @@ export class FileViewComponent {
         this.selectedCategoryName && this.categories.length > 0) {
       const match = this.categories.find(c => c.name === this.selectedCategoryName);
       if (match && Array.isArray(match.fields) && match.fields.length > 0) {
-        this.keyInformation = match.fields.map(f => ({
-          label: f.name,   // assumes each field object has a 'name'
-          value: ''        // user can edit this later
-        }));
+        this.keyInformation = this.generateKeyInfoFromCategory(match);
       }
     }
 
@@ -287,13 +318,14 @@ export class FileViewComponent {
         this.loading = false;
       });
   }
+  /**
+ * Resets key fields when category is changed,
+ * initializes touchedFields map for validation.
+ */
   onCategoryChange(): void {
     const selected = this.categories.find(c => c.name === this.selectedCategoryName);
     if (selected && Array.isArray(selected.fields)) {
-      this.keyInformation = selected.fields.map(field => ({
-        label: field.name,
-        value: ''
-      }));
+      this.keyInformation = this.generateKeyInfoFromCategory(selected);
     }
   }
 
@@ -321,5 +353,60 @@ export class FileViewComponent {
     this.imageZoom = 1;
     this.pdfZoom = 1;
   }
+ /**
+ * Checks if a given field label is marked as mandatory
+ * in the selected category's field list.
+ */
+  isFieldRequired(label: string): boolean {
+    const category = this.categories.find(c => c.name === this.selectedCategoryName);
+    return !!category?.fields?.find(f => f.name === label && f.mandatory);
+  }
 
+  /**
+ * Tries to guess the input type for a field based on its label.
+ */
+  getInputType(label: string): string {
+    const lower = label.toLowerCase();
+    if (lower.includes('datum') || lower.includes('date')) return 'date';
+    if (lower.includes('zahl') || lower.includes('nummer') || lower.includes('anzahl')) return 'number';
+    return 'text';
+  }
+  
+  /**
+ * Compares the current form state with the original state to determine
+ * if changes were actually made (used to toggle Save button).
+ */
+  checkForChanges(): void {
+    const currentInfo = Object.fromEntries(
+      this.keyInformation.map(k => [k.label.toLowerCase().replace(/ /g, '_'), k.value || ''])
+    );
+
+    const categoryChanged = this.selectedCategoryName !== this.originalCategoryName;
+    const buildingChanged = this.selectedBuildingId !== this.originalBuildingId;
+
+    const metadataChanged = Object.keys(currentInfo).some(key =>
+      currentInfo[key] !== this.originalKeyInformation[key]
+    );
+
+    this.hasChanges = categoryChanged || buildingChanged || metadataChanged;
+  }
+
+  /**
+ * Generates empty key information fields from a category,
+ * and initializes touched state for validation tracking.
+ */
+  private generateKeyInfoFromCategory(category: Category): { label: string; value: string }[] {
+    this.touchedFields = {};
+    if (!Array.isArray(category.fields)) {
+      return [];
+    }
+
+    return category.fields.map(field => {
+      this.touchedFields[field.name] = false;
+      return {
+        label: field.name,
+        value: ''
+      };
+    });
+  }
 }
