@@ -594,7 +594,6 @@ namespace BitAndBeam.Controllers
                     d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
 
-
             if (document == null)
                 return NotFound();
 
