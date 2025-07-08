@@ -195,22 +195,29 @@ export class DocumentMetadataPopupComponent implements OnInit {
     // Show loading notification
     this.showSuccessNotification('Extracting key information...');
 
-    const documentsApi = this.apiFactory.create(DocumentsApi);
-    
-    // Call the extract-key-information endpoint
-    documentsApi.apiDocumentsIdExtractKeyInformationPost(documentId, { categoryName: categoryName })
-      .then(response => {
+    // Temporary solution: Make HTTP call directly until OpenAPI client is regenerated
+    import('axios').then(axios => {
+      axios.default.post(`/api/Documents/${documentId}/extract-key-information`, {
+        categoryName: categoryName
+      })
+      .then((response: any) => {
         console.log('✅ Key information extracted:', response.data);
         this.isExtractingKeyInfo = false;
         this.completeSave(categoryName, this.selectedBuildingId);
       })
-      .catch(error => {
+      .catch((error: any) => {
         console.error('❌ Failed to extract key information', error);
         this.isExtractingKeyInfo = false;
         // Still complete the save even if key extraction fails
         this.showErrorNotification('Document saved but key information extraction failed');
         this.completeSave(categoryName, this.selectedBuildingId);
       });
+    }).catch(() => {
+      // Fallback if axios import fails - just complete the save
+      console.log('⚠️ Key information extraction skipped - API method not available');
+      this.isExtractingKeyInfo = false;
+      this.completeSave(categoryName, this.selectedBuildingId);
+    });
   }
 
   private completeSave(categoryName: string | null, buildingId: number | null): void {
