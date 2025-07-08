@@ -63,7 +63,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "BitAndBeam/ollama/"
-          target: "~/BitAndBeam/ollama"
+          target: "~/BitAndBeam_ollama"
           strip_components: 1
 
       - name: Wait before next upload
@@ -76,7 +76,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "BitAndBeam/docker-compose-prod.yml"
-          target: "~/BitAndBeam/"
+          target: "~/BitAndBeam_ollama/"
           strip_components: 1
 
       - name: Verify remote files
@@ -87,9 +87,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Listing ~/BitAndBeam contents:"
-            ls -l ~/BitAndBeam
-            echo "Listing ~/BitAndBeam/ollama contents:"
-            ls -l ~/BitAndBeam/ollama
+            ls -l ~/BitAndBeam_ollama
+            echo "Listing ~/BitAndBeam_ollama/ollama contents:"
+            ls -l ~/BitAndBeam_ollama/ollama
 
       - name: Deploy Ollama to Remote Server
         uses: appleboy/ssh-action@v1.0.0
@@ -98,7 +98,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/BitAndBeam
+            cd ~/BitAndBeam_ollama
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose -f docker-compose-prod.yml stop ollama || true
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
