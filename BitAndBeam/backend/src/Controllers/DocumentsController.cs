@@ -718,6 +718,102 @@ namespace BitAndBeam.Controllers
             return Ok(dto);
         }
 
+        // Helper method for key information extraction (used by both endpoints)
+        private async Task<Dictionary<string, string?>?> ExtractKeyInformationForDocument(int documentId, ExtractKeyInformationRequest request)
+        {
+            var document = _context.Documents.FirstOrDefault(d => d.DocumentId == documentId);
+            if (document == null) return null;
+
+            try
+            {
+                // Read the previously extracted text
+                var textOutputDir = "/app/documents2";
+                var extractedTextPath = Path.Combine(textOutputDir, $"extracted_text_{document.DocumentId}.txt");
+                
+                if (!System.IO.File.Exists(extractedTextPath))
+                {
+                    // Re-extract text if file doesn't exist
+                    var filePath = Path.Combine("/app/documents", document.FileName);
+                    if (!System.IO.File.Exists(filePath)) return null;
+
+                    var fileBytes = System.IO.File.ReadAllBytes(filePath);
+                    var textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName).ConfigureAwait(false);
+                    
+                    if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
+                    {
+                        textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true).ConfigureAwait(false);
+                    }
+                    
+                    textForOllama = ExtractVisibleText(textForOllama);
+                    await System.IO.File.WriteAllTextAsync(extractedTextPath, textForOllama).ConfigureAwait(false);
+                }
+
+                var extractedText = await System.IO.File.ReadAllTextAsync(extractedTextPath).ConfigureAwait(false);
+                var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
+
+                // Build category-specific prompt for key information extraction
+                // Read categories directly from file as raw JSON to avoid double serialization
+                var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
+                var keyInfoPrompt = BuildKeyInformationPrompt(shortText, categoriesSchemaJson, request.CategoryName);
+
+                // Extract key information using Ollama call
+                Dictionary<string, string?> keyInformation = new();
+
+                var ollamaRawResponse = await _ollamaService.GenerateAsync(keyInfoPrompt).ConfigureAwait(false);
+
+                var ollamaJsonDoc = JsonDocument.Parse(ollamaRawResponse);
+                var ollamaRoot = ollamaJsonDoc.RootElement;
+
+                if (ollamaRoot.TryGetProperty("response", out var responseElem))
+                {
+                    var innerResponseString = responseElem.GetString();
+
+                    var cleanedJson = innerResponseString
+                        .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                        .Replace("```", "", StringComparison.OrdinalIgnoreCase)
+                        .Trim();
+
+                    int first = cleanedJson.IndexOf('{');
+                    int last = cleanedJson.LastIndexOf('}');
+                    if (first >= 0 && last > first)
+                        cleanedJson = cleanedJson[first..(last + 1)];
+
+                    var root = JsonDocument.Parse(cleanedJson).RootElement;
+
+                    // Extract key information
+                    if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var property in kiObj.EnumerateObject())
+                        {
+                            string value = property.Value.ValueKind switch
+                            {
+                                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
+                                JsonValueKind.Number => property.Value.GetRawText(),
+                                JsonValueKind.True => "true",
+                                JsonValueKind.False => "false",
+                                JsonValueKind.Null => null,
+                                _ => property.Value.ToString()
+                            };
+                            keyInformation[property.Name] = value;
+                        }
+                    }
+                }
+
+                // Update document with extracted key information
+                document.KeyInformation = keyInformation.Count > 0 ? JsonDocument.Parse(JsonSerializer.Serialize(keyInformation)) : null;
+                document.LastModified = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+
+                return keyInformation;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Key information extraction failed for document {DocumentId}", documentId);
+                return null;
+            }
+        }
+
         [HttpDelete("{id}")]
         public IActionResult DeleteDocument(int id)
         {
