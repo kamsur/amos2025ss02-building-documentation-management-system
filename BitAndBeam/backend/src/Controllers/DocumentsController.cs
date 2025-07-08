@@ -1059,11 +1059,11 @@ namespace BitAndBeam.Controllers
             **Example Format**:
             {
                 "key_information": {
-                    {keyInfoExample}
+                    {{keyInfoExample}}
                 }
             }
 
-            **TASK** → For the category "{categoryName}", extract the **key information** fields defined for that category in "category_schema" and return them under "key_information".
+            **TASK** → For the category "{{categoryName}}", extract the **key information** fields defined for that category in "category_schema" and return them under "key_information".
             For every field in the selected category's 'fields' array:
             • Use the field's **name** as the JSON key.
             • Try to extract the corresponding value from the document; if not found, set it to null.
@@ -1076,10 +1076,10 @@ namespace BitAndBeam.Controllers
             • Do **not** wrap the answer in markdown or code fences.
 
             **category_schema**:
-            {category.Value}
+            {{category.Value}}
 
             **Extracted Text**:
-            {extractedText}
+            {{extractedText}}
             """;
         }
 
