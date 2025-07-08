@@ -8,6 +8,23 @@ import { DocumentMetadataPopupComponent } from '../document-metadata-popup/docum
 import type { AxiosProgressEvent, AxiosResponse } from 'axios';
 import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
 
+interface UploadResponse {
+  documentId: number;
+  fileUrl: string;
+  hasMetadata: boolean;
+  suggestedAddress: {
+    street: string;
+    house_number: string;
+    zip_code: string;
+    city: string;
+  };
+  suggestedBuildingId?: number;
+  suggestedBuildingName?: string;
+  suggestedCategoryName?: string;
+  categoryName?: string;
+  keyInformation: any;
+}
+
 @Component({
   selector: 'app-upload-file',
   templateUrl: './upload-file.component.html',
@@ -24,6 +41,7 @@ export class UploadFileComponent implements OnInit {
   // For building association with documents
   selectedBuildingId: number | null = null;
   uploadedDocumentId: number | null = null;
+  uploadResponse: UploadResponse | null = null;
 
   // File upload properties
   uploading = false;
@@ -106,38 +124,53 @@ export class UploadFileComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
+    console.log('📤 Starting file upload:', file.name);
+
     // Pass the file directly as the API expects a File object, not FormData
     this.documentsApi.apiDocumentsPost(file, {
       onUploadProgress: (progressEvent: AxiosProgressEvent) => {
         if (progressEvent.total) {
           this.uploadProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`📊 Upload progress: ${this.uploadProgress}%`);
         }
       }
     }).then((response: AxiosResponse<any>) => {
-      console.log('Upload successful', response.data);
+      console.log('✅ Upload successful:', response.data);
       this.uploading = false;
-      this.uploadedDocumentId = response.data.id || response.data.documentId;
-      this.successMessage = `File "${file.name}" uploaded successfully!`;
-
-      // Associate the document with a building if needed
-      if (this.selectedBuildingId && this.uploadedDocumentId) {
-        this.associateDocumentWithBuilding(this.uploadedDocumentId, this.selectedBuildingId);
+      
+      // Store the complete upload response
+      this.uploadResponse = response.data as UploadResponse;
+      this.uploadedDocumentId = response.data.documentId;
+      
+      // Show success message with AI suggestions info
+      let suggestionInfo = '';
+      if (response.data.suggestedCategoryName) {
+        suggestionInfo += ` AI suggested category: ${response.data.suggestedCategoryName}.`;
       }
+      if (response.data.suggestedBuildingName) {
+        suggestionInfo += ` AI suggested building: ${response.data.suggestedBuildingName}.`;
+      }
+      
+      this.successMessage = `File "${file.name}" uploaded successfully!${suggestionInfo}`;
 
-      // Show metadata popup after successful upload
+      // Show metadata popup after successful upload with AI suggestions
       this.showMetadataPopup = true;
 
       // Emit the uploaded document ID to the parent component or handle locally
-      this.onFileUploaded(this.uploadedDocumentId!);
+      // Add null check to prevent TypeScript error
+      if (response.data.documentId) {
+        this.onFileUploaded(response.data.documentId);
+      }
 
       // Clear success message after a delay
       setTimeout(() => {
         this.successMessage = '';
-      }, 5000);
+      }, 8000); // Longer delay to show AI suggestions
 
     }).catch((error: any) => {
-      console.error('Upload failed', error);
+      console.error('❌ Upload failed:', error);
       this.uploading = false;
+      this.uploadResponse = null;
       this.errorMessage = 'Upload failed: ' + (error.response?.data?.message || error.message || 'Unknown error');
 
       // Clear error message after a delay
@@ -148,29 +181,16 @@ export class UploadFileComponent implements OnInit {
   }
 
   /**
-   * Associate the uploaded document with a building using the metadata PATCH endpoint
-   */
-  private associateDocumentWithBuilding(documentId: number, buildingId: number): void {
-    const metadata = {
-      buildingId: buildingId,
-      categoryName: null // Keep the category as is or null if not set yet
-    };
-
-    this.documentsApi.apiDocumentsIdPatch(documentId, metadata)
-      .then(() => {
-        console.log(`Document ${documentId} associated with building ${buildingId}`);
-      })
-      .catch(error => {
-        console.error('Failed to associate document with building:', error);
-      });
-  }
-
-  /**
    * Update document ID after successful upload
    * This is called from within the uploadFile method after a successful upload
    */
-  onFileUploaded(documentId: number): void {
-    console.log('File uploaded with document ID:', documentId);
+  onFileUploaded(documentId: number | null): void {
+    if (!documentId) {
+      console.log('⚠️ No document ID provided to onFileUploaded');
+      return;
+    }
+    
+    console.log('📄 File uploaded with document ID:', documentId);
     this.uploadedDocumentId = documentId;
     // Trigger sidebar refresh after upload
     this.sidebarRefreshService.triggerRefresh();
@@ -182,23 +202,47 @@ export class UploadFileComponent implements OnInit {
    * Close the metadata popup
    */
   closeMetadataPopup(): void {
+    console.log('❌ Closing metadata popup');
     this.showMetadataPopup = false;
     this.uploadedDocumentId = null;
+    this.uploadResponse = null;
   }
 
   /**
-   * Save document metadata
+   * Save document metadata - this is now handled by the popup component
+   * but we can still listen to the event for additional actions
    */
-  saveDocumentMetadata(metadata: any): void {
-    if (this.uploadedDocumentId) {
-      this.documentsApi.apiDocumentsIdPatch(this.uploadedDocumentId, metadata)
-        .then(() => {
-          console.log('Document metadata updated successfully');
-          this.showMetadataPopup = false;
-        })
-        .catch(error => {
-          console.error('Failed to update document metadata:', error);
-        });
-    }
+  saveDocumentMetadata(metadata: {categoryName: string | null, buildingId: number | null}): void {
+    console.log('💾 Document metadata saved:', metadata);
+    
+    // The popup component now handles the actual API calls and key information extraction
+    // This method is just for any additional actions you want to take after saving
+    
+    // Trigger sidebar refresh to show updated document
+    this.sidebarRefreshService.triggerRefresh();
+    
+    // Close the popup (this will also be called by the popup component itself)
+    this.closeMetadataPopup();
+  }
+
+  /**
+   * Get the document name for the popup
+   */
+  get documentName(): string {
+    return this.uploadedFile?.name || 'Unknown Document';
+  }
+
+  /**
+   * Get suggested category name from upload response
+   */
+  get suggestedCategoryName(): string | null {
+    return this.uploadResponse?.suggestedCategoryName || null;
+  }
+
+  /**
+   * Get suggested building ID from upload response
+   */
+  get suggestedBuildingId(): number | null {
+    return this.uploadResponse?.suggestedBuildingId || null;
   }
 }
