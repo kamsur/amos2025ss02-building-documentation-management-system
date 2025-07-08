@@ -86,7 +86,6 @@ namespace BitAndBeam.Controllers
         }
 
 
-
         [HttpPost]
         public async Task<IActionResult> UploadDocument(IFormFile file)
         {
