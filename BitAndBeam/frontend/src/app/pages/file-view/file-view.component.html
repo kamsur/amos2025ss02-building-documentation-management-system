@@ -45,7 +45,7 @@
         <!-- ✅ Editable Metadata Panel -->
         <aside class="metadata-panel" [class.collapsed]="isMetadataPanelCollapsed">
           <div class="metadata-panel-header">
-            <h3 *ngIf="!isMetadataPanelCollapsed">Edit Metadata</h3>
+            <h3 *ngIf="!isMetadataPanelCollapsed">/h3>
             <button class="metadata-toggle-btn" (click)="toggleMetadataPanel()"
                     [title]="isMetadataPanelCollapsed ? 'Expand metadata panel' : 'Collapse metadata panel'">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -78,7 +78,6 @@
               </table>
             </div>
             <div class="ollama-info" *ngIf="keyInfo">
-              <h3>Extracted Information</h3>
               <!-- B. Category -->
               <div *ngIf="selectedCategoryName">
                 <h4>Detected Category</h4>
