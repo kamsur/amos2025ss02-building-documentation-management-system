@@ -7,12 +7,14 @@ on:
     paths:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
+      - '.github/workflows/ollama-ci.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
+      - '.github/workflows/ollama-ci.yml'
   # workflow_call:
   #   outputs:
   #     sdk_updated:
@@ -41,7 +43,7 @@ jobs:
         working-directory: BitAndBeam
         run: |
           # Build only the services we need
-          docker compose build postgres ollama tika backend openapi-client
+          docker compose build postgres tika backend openapi-client
 
       - name: Start services and generate SDK
         working-directory: BitAndBeam
@@ -50,9 +52,9 @@ jobs:
           sudo chown -R $USER:$USER frontend/src/api
           
           # Start postgres and wait for it to be ready
-          docker compose up -d postgres
-          echo "Waiting for postgres to be ready..."
-          sleep 10
+          docker compose up -d postgres tika
+          echo "Waiting for postgres and tika to be ready..."
+          sleep 20
           
           # Start backend
           docker compose up -d backend

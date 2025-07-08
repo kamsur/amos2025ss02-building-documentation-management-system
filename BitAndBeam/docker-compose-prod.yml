@@ -5,9 +5,11 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      tika:
+        condition: service_healthy
       # - ollama
-      - tika
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
@@ -18,7 +20,7 @@ services:
       - documentdata:/app/documents:rw
       - documents2data:/app/documents2:rw
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "curl", "-f", "http://backend:5000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -30,7 +32,8 @@ services:
     image: ghcr.io/amosproj/bitandbeam-frontend:latest
     restart: always
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       - API_URL=http://amos.b-iq.net:5000
     ports:
@@ -57,30 +60,28 @@ services:
     networks:
       - internal
       
-  ollama:
-    image: ghcr.io/amosproj/bitandbeam-ollama:latest
-    container_name: ollama
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    volumes:
-      - ollamadata:/root/.ollama
-    ports:
-      - "11434:11434"
-    networks:
-      - internal
-    expose:
-      - "11434"
+  # ollama:
+  #   image: ghcr.io/amosproj/bitandbeam-ollama:latest
+  #   container_name: ollama
+  #   restart: always
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://ollama:11434/api/tags"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   ports:
+  #     - "11434:11434"
+  #   networks:
+  #     - internal
+  #   expose:
+  #     - "11434"
 
   tika:
     image: apache/tika
     container_name: bitandbeam_tika
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9998/version"]
+      test: ["CMD", "curl", "-f", "http://tika:9998/version"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,7 +91,6 @@ services:
       - "9998"
 
 volumes:
-  ollamadata:
   documentdata:
   documents2data:
   pgdata:

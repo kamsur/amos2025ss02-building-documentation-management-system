@@ -1249,6 +1249,7 @@ namespace BitAndBeam.Controllers
             {
                 "key_information": {
                     {{keyInfoExample}}
+                    {{keyInfoExample}}
                 }
             }
 
@@ -1270,6 +1271,7 @@ namespace BitAndBeam.Controllers
             {{category.Value}}
 
             **Extracted Text**:
+            {{extractedText}}
             {{extractedText}}
             """;
         }
