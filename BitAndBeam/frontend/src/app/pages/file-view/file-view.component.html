@@ -115,9 +115,19 @@
                   <ul>
                     <li *ngFor="let item of keyInformation">
                       <strong>{{ item.label }}:</strong>
-                      <input type="text" [(ngModel)]="item.value" (ngModelChange)="hasChanges = true"/>
+                      <input
+                        [type]="getInputType(item.label)"
+                        [(ngModel)]="item.value"
+                        (ngModelChange)="checkForChanges()"
+                        (blur)="touchedFields[item.label] = true"
+                      />
+                      <!-- 🟥 Validation message -->
+                      <div class="validation-message"
+                          *ngIf="isFieldRequired(item.label) && touchedFields[item.label] && !item.value?.trim()">
+                        <small style="color: red;">This field is required.</small>
+                      </div>
                     </li>
-                  </ul>
+                </ul>
                 </ng-container>
                 <ng-template #noKeyInfo>
                   <p>No key information found.</p>

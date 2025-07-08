@@ -47,6 +47,13 @@ export class FileViewComponent implements OnInit, OnDestroy {
   loadingKeyInfo: boolean = false;
   keyInfo: any = null;
   hasChanges: boolean = false;
+  // 🟡 Tracks if a field has been touched for validation feedback
+  touchedFields: { [label: string]: boolean } = {};
+
+  originalKeyInformation: { [key: string]: string } = {};
+  originalCategoryName: string | null = null;
+  originalBuildingId: number | null = null;
+
 
   // ✅ New variables for Analysis button
   originalCategoryName: string | null = null;
@@ -326,7 +333,10 @@ export class FileViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ New method: update building/category
+  /**
+ * Builds patch request and sends metadata updates to backend.
+ * Regenerates view after successful save.
+ */
   saveMetadataChanges(): void {
     if (!this.selectedFile?.id) return;
 
