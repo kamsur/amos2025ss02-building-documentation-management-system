@@ -26,10 +26,6 @@
       
       <div class="form-group">
         <label for="categorySelect">Document Category:</label>
-        <!-- Debug info - remove this after fixing -->
-        <small style="color: #666; font-size: 12px; display: block; margin-bottom: 4px;">
-          Debug: Categories loaded: {{ categories.length }}, Selected: {{ selectedCategoryName }}, Suggested: {{ suggestedCategoryName }}
-        </small>
         
         <div class="category-selection-container">
           <select id="categorySelect" [(ngModel)]="selectedCategoryName" (ngModelChange)="onCategoryChange($event)" [disabled]="isExtractingKeyInfo">
@@ -49,9 +45,6 @@
             <optgroup label="Debug Info" *ngIf="!categories || categories.length === 0">
               <option disabled>No categories loaded - check console</option>
             </optgroup>
-            
-            <!-- Manual input option -->
-            <option [value]="OTHER_CATEGORY_OPTION">Other...</option>
           </select>
         </div>
         
