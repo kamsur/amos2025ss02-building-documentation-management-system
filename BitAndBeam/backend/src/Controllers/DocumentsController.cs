@@ -1115,14 +1115,14 @@ namespace BitAndBeam.Controllers
             }
         }
 
-        private string BuildPrompt(string extractedText, string categoriesSchemaJson)
+        private string BuildInitialPrompt(string extractedText, string categoriesSchemaJson)
         {
             return $$"""
-            You are an intelligent document analyzer.
+            You are an intelligent document analyzer for German documents.
 
-            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+            Given the **extracted text** from a German document, your task is to analyze and extract the following information in a strict JSON format:
 
-            Your answer MUST include the following top-level fields: "address", "category", and "key_information".
+            Your answer MUST include the following top-level fields: "address" and "category".
 
             **Example Format**:
             {
@@ -1132,12 +1132,7 @@ namespace BitAndBeam.Controllers
                     "zip_code": "<string|null>",
                     "city": "<string|null>"
                 },
-                "category": "<string|null>",
-                "key_information": {
-                    "Field 1": "<string|null>",
-                    "Field 2": "<string|null>",
-                    "Field 3": "<string|null>"
-                }
+                "category": "<string|null>"
             }
 
             **TASK A** → Extract an **address** if present.
@@ -1147,72 +1142,19 @@ namespace BitAndBeam.Controllers
 
             **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
 
-            **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
-            For every field in the selected category's 'fields' array:
-            • Use the field's **name** as the JSON key.
-            • Try to extract the corresponding value from the document; if not found, set it to null.
-            • Only include the fields declared for that category — no extra keys.
-
             **Rules**
-
             • Every value must be a JSON string or null — no units, no comments.
             • Output MUST be valid JSON that parses with 'JSON.parse()'.
             • If any field cannot be detected, output it with a null value.
             • Do **not** wrap the answer in markdown or code fences.
+            • Do NOT extract key information fields - only address and category.
 
             **categories_schema**:
-
             {{categoriesSchemaJson}}
 
             **Extracted Text**:
-
             {{extractedText}}
             """;
-
-            // return $$"""
-            // You are an intelligent document analyzer for documents in German language, related to buildings.
-
-            // Given the **Extracted Text** and a **categories_schema** (including field definitions) from a German document, your task is to carefully analyze **Extracted Text** and extract the following information in a strict JSON format:
-
-            // 1. **Address**: Extract the address if present. Look for labels like:
-            //    - 'Adresse', 'Anschrift', 'Standort', 'Objektadresse', 'Gebäudeadresse', 'Hausanschrift', 'Liegenschaft', 'Postanschrift'.
-            //    - Field names such as 'Straße', 'Haus-Nr.', 'PLZ', 'Ort'.
-
-            // 2. **Category**: Choose the SINGLE best-matching category from the provided **categories_schema**, that describes the document. If no category fits, return `null`.
-
-            // 3. **Key Information**: From the provided **Extracted Text**, extract only the fields defined in the 'fields' array of the selected category, in the provided **categories_schema**. Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. If a value cannot be found, set it to `null`.
-
-            // **Rules**:
-            // - Analyze the document step-by-step, first the address, then the category, and finally the key information.
-            // - Every value must be a JSON string or `null`.
-            // - Output MUST be valid JSON that parses with 'JSON.parse()'.
-            // - Do not include extra keys or comments.
-            // - Do not create information that is not present in **Extracted Text** and do not modify the **categories_schema** provided below.
-
-            // **Example Format**:
-            // {
-            //     \"address\": {
-            //         \"street\": \"<string|null>\",
-            //         \"house_number\": \"<string|null>\",
-            //         \"zip_code\": \"<string|null>\",
-            //         \"city\": \"<string|null>\"
-            //     },
-            //     "\category\": \"<string|null>\",
-            //     "\key_information\": {
-            //         "\Art des Ausweises\": \"<string|null>\",
-            //         \"Ausstellungsdatum\": \"<string|null>\",
-            //         \"Gültigkeit (Ablaufdatum)\": \"<string|null>\",
-            //         \"Registriernummer des Ausweises\": \"<string|null>\",
-            //         \"Baujahr Gebäude\": \"<string|null>\",
-            //     }
-            // }
-
-            // **categories_schema**:
-            // {{categoriesSchemaJson}}
-
-            // **Extracted Text**:
-            // {{extractedText}}
-            // """;
         }
 
         private string BuildPromptForCategory(string extractedText, string categoriesSchemaJson, string categoryName)
