@@ -48,6 +48,12 @@ export class FileViewComponent implements OnInit, OnDestroy {
   keyInfo: any = null;
   hasChanges: boolean = false;
 
+  // ✅ New variables for Analysis button
+  originalCategoryName: string | null = null;
+  isAnalyzing: boolean = false;
+  analysisMessage: string = '';
+  analysisSuccess: boolean = true;
+
   // Cleanup
   private destroy$ = new Subject<void>();
   private blobUrl: string | null = null;
@@ -200,6 +206,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
               
               this.selectedBuildingId = doc.buildingId ?? null;
               this.selectedCategoryName = doc.categoryName ?? null;
+              this.originalCategoryName = doc.categoryName ?? null; // Store original category
 
               // ✅ FIXED: Add safe check before using array methods
               if (doc.categoryName && Array.isArray(this.categories) && !this.categories.some(c => c.name === doc.categoryName)) {
@@ -354,6 +361,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
       .then(() => {
         this.toastMessage = '✅ Metadata updated successfully.';
         this.hasChanges = false;
+        this.originalCategoryName = this.selectedCategoryName; // Update original category after save
         this.sidebarRefreshService.triggerRefresh();
 
         // ✅ After save, reload document to update UI
@@ -388,6 +396,140 @@ export class FileViewComponent implements OnInit, OnDestroy {
     }
     
     this.hasChanges = true;
+    this.analysisMessage = ''; // Clear any previous analysis messages
+  }
+
+  /**
+   * Check if the Analyze button should be enabled
+   */
+  get canAnalyze(): boolean {
+    return !!(
+      this.selectedCategoryName && 
+      this.selectedCategoryName !== this.originalCategoryName &&
+      !this.isAnalyzing
+    );
+  }
+
+  /**
+   * Get tooltip for the Analyze button
+   */
+  getAnalyzeButtonTooltip(): string {
+    if (this.isAnalyzing) {
+      return 'Analysis in progress...';
+    }
+    if (!this.selectedCategoryName) {
+      return 'Please select a category first';
+    }
+    if (this.selectedCategoryName === this.originalCategoryName) {
+      return 'Category has not changed';
+    }
+    return 'Re-analyze document with new category';
+  }
+
+  /**
+   * Analyze document with new category
+   */
+  analyzeWithNewCategory(): void {
+    if (!this.selectedFile?.id || !this.selectedCategoryName) return;
+
+    this.isAnalyzing = true;
+    this.analysisMessage = '';
+    
+    console.log('🔍 Starting AI analysis with category:', this.selectedCategoryName);
+
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    
+    // Try to use the OpenAPI client method for key extraction
+    const extractMethod = (documentsApi as any).apiDocumentsIdExtractKeyInformationPost 
+                       || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
+                       || (documentsApi as any).extractKeyInformation;
+
+    if (extractMethod && typeof extractMethod === 'function') {
+      console.log('✅ Using OpenAPI client method for key extraction');
+      
+      extractMethod.call(documentsApi, this.selectedFile.id, { categoryName: this.selectedCategoryName })
+        .then((response: any) => {
+          console.log('✅ Key information extracted:', response.data);
+          this.isAnalyzing = false;
+          this.analysisSuccess = true;
+          this.analysisMessage = '✅ AI analysis completed successfully!';
+          
+          // Reload document to get new key information
+          this.loadDocument(this.selectedFile!.id);
+          this.fetchKeyInfo(this.selectedFile!.id);
+          
+          // Clear message after delay
+          setTimeout(() => {
+            this.analysisMessage = '';
+          }, 5000);
+        })
+        .catch((error: any) => {
+          console.error('❌ Key extraction failed:', error);
+          this.handleAnalysisError(error);
+        });
+    } else {
+      console.log('⚠️ OpenAPI method not found, using manual HTTP call');
+      
+      // Fallback to manual HTTP call
+      const token = this.session.getToken();
+      const headers = new HttpHeaders({
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      });
+
+      this.http.post(
+        `${this.config.apiUrl}/api/Documents/${this.selectedFile.id}/extract-key-information`,
+        { categoryName: this.selectedCategoryName },
+        { headers }
+      ).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          console.log('✅ Key information extracted:', response);
+          this.isAnalyzing = false;
+          this.analysisSuccess = true;
+          this.analysisMessage = '✅ AI analysis completed successfully!';
+          
+          // Reload document to get new key information
+          this.loadDocument(this.selectedFile!.id);
+          this.fetchKeyInfo(this.selectedFile!.id);
+          
+          // Clear message after delay
+          setTimeout(() => {
+            this.analysisMessage = '';
+          }, 5000);
+        },
+        error: (error) => {
+          console.error('❌ Key extraction failed:', error);
+          this.handleAnalysisError(error);
+        }
+      });
+    }
+  }
+
+  /**
+   * Handle analysis errors
+   */
+  private handleAnalysisError(error: any): void {
+    this.isAnalyzing = false;
+    this.analysisSuccess = false;
+    
+    let errorMsg = 'AI analysis failed';
+    if (error.response?.status === 401 || error.status === 401) {
+      errorMsg = 'Authentication failed for AI analysis';
+    } else if (error.response?.status === 405 || error.status === 405) {
+      errorMsg = 'AI analysis endpoint not available';
+    } else if (error.response?.status === 404 || error.status === 404) {
+      errorMsg = 'Document not found for AI analysis';
+    } else if (error.response?.data?.message || error.error?.message) {
+      errorMsg = error.response?.data?.message || error.error?.message;
+    }
+    
+    this.analysisMessage = `❌ ${errorMsg}`;
+    
+    // Clear error message after delay
+    setTimeout(() => {
+      this.analysisMessage = '';
+    }, 5000);
   }
 
   toggleMetadataPanel(): void {
