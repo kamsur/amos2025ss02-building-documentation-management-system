@@ -7,12 +7,14 @@ on:
     paths:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
+      - '.github/workflows/ollama-ci.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'BitAndBeam/backend/**'
       - 'BitAndBeam/openapi-client/**'
+      - '.github/workflows/ollama-ci.yml'
   # workflow_call:
   #   outputs:
   #     sdk_updated:
