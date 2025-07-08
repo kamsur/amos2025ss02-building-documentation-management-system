@@ -250,28 +250,51 @@ export class DocumentMetadataPopupComponent implements OnInit {
     // Show loading notification
     this.showSuccessNotification('Extracting key information...');
 
-    // Temporary solution: Make HTTP call directly until OpenAPI client is regenerated
+    // Use the correct backend URL - same as other API calls
     import('axios').then(axios => {
       axios.default.post(`/api/Documents/${documentId}/extract-key-information`, {
         categoryName: categoryName
+      }, {
+        // Use the same base URL as other API calls
+        baseURL: window.location.origin.replace(':4200', ':5001').replace(':8080', ':5001')
       })
       .then((response: any) => {
         console.log('✅ Key information extracted:', response.data);
         this.isExtractingKeyInfo = false;
-        this.completeSave(categoryName, this.selectedBuildingId);
+        this.showSuccessNotification('Key information extracted successfully!');
+        
+        // Wait a bit to show success message, then complete save
+        setTimeout(() => {
+          this.completeSave(categoryName, this.selectedBuildingId);
+        }, 1000);
       })
       .catch((error: any) => {
         console.error('❌ Failed to extract key information', error);
         this.isExtractingKeyInfo = false;
+        
+        // Show more specific error message
+        let errorMsg = 'Document saved but key information extraction failed';
+        if (error.response?.status === 405) {
+          errorMsg = 'Key information extraction endpoint not available yet';
+        } else if (error.response?.status === 404) {
+          errorMsg = 'Document not found for key information extraction';
+        }
+        
+        this.showErrorNotification(errorMsg);
+        
         // Still complete the save even if key extraction fails
-        this.showErrorNotification('Document saved but key information extraction failed');
-        this.completeSave(categoryName, this.selectedBuildingId);
+        setTimeout(() => {
+          this.completeSave(categoryName, this.selectedBuildingId);
+        }, 1500);
       });
     }).catch(() => {
       // Fallback if axios import fails - just complete the save
-      console.log('⚠️ Key information extraction skipped - API method not available');
+      console.log('⚠️ Key information extraction skipped - Axios not available');
       this.isExtractingKeyInfo = false;
-      this.completeSave(categoryName, this.selectedBuildingId);
+      this.showSuccessNotification('Document saved successfully');
+      setTimeout(() => {
+        this.completeSave(categoryName, this.selectedBuildingId);
+      }, 1000);
     });
   }
 
