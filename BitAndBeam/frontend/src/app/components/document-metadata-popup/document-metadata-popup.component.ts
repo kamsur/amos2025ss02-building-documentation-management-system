@@ -49,9 +49,13 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadBuildings();
+    console.log('🔄 DocumentMetadataPopup ngOnInit called');
     this.loadCategories();
-    this.setInitialValues();
+    this.loadBuildings();
+    // Set initial values after a short delay to ensure categories are loaded
+    setTimeout(() => {
+      this.setInitialValues();
+    }, 100);
   }
 
   setInitialValues(): void {
@@ -59,6 +63,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
     console.log('📋 DocumentData:', this.documentData);
     console.log('🏷️ SuggestedCategoryName:', this.suggestedCategoryName);
     console.log('🏢 SuggestedBuildingId:', this.suggestedBuildingId);
+    console.log('📂 Available categories:', this.categories.length);
 
     // Priority 1: Use suggested values from upload response (for new uploads)
     if (this.suggestedCategoryName !== null && this.suggestedCategoryName !== undefined) {
@@ -92,22 +97,44 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
 
   loadBuildings(): void {
+    console.log('🏢 Loading buildings...');
     this.buildingService.getBuildings().subscribe({
       next: (data) => {
         this.buildings = data;
-        console.log('🏢 Loaded buildings:', data.length);
+        console.log('✅ Loaded buildings:', data.length, data);
       },
-      error: (err) => console.error('Failed to fetch buildings', err)
+      error: (err) => {
+        console.error('❌ Failed to fetch buildings', err);
+      }
     });
   }
 
   loadCategories(): void {
+    console.log('🏷️ Loading categories...');
     this.categoryService.getCategories().subscribe({
       next: (data) => {
         this.categories = data;
-        console.log('🏷️ Loaded categories:', data.length);
+        console.log('✅ Loaded categories:', data.length, data);
+        
+        // Set initial values again after categories are loaded
+        this.setInitialValues();
       },
-      error: (err) => console.error('Failed to fetch categories', err)
+      error: (err) => {
+        console.error('❌ Failed to fetch categories', err);
+        console.log('🔍 Trying to fetch categories using DocumentsApi as fallback...');
+        
+        // Fallback: Try using DocumentsApi to get categories
+        const documentsApi = this.apiFactory.create(DocumentsApi);
+        documentsApi.apiDocumentsCategoriesGet()
+          .then((response: any) => {
+            console.log('✅ Categories loaded via DocumentsApi:', response.data);
+            this.categories = response.data.categories || response.data || [];
+            this.setInitialValues();
+          })
+          .catch((fallbackErr: any) => {
+            console.error('❌ Both category services failed:', fallbackErr);
+          });
+      }
     });
   }
 
@@ -258,6 +285,13 @@ export class DocumentMetadataPopupComponent implements OnInit {
     this.notificationTimeout = setTimeout(() => {
       this.showNotification = false;
     }, 5000);
+  }
+
+  /**
+   * TrackBy function for categories to improve performance
+   */
+  trackByCategory(index: number, category: Category): any {
+    return category.name || index;
   }
 
   /**
