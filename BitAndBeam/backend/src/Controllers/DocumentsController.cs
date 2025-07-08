@@ -924,18 +924,11 @@ namespace BitAndBeam.Controllers
             public string? Description { get; set; }
         }
 
+        public class ExtractKeyInformationRequest
+        {
+            public string CategoryName { get; set; } = string.Empty;
+        }
 
-
-        // public class DocumentCategoryCreateRequest
-        // {
-        //     public string Name { get; set; } = string.Empty;
-        //     public string? Description { get; set; }
-        //     public List<Dictionary<string, string>>? Fields { get; set; }
-        // }
-
-        /// <summary>
-        /// Request model for document chatbot queries
-        /// </summary>
         public class DocumentChatbotRequest
         {
             /// <summary>
