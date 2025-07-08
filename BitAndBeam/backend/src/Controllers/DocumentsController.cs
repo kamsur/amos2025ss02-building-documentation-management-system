@@ -358,6 +358,142 @@ namespace BitAndBeam.Controllers
         }
 
 
+        [HttpPost("{id}/extract-key-information")]
+        public async Task<IActionResult> ExtractKeyInformation(int id, [FromBody] ExtractKeyInformationRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.CategoryName))
+                return BadRequest("CategoryName is required");
+
+            var orgId = GetCurrentUserOrganizationId();
+            var document = _context.Documents
+                .FirstOrDefault(d => d.DocumentId == id && d.OrganizationId == orgId);
+
+            if (document == null)
+                return NotFound();
+
+            try
+            {
+                // Read the previously extracted text
+                var textOutputDir = "/app/documents2";
+                var extractedTextPath = Path.Combine(textOutputDir, $"extracted_text_{document.DocumentId}.txt");
+                
+                if (!System.IO.File.Exists(extractedTextPath))
+                {
+                    _logger.LogWarning("Extracted text file not found for document {DocumentId}, re-extracting", document.DocumentId);
+                    
+                    // Re-extract text if file doesn't exist
+                    var filePath = Path.Combine("/app/documents", document.FileName);
+                    if (!System.IO.File.Exists(filePath))
+                        return BadRequest("Original document file not found");
+
+                    var fileBytes = System.IO.File.ReadAllBytes(filePath);
+                    var textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName).ConfigureAwait(false);
+                    
+                    if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
+                    {
+                        textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true).ConfigureAwait(false);
+                    }
+                    
+                    textForOllama = ExtractVisibleText(textForOllama);
+                    await System.IO.File.WriteAllTextAsync(extractedTextPath, textForOllama).ConfigureAwait(false);
+                }
+
+                var extractedText = await System.IO.File.ReadAllTextAsync(extractedTextPath).ConfigureAwait(false);
+                var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
+
+                // Read categories directly from file as raw JSON to avoid double serialization
+                var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
+                
+                // Debug log the categories schema structure
+                _logger.LogInformation("Categories schema for key extraction: {Schema}", categoriesSchemaJson);
+                _logger.LogInformation("Requested category name: {CategoryName}", request.CategoryName);
+                
+                var keyInfoPrompt = BuildKeyInformationPrompt(shortText, categoriesSchemaJson, request.CategoryName);
+
+                // Extract key information using second Ollama call
+                Dictionary<string, string?> keyInformation = new();
+
+                var ollamaRawResponse = await _ollamaService.GenerateAsync(keyInfoPrompt).ConfigureAwait(false);
+                _logger.LogInformation("OLLAMA key information response:\n{0}", ollamaRawResponse);
+
+                var ollamaJsonDoc = JsonDocument.Parse(ollamaRawResponse);
+                var ollamaRoot = ollamaJsonDoc.RootElement;
+
+                if (ollamaRoot.TryGetProperty("response", out var responseElem))
+                {
+                    var innerResponseString = responseElem.GetString();
+
+                    var cleanedJson = innerResponseString
+                        .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                        .Replace("```", "", StringComparison.OrdinalIgnoreCase)
+                        .Trim();
+
+                    int first = cleanedJson.IndexOf('{');
+                    int last = cleanedJson.LastIndexOf('}');
+                    if (first >= 0 && last > first)
+                        cleanedJson = cleanedJson[first..(last + 1)];
+
+                    _logger.LogInformation("🧼 Cleaned Key Info JSON: {Cleaned}", cleanedJson);
+
+                    var cleanedJsonPath = Path.Combine(textOutputDir, "key_info_ollama_response.json");
+                    using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                    using (var cleanedWriter = new StreamWriter(cleanedStream))
+                    {
+                        await cleanedWriter.WriteAsync(cleanedJson).ConfigureAwait(false);
+                    }
+
+                    var root = JsonDocument.Parse(cleanedJson).RootElement;
+
+                    // Extract key information
+                    if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var property in kiObj.EnumerateObject())
+                        {
+                            string value = property.Value.ValueKind switch
+                            {
+                                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
+                                JsonValueKind.Number => property.Value.GetRawText(),
+                                JsonValueKind.True => "true",
+                                JsonValueKind.False => "false",
+                                JsonValueKind.Null => null,
+                                _ => property.Value.ToString()
+                            };
+                            keyInformation[property.Name] = value;
+                        }
+                    }
+                }
+
+                // Update document with confirmed category and extracted key information
+                document.CategoryName = request.CategoryName;
+                document.KeyInformation = keyInformation.Count > 0 ? JsonDocument.Parse(JsonSerializer.Serialize(keyInformation)) : null;
+                document.LastModified = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+
+                // Save extracted key information to file
+                if (keyInformation.Count > 0)
+                {
+                    var keyInfoJsonPath = Path.Combine(textOutputDir, "final_key_information.json");
+                    var keyInfoJson = JsonSerializer.Serialize(keyInformation, new JsonSerializerOptions { WriteIndented = true });
+                    await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson).ConfigureAwait(false);
+                }
+
+                _logger.LogInformation("✅ Key information extracted for document {DocumentId} with category {Category}", document.DocumentId, request.CategoryName);
+
+                return Ok(new
+                {
+                    Success = true,
+                    KeyInformation = keyInformation,
+                    CategoryName = document.CategoryName
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Key information extraction failed for document {DocumentId}", document.DocumentId);
+                return StatusCode(500, new { error = "Key information extraction failed", details = ex.Message });
+            }
+        }
+
         [HttpGet]
         public IActionResult GetAllDocuments()
         {
