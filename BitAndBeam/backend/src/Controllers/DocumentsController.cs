@@ -1115,6 +1115,11 @@ namespace BitAndBeam.Controllers
             }
         }
 
+        // PROMPT METHODS
+
+        /// <summary>
+        /// Builds the initial prompt for address and category suggestion only
+        /// </summary>
         private string BuildInitialPrompt(string extractedText, string categoriesSchemaJson)
         {
             return $$"""
