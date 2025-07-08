@@ -45,7 +45,7 @@
         <!-- ✅ Editable Metadata Panel -->
         <aside class="metadata-panel" [class.collapsed]="isMetadataPanelCollapsed">
           <div class="metadata-panel-header">
-            <h3 *ngIf="!isMetadataPanelCollapsed">/h3>
+            <h3 *ngIf="!isMetadataPanelCollapsed">Edit Metadata</h3>
             <button class="metadata-toggle-btn" (click)="toggleMetadataPanel()"
                     [title]="isMetadataPanelCollapsed ? 'Expand metadata panel' : 'Collapse metadata panel'">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -56,20 +56,45 @@
           <div class="metadata-content">
             <div class="metadata-item">
               <label for="building-select"><strong>Building:</strong></label>
-              <select id="building-select" [(ngModel)]="selectedBuildingId">
+              <select id="building-select" [(ngModel)]="selectedBuildingId" (ngModelChange)="hasChanges = true">
                 <option [ngValue]="null">No Building</option>
                 <option *ngFor="let b of buildings" [ngValue]="b.id">{{ b.name }}</option>
               </select>
             </div>
             <div class="metadata-item">
               <label for="category-select"><strong>Category:</strong></label>
-              <select id="category-select" [(ngModel)]="selectedCategoryName" (change)="onCategoryChange()" (ngModelChange)="hasChanges = true">
-                <option [ngValue]="null">No Category</option>
-                <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
-              </select>
+              <div class="category-with-analyze">
+                <select id="category-select" [(ngModel)]="selectedCategoryName" (ngModelChange)="onCategoryChange()">
+                  <option [ngValue]="null">No Category</option>
+                  <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
+                </select>
+                <button class="analyze-btn" 
+                        (click)="analyzeWithNewCategory()" 
+                        [disabled]="!canAnalyze || isAnalyzing"
+                        [title]="getAnalyzeButtonTooltip()">
+                  <span *ngIf="!isAnalyzing">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                      <path d="M11 8v6"></path>
+                      <path d="M8 11h6"></path>
+                    </svg>
+                    Analyze
+                  </span>
+                  <span *ngIf="isAnalyzing" class="analyzing-spinner">
+                    <div class="mini-spinner"></div>
+                    Analyzing...
+                  </span>
+                </button>
+              </div>
             </div>
+            
+            <!-- Analysis Status Message -->
+            <div *ngIf="analysisMessage" class="analysis-status" [class.success]="analysisSuccess" [class.error]="!analysisSuccess">
+              {{ analysisMessage }}
+            </div>
+
             <div *ngIf="parsedMetadata.length > 0">
-              <h3>📄 Metadata</h3>
               <table>
                 <tr *ngFor="let item of parsedMetadata">
                   <td><strong>{{ item.label }}:</strong></td>
@@ -85,7 +110,7 @@
               </div>
               <!-- C. Key Information -->
               <div>
-                <h4> Key Information</h4>
+                <h4>Key Information</h4>
                 <ng-container *ngIf="keyInformation.length > 0; else noKeyInfo">
                   <ul>
                     <li *ngFor="let item of keyInformation">
@@ -99,25 +124,6 @@
                 </ng-template>
               </div>
             </div>
-            <!-- A. Suggested Address -->
-            <!--
-              <div *ngIf="keyInfo.suggestedAddress">
-                <h4>Suggested Address</h4>
-                <ul>
-                  <li><strong>Street:</strong>
-                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.street" />
-                  </li>
-                  <li><strong>House Number:</strong>
-                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.house_number" />
-                  </li>
-                  <li><strong>ZIP Code:</strong>
-                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.zip_code" />
-                  </li>
-                  <li><strong>City:</strong>
-                    <input type="text" [(ngModel)]="keyInfo.suggestedAddress.city" />
-                  </li>
-                </ul>
-              </div>-->
           </div>
           <div class="meta-actions">
               <button class="save-btn" (click)="saveMetadataChanges()" [disabled]="!hasChanges || loading">
@@ -142,4 +148,3 @@
   [documentId]="selectedFile?.id"
   [documentTitle]="selectedFile?.name">
 </app-ai-assistant>
-
