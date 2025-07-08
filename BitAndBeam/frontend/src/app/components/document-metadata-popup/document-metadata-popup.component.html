@@ -109,16 +109,19 @@
     </div>
     
     <div class="popup-footer">
-      <button class="cancel-button" (click)="onClose()" [disabled]="isExtractingKeyInfo">Cancel</button>
+      <button class="cancel-button" (click)="onClose()" [disabled]="isExtractingKeyInfo">
+        Cancel
+      </button>
       <button 
         class="save-button" 
         (click)="onSave()" 
         [disabled]="(isOtherCategory && !otherCategoryName.trim()) || isExtractingKeyInfo"
+        [class.loading]="isExtractingKeyInfo"
       >
         <span *ngIf="!isExtractingKeyInfo">Save</span>
-        <span *ngIf="isExtractingKeyInfo">
+        <span *ngIf="isExtractingKeyInfo" class="loading-content">
           <div class="button-spinner"></div>
-          Processing...
+          <span class="loading-text">Processing...</span>
         </span>
       </button>
     </div>
