@@ -1,19 +1,20 @@
-import { Component } from '@angular/core';
-import { Router ,ActivatedRoute} from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { ConfigService } from '../../config.service';
-import { SidebarComponent} from '../../components/sidebar/sidebar.component';
+import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
 import { Configuration, DocumentsApi, Document as ApiDocument, DocumentMetadataPatchRequest } from '../../../api';
 import { CategoryService, Category } from '../../services/category.service';
 import { ApiClientFactory } from '../../services/api-client.factory';
-import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
+import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
 import { FormsModule } from '@angular/forms';
-import { HttpClient , HttpHeaders} from '@angular/common/http';
-import { SessionService } from '../../services/session.service'; //
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { SessionService } from '../../services/session.service';
 import { AiAssistantComponent } from '../../components/ai-assistant/ai-assistant.component';
-
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: true,
@@ -22,14 +23,14 @@ import { AiAssistantComponent } from '../../components/ai-assistant/ai-assistant
   styleUrls: ['./file-view.component.css'],
   imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule, AiAssistantComponent]
 })
-export class FileViewComponent {
+export class FileViewComponent implements OnInit, OnDestroy {
 
   selectedFile: DocumentItem | null = null;
   notFound = false;
   isPdf = false;
   isImage = false;
   buildings: any[] = [];
-  categories: Category[] = [];
+  categories: Category[] = []; // Always initialize as empty array
   selectedBuildingId: number | null = null;
   selectedCategoryName: string | null = null;
   loading = false;
@@ -47,12 +48,29 @@ export class FileViewComponent {
   keyInfo: any = null;
   hasChanges: boolean = false;
 
-  constructor(private config: ConfigService,private route: ActivatedRoute,private router: Router, private buildingService: BuildingService,  private categoryService: CategoryService,
-  private apiFactory: ApiClientFactory , private sidebarRefreshService: SidebarRefreshService, private http: HttpClient,
-              private session: SessionService) {}
+  // Cleanup
+  private destroy$ = new Subject<void>();
+  private blobUrl: string | null = null;
+
+  constructor(
+    private config: ConfigService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private buildingService: BuildingService,
+    private categoryService: CategoryService,
+    private apiFactory: ApiClientFactory,
+    private sidebarRefreshService: SidebarRefreshService,
+    private http: HttpClient,
+    private session: SessionService
+  ) {
+    // Initialize arrays to prevent undefined errors
+    this.buildings = [];
+    this.categories = [];
+  }
+
   ngOnInit(): void {
     // Watch for route param changes
-    this.route.paramMap.subscribe(paramMap => {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(paramMap => {
       const idParam = paramMap.get('id');
       const id = Number(idParam);
 
@@ -67,16 +85,53 @@ export class FileViewComponent {
       this.isPdf = false;
       this.isImage = false;
 
-      this.buildingService.getBuildings().subscribe(b => this.buildings = b);
-      this.categoryService.getCategories().subscribe(c => this.categories = c);
-
+      // Load buildings and categories first
+      this.loadBuildingsAndCategories();
       this.loadDocument(id);
     });
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Clean up blob URL
+    if (this.blobUrl) {
+      URL.revokeObjectURL(this.blobUrl);
+    }
+  }
 
-  loadDocument(id: number){
-    this.buildingService.getDocumentById(id).subscribe({
+  /**
+   * Load buildings and categories with proper error handling
+   */
+  private loadBuildingsAndCategories(): void {
+    // Load buildings
+    this.buildingService.getBuildings().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (buildings) => {
+        this.buildings = Array.isArray(buildings) ? buildings : [];
+        console.log('✅ Loaded buildings:', this.buildings.length);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load buildings:', err);
+        this.buildings = [];
+      }
+    });
+
+    // Load categories
+    this.categoryService.getCategories().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (categories) => {
+        this.categories = Array.isArray(categories) ? categories : [];
+        console.log('✅ Loaded categories:', this.categories.length);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load categories:', err);
+        this.categories = [];
+      }
+    });
+  }
+
+  loadDocument(id: number): void {
+    this.buildingService.getDocumentById(id).pipe(takeUntil(this.destroy$)).subscribe({
       next: (doc: ApiDocument) => {
         this.metadataRaw = doc.metadata ?? '';
         if (doc.metadata) {
@@ -106,10 +161,11 @@ export class FileViewComponent {
               { label: 'Category', value: doc.categoryName || 'N/A' },
             ];
           } catch (e) {
-              console.error('❌ Failed to parse metadata', e);
-              this.parsedMetadata = [];
-            }
+            console.error('❌ Failed to parse metadata', e);
+            this.parsedMetadata = [];
+          }
         }
+
         const token = this.session.getToken();
         const previewUrl = `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`;
 
@@ -117,50 +173,60 @@ export class FileViewComponent {
           Authorization: `Bearer ${token}`
         });
 
-        this.http.get(previewUrl, { headers, responseType: 'blob' }).subscribe(blob => {
-          const objectUrl = URL.createObjectURL(blob);
+        this.http.get(previewUrl, { headers, responseType: 'blob' })
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (blob) => {
+              // Clean up previous blob URL if exists
+              if (this.blobUrl) {
+                URL.revokeObjectURL(this.blobUrl);
+              }
+              
+              this.blobUrl = URL.createObjectURL(blob);
 
-          this.selectedFile = {
-            id: doc.documentId!,
-            name: doc.fileName ?? '',
-            url: objectUrl,
-            metadata: [
-              { label: 'Uploaded', value: doc.uploadDate ?? '' },
-              {
-                label: 'Size',
-                value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
-              },
-              { label: 'Type', value: doc.fileType ?? 'unknown' },
-            ]
-          };
-          this.selectedBuildingId = doc.buildingId ?? null;
-          this.selectedCategoryName = doc.categoryName ?? null;
+              this.selectedFile = {
+                id: doc.documentId!,
+                name: doc.fileName ?? '',
+                url: this.blobUrl,
+                metadata: [
+                  { label: 'Uploaded', value: doc.uploadDate ?? '' },
+                  {
+                    label: 'Size',
+                    value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
+                  },
+                  { label: 'Type', value: doc.fileType ?? 'unknown' },
+                ]
+              };
+              
+              this.selectedBuildingId = doc.buildingId ?? null;
+              this.selectedCategoryName = doc.categoryName ?? null;
 
-          // ✅ Add document's category to the list if it doesn't exist
-          if (doc.categoryName && !this.categories.some(c => c.name === doc.categoryName)) {
-            this.categories.push({ name: doc.categoryName } as Category);
-          }
+              // ✅ FIXED: Add safe check before using array methods
+              if (doc.categoryName && Array.isArray(this.categories) && !this.categories.some(c => c.name === doc.categoryName)) {
+                this.categories.push({ name: doc.categoryName } as Category);
+              }
 
-          if (doc.keyInformation) {
-            this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
-              label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),  // Pretty label
-              value: value !== null ? String(value) : 'N/A'  // Force even nulls to show
-            }));
-          } else {
-              this.keyInformation = [];
+              if (doc.keyInformation) {
+                this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
+                  label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                  value: value !== null ? String(value) : 'N/A'
+                }));
+              } else {
+                this.keyInformation = [];
+              }
+
+              const fileType = (doc.fileType ?? '').toLowerCase();
+              this.isPdf = fileType === 'pdf';
+              this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+
+              // ✅ Fetch key info
+              this.fetchKeyInfo(id);
+            },
+            error: (err) => {
+              console.error('❌ Failed to load document preview:', err);
+              this.notFound = true;
             }
-
-          const fileType = (doc.fileType ?? '').toLowerCase();
-          this.isPdf = fileType === 'pdf';
-          this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
-
-          // ✅ Fetch key info
-          this.fetchKeyInfo(id);
-
-        }, err => {
-          console.error('❌ Failed to load document preview:', err);
-          this.notFound = true;
-        });
+          });
       },
       error: (err) => {
         console.error('❌ Failed to load document metadata:', err);
@@ -170,7 +236,7 @@ export class FileViewComponent {
   }
 
   // ✅ New method: fetch key information
-  fetchKeyInfo(id: number) {
+  fetchKeyInfo(id: number): void {
     this.loadingKeyInfo = true;
     const token = this.session.getToken();
     const url = `${this.config.apiUrl}/api/Documents/${id}`;
@@ -178,49 +244,54 @@ export class FileViewComponent {
       Authorization: `Bearer ${token}`
     });
 
-    this.http.get<any>(url, { headers }).subscribe({
-      next: (data) => {
-        this.keyInfo = {
-          hasMetadata: data.hasMetadata,
-          suggestedAddress: data.suggestedAddress,
-          rawMetadata: data.metadata,
-        };
-        //safely fallback if address is missing
-        if (!this.keyInfo.suggestedAddress) {
-          this.keyInfo.suggestedAddress = {
-            street: '',
-            house_number: '',
-            zip_code: '',
-            city: ''
+    this.http.get<any>(url, { headers })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.keyInfo = {
+            hasMetadata: data.hasMetadata,
+            suggestedAddress: data.suggestedAddress,
+            rawMetadata: data.metadata,
           };
-        }
-        // ✅ If no keyInformation found but category is selected, generate empty key fields
-        if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
-            this.selectedCategoryName && this.categories.length > 0) {
-          const match = this.categories.find(c => c.name === this.selectedCategoryName);
-          if (match && Array.isArray(match.fields)) {
-            this.keyInformation = match.fields.map(f => ({
-              label: f.name,
-              value: ''
+          
+          // Safely fallback if address is missing
+          if (!this.keyInfo.suggestedAddress) {
+            this.keyInfo.suggestedAddress = {
+              street: '',
+              house_number: '',
+              zip_code: '',
+              city: ''
+            };
+          }
+          
+          // ✅ FIXED: Add safe checks for array operations
+          if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
+              this.selectedCategoryName && Array.isArray(this.categories) && this.categories.length > 0) {
+            const match = this.categories.find(c => c.name === this.selectedCategoryName);
+            if (match && Array.isArray(match.fields)) {
+              this.keyInformation = match.fields.map(f => ({
+                label: f.name,
+                value: ''
+              }));
+            }
+          } else {
+            this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
+              label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+              value: value !== null ? String(value) : 'N/A'
             }));
           }
-        } else {
-          this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
-            label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-            value: value !== null ? String(value) : 'N/A'
-          }));
-        }
-        if (!this.keyInformation.length && this.selectedCategoryName) {
-          this.onCategoryChange();
-        }
+          
+          if (!this.keyInformation.length && this.selectedCategoryName) {
+            this.onCategoryChange();
+          }
 
-        this.loadingKeyInfo = false;
-      },
-      error: (err) => {
-        console.error('❌ Failed to load key info:', err);
-        this.loadingKeyInfo = false;
-      }
-    });
+          this.loadingKeyInfo = false;
+        },
+        error: (err) => {
+          console.error('❌ Failed to load key info:', err);
+          this.loadingKeyInfo = false;
+        }
+      });
   }
 
   downloadFile(): void {
@@ -231,10 +302,21 @@ export class FileViewComponent {
   deleteFile(): void {
     if (!this.selectedFile?.id) return;
 
-    this.buildingService.deleteDocument(this.selectedFile.id).subscribe({
-      next: () => this.router.navigate(['/upload']),
-      error: (err) => console.error('Delete failed:', err)
-    });
+    if (confirm('Are you sure you want to delete this document?')) {
+      this.buildingService.deleteDocument(this.selectedFile.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.sidebarRefreshService.triggerRefresh();
+            this.router.navigate(['/upload']);
+          },
+          error: (err) => {
+            console.error('Delete failed:', err);
+            this.toastMessage = '❌ Failed to delete document.';
+            setTimeout(() => this.toastMessage = '', 4000);
+          }
+        });
+    }
   }
 
   // ✅ New method: update building/category
@@ -244,14 +326,14 @@ export class FileViewComponent {
     this.loading = true;
     this.toastMessage = '';
 
-    // 🟡 AUTO-GENERATE blank key info if none is loaded but category is selected
+    // ✅ FIXED: Add safe checks for array operations
     if ((!this.keyInformation || this.keyInformation.length === 0) &&
-        this.selectedCategoryName && this.categories.length > 0) {
+        this.selectedCategoryName && Array.isArray(this.categories) && this.categories.length > 0) {
       const match = this.categories.find(c => c.name === this.selectedCategoryName);
       if (match && Array.isArray(match.fields) && match.fields.length > 0) {
         this.keyInformation = match.fields.map(f => ({
-          label: f.name,   // assumes each field object has a 'name'
-          value: ''        // user can edit this later
+          label: f.name,
+          value: ''
         }));
       }
     }
@@ -280,14 +362,23 @@ export class FileViewComponent {
 
         setTimeout(() => this.toastMessage = '', 4000);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('❌ Failed to update metadata:', err);
         this.toastMessage = '❌ Failed to update metadata.';
+        setTimeout(() => this.toastMessage = '', 4000);
       })
       .finally(() => {
         this.loading = false;
       });
   }
+
   onCategoryChange(): void {
+    // ✅ FIXED: Add safe check for array
+    if (!Array.isArray(this.categories)) {
+      console.warn('Categories is not an array');
+      return;
+    }
+    
     const selected = this.categories.find(c => c.name === this.selectedCategoryName);
     if (selected && Array.isArray(selected.fields)) {
       this.keyInformation = selected.fields.map(field => ({
@@ -295,13 +386,15 @@ export class FileViewComponent {
         value: ''
       }));
     }
+    
+    this.hasChanges = true;
   }
 
   toggleMetadataPanel(): void {
     this.isMetadataPanelCollapsed = !this.isMetadataPanelCollapsed;
   }
 
-  zoomIn() {
+  zoomIn(): void {
     if (this.isImage) {
       this.imageZoom = Math.min(this.imageZoom + 0.2, 5);
     } else if (this.isPdf) {
@@ -309,7 +402,7 @@ export class FileViewComponent {
     }
   }
 
-  zoomOut() {
+  zoomOut(): void {
     if (this.isImage) {
       this.imageZoom = Math.max(this.imageZoom - 0.2, 0.2);
     } else if (this.isPdf) {
@@ -317,9 +410,8 @@ export class FileViewComponent {
     }
   }
 
-  resetZoom() {
+  resetZoom(): void {
     this.imageZoom = 1;
     this.pdfZoom = 1;
   }
-
 }
