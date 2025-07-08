@@ -544,55 +544,42 @@ namespace BitAndBeam.Controllers
         {
             if (!System.IO.File.Exists(CategoriesJsonPath))
                 return NotFound("document_categories.json not found");
-            var categories = ReadCategories();
-            var result = categories.Select(c => new
+            
+            try
             {
-                name = c.Name,
-                description = c.Description,
-                fields = c.Fields,
-            }).ToList();
-            return Ok(result);
+                // Read raw file content for debugging
+                var rawContent = System.IO.File.ReadAllText(CategoriesJsonPath);
+                _logger.LogInformation("📋 Raw categories file content: {Content}", rawContent);
+                
+                var categories = ReadCategories();
+                _logger.LogInformation("🔍 Parsed {Count} categories", categories.Count);
+                
+                var result = categories.Select(c => new
+                {
+                    name = c.Name,
+                    description = c.Description,
+                    fields = c.Fields,
+                }).ToList();
+                
+                // Also return debugging info
+                return Ok(new
+                {
+                    categories = result,
+                    debug = new
+                    {
+                        rawFileExists = System.IO.File.Exists(CategoriesJsonPath),
+                        rawFileLength = rawContent.Length,
+                        parsedCategoriesCount = categories.Count,
+                        serializedSchema = JsonSerializer.Serialize(categories)
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error reading categories: {Error}", ex.Message);
+                return StatusCode(500, new { error = ex.Message, stackTrace = ex.StackTrace });
+            }
         }
-
-        // [HttpPost("categories")]
-        // public IActionResult CreateCategory([FromBody] DocumentCategoryCreateRequest request)
-        // {
-        //     if (string.IsNullOrWhiteSpace(request.Name))
-        //         return BadRequest("Category name is required.");
-
-        //     var categories = ReadCategories();
-        //     if (categories.Any(c => string.Equals(c.Name, request.Name, StringComparison.OrdinalIgnoreCase)))
-        //         return Conflict($"Category with name '{request.Name}' already exists.");
-
-        //     var newCategory = new DocumentCategory
-        //     {
-        //         Name = request.Name!,
-        //         Description = request.Description,
-        //         Fields = request.Fields ?? new List<Dictionary<string, string>>()
-        //     };
-        //     categories.Add(newCategory);
-
-        //     // Write back to JSON
-        //     var json = System.IO.File.ReadAllText(CategoriesJsonPath);
-        //     using var docJson = JsonDocument.Parse(json);
-        //     var newJsonObj = new Dictionary<string, object>();
-        //     foreach (var prop in docJson.RootElement.EnumerateObject())
-        //     {
-        //         if (prop.Name == "categories")
-        //             newJsonObj[prop.Name] = categories;
-        //         else
-        //             newJsonObj[prop.Name] = JsonSerializer.Deserialize<object>(prop.Value.GetRawText()) ?? new object();
-        //     }
-        //     var newJson = JsonSerializer.Serialize(newJsonObj, CachedJsonSerializerOptions);
-        //     System.IO.File.WriteAllText(CategoriesJsonPath, newJson);
-
-        //     return CreatedAtAction(nameof(GetDocumentCategories), new { name = newCategory.Name }, new
-        //     {
-        //         name = newCategory.Name,
-        //         description = newCategory.Description,
-        //         fields = newCategory.Fields
-        //     });
-        // }
 
         [HttpPut("{id}")]
         public IActionResult UpdateDocument(int id, [FromBody] DocumentUpdateRequest request)
