@@ -59,8 +59,17 @@ export class DocumentMetadataPopupComponent implements OnInit {
     }
 
     // If documentData has a categoryName, preselect that category
-    if (this.documentData && this.documentData.categoryName !== undefined) {
+   /* if (this.documentData && this.documentData.categoryName !== undefined) {
       this.selectedCategoryName = this.documentData.categoryName;
+    }*/  
+    if(this.documentData) {
+      if (this.documentData.categoryName) {
+        this.selectedCategoryName = this.documentData.categoryName;
+      }
+      else if ((this.documentData as any).suggestedCategoryName) {
+        // If suggestedCategoryName exists, use it
+        this.selectedCategoryName = (this.documentData as any).suggestedCategoryName;
+      }
     }
   }
 
@@ -73,7 +82,18 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
-      next: (data) => this.categories = data,
+      next: (data) => {
+        this.categories = data;
+
+      // 🔧 Add suggested category if missing
+      if (this.selectedCategoryName && !this.categories.some(c => c.name === this.selectedCategoryName)) {
+        this.categories.unshift({
+          name: this.selectedCategoryName,
+          description: '(automatically suggested)',
+          fields: []
+        });
+      }
+    },
       error: (err) => console.error('Failed to fetch categories', err)
     });
   }
