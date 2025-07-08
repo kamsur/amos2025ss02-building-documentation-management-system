@@ -1,18 +1,16 @@
-FROM python:3.10-slim
+FROM ollama/ollama:latest
 
-# Install Ollama dependencies
-RUN apt-get update && apt-get install -y curl gnupg && \
-    curl -fsSL https://ollama.com/install.sh | sh && \
-    apt-get clean
+# Install dos2unix
+RUN apt-get update && apt-get install -y dos2unix && apt-get clean
 
-# Copy app files
+# Set working directory
 WORKDIR /app
-COPY app/ .
 
-# Install Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy files
+# COPY Modelfile /app/Modelfile
+COPY entrypoint.sh /entrypoint.sh
 
-# Start Ollama + FastAPI server
-CMD ["bash", "-c", "ollama serve & sleep 8 && ollama pull gemma3:1b && uvicorn main:app --host 0.0.0.0 --port 8000 & wait -n"]
+# Convert entrypoint script to LF and make executable
+RUN dos2unix /entrypoint.sh && chmod +x /entrypoint.sh
 
-
+ENTRYPOINT ["/entrypoint.sh"]

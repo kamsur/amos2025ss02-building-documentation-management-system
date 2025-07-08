@@ -497,6 +497,32 @@ export interface Document {
     'buildingDocumentRelations'?: Array<BuildingDocumentRelation> | null;
 }
 /**
+ * Request model for document chatbot queries
+ * @export
+ * @interface DocumentChatbotRequest
+ */
+export interface DocumentChatbotRequest {
+    /**
+     * User\'s input/question to ask about the document
+     * @type {string}
+     * @memberof DocumentChatbotRequest
+     */
+    'userInput'?: string | null;
+}
+/**
+ * Response model for document chatbot queries
+ * @export
+ * @interface DocumentChatbotResponse
+ */
+export interface DocumentChatbotResponse {
+    /**
+     * The response from the chatbot
+     * @type {string}
+     * @memberof DocumentChatbotResponse
+     */
+    'response'?: string | null;
+}
+/**
  * 
  * @export
  * @interface DocumentMetadataPatchRequest
@@ -514,6 +540,12 @@ export interface DocumentMetadataPatchRequest {
      * @memberof DocumentMetadataPatchRequest
      */
     'buildingId'?: number | null;
+    /**
+     * 
+     * @type {{ [key: string]: string | null; }}
+     * @memberof DocumentMetadataPatchRequest
+     */
+    'keyInformation'?: { [key: string]: string | null; } | null;
 }
 /**
  * 
@@ -1797,6 +1829,47 @@ export const DocumentsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary Query the chatbot about a specific document
+         * @param {number} documentId The ID of the document to query
+         * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDocumentsDocumentIdAskPost: async (documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'documentId' is not null or undefined
+            assertParamExists('apiDocumentsDocumentIdAskPost', 'documentId', documentId)
+            const localVarPath = `/api/Documents/{documentId}/ask`
+                .replace(`{${"documentId"}}`, encodeURIComponent(String(documentId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(documentChatbotRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2115,6 +2188,20 @@ export const DocumentsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Query the chatbot about a specific document
+         * @param {number} documentId The ID of the document to query
+         * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiDocumentsDocumentIdAskPost(documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DocumentChatbotResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiDocumentsDocumentIdAskPost(documentId, documentChatbotRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DocumentsApi.apiDocumentsDocumentIdAskPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2230,6 +2317,17 @@ export const DocumentsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary Query the chatbot about a specific document
+         * @param {number} documentId The ID of the document to query
+         * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiDocumentsDocumentIdAskPost(documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options?: any): AxiosPromise<DocumentChatbotResponse> {
+            return localVarFp.apiDocumentsDocumentIdAskPost(documentId, documentChatbotRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2319,6 +2417,19 @@ export class DocumentsApi extends BaseAPI {
      */
     public apiDocumentsCategoriesGet(options?: RawAxiosRequestConfig) {
         return DocumentsApiFp(this.configuration).apiDocumentsCategoriesGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Query the chatbot about a specific document
+     * @param {number} documentId The ID of the document to query
+     * @param {DocumentChatbotRequest} [documentChatbotRequest] The user\&#39;s input/question
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DocumentsApi
+     */
+    public apiDocumentsDocumentIdAskPost(documentId: number, documentChatbotRequest?: DocumentChatbotRequest, options?: RawAxiosRequestConfig) {
+        return DocumentsApiFp(this.configuration).apiDocumentsDocumentIdAskPost(documentId, documentChatbotRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2421,8 +2532,7 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2456,6 +2566,38 @@ export const OllamaApiAxiosParamCreator = function (configuration?: Configuratio
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiOllamaHealthGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/Ollama/health`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            await setApiKeyToObject(localVarHeaderParameter, "Authorization", configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -2468,8 +2610,7 @@ export const OllamaApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2477,6 +2618,17 @@ export const OllamaApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiOllamaAskPost(ollamaRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['OllamaApi.apiOllamaAskPost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiOllamaHealthGet(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiOllamaHealthGet(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['OllamaApi.apiOllamaHealthGet']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
@@ -2491,13 +2643,20 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
     return {
         /**
          * 
-         * @summary Sends prompt to Ollama backend and returns response with metadata.
-         * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+         * @param {OllamaRequest} [ollamaRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: any): AxiosPromise<void> {
             return localVarFp.apiOllamaAskPost(ollamaRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiOllamaHealthGet(options?: any): AxiosPromise<void> {
+            return localVarFp.apiOllamaHealthGet(options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -2511,14 +2670,23 @@ export const OllamaApiFactory = function (configuration?: Configuration, basePat
 export class OllamaApi extends BaseAPI {
     /**
      * 
-     * @summary Sends prompt to Ollama backend and returns response with metadata.
-     * @param {OllamaRequest} [ollamaRequest] Prompt and optional context
+     * @param {OllamaRequest} [ollamaRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OllamaApi
      */
     public apiOllamaAskPost(ollamaRequest?: OllamaRequest, options?: RawAxiosRequestConfig) {
         return OllamaApiFp(this.configuration).apiOllamaAskPost(ollamaRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof OllamaApi
+     */
+    public apiOllamaHealthGet(options?: RawAxiosRequestConfig) {
+        return OllamaApiFp(this.configuration).apiOllamaHealthGet(options).then((request) => request(this.axios, this.basePath));
     }
 }
 

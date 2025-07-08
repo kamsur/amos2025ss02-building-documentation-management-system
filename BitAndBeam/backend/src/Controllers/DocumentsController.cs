@@ -3,11 +3,15 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using BitAndBeam.Data;
 using BitAndBeam.Models;
 using BitAndBeam.Services;
+using HtmlAgilityPack; // Ensure this package is installed
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BitAndBeam.Controllers
@@ -20,14 +24,16 @@ namespace BitAndBeam.Controllers
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly TikaService _tikaService;
+        private readonly OllamaService _ollamaService;
         private readonly ILogger<DocumentsController> _logger;
 
-        public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, ILogger<DocumentsController> logger)
+        public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, OllamaService ollamaService, ILogger<DocumentsController> logger)
         {
             Console.WriteLine("🚀 DocumentsController loaded");
             _context = context;
             _env = env;
             _tikaService = tikaService;
+            _ollamaService = ollamaService;
             _logger = logger;
         }
 
@@ -48,319 +54,20 @@ namespace BitAndBeam.Controllers
             return categories;
         }
 
-        // [HttpPost]
-        // public async Task<IActionResult> UploadDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
-        // {
-        //     if (file == null || file.Length == 0)
-        //         return BadRequest("File is required");
-
-        //     // ╭──────────────────────────── 1. save upload ───────────────────────────╮
-        //     var uploadsPath = Path.Combine("/app/documents");
-        //     Directory.CreateDirectory(uploadsPath);
-
-        //     var fullPath = Path.Combine(uploadsPath, file.FileName);
-        //     using (var fs = new FileStream(fullPath, FileMode.Create))
-        //     {
-        //         await file.CopyToAsync(fs).ConfigureAwait(false);
-        //     }
-
-        //     // Reset the file stream position to zero before re-reading
-        //     byte[] fileBytes;
-        //     using (var ms = new MemoryStream())
-        //     using (var fileStream = file.OpenReadStream())
-        //     {
-        //         await fileStream.CopyToAsync(ms).ConfigureAwait(false);
-        //         fileBytes = ms.ToArray();
-        //     }
-
-        //     // ╭──────────────────────────── 2. Tika extract ───────────────────────────╮
-        //     string metadata = "{}";
-        //     string textForOllama = string.Empty;
-
-        //     try
-        //     {
-        //         metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
-        //         textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
-
-        //         // ⚡ OCR fallback (Option B)
-        //         if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
-        //         {
-        //             textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName, true).ConfigureAwait(false);
-        //         }
-
-        //         _logger.LogInformation("✅ Metadata & text extracted for {File}", file.FileName);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
-        //     }
-
-        //     // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
-        //     var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
-        //     var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
-
-        //     var prompt = $$"""
-        //     You are an intelligent document analyzer.
-
-        //     Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
-
-        //     **Example output:**
-        //     {
-        //         "address":
-        //         {
-        //             "street":"<string|null>",
-        //             "house_number":"<string|null>",
-        //             "zip_code":"<string|null>",
-        //             "city":"<string|null>"
-        //         },
-        //         "category":"Energy Consumption Reports",
-        //         "key_information":
-        //         {
-        //             "report_period":"<string|null>",
-        //             "total_energy_kwh":"<string|null>",
-        //             "energy_source":"<string|null>",
-        //             "benchmark":"<string|null>",
-        //             "author":"<string|null>",
-        //             "issue_date":"<string|null>"
-        //         }
-        //     }
-
-        //     **TASK A** → Extract an **address** if present.  
-        //     Look for labels like: 
-        //     "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
-        //     "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
-        //     or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
-
-        //     **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema"  
-        //     (use null if none fits)
-
-        //     **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under `"key_information"`.  
-        //     For every field in the selected category's 'fields' array:
-        //     • Use the field's **name** as the JSON key.  
-        //     • Try to extract the corresponding value from the document; if not found, set it to null.  
-        //     • Only include the fields declared for that category — no extra keys.
-
-        //     **Rules**  
-        //     • Every value must be a JSON string or null — no units, no comments.  
-        //     • Output MUST be valid JSON that parses with 'JSON.parse()'.  
-        //     • If any field cannot be detected, output it with a null value.  
-        //     • Do **not** wrap the answer in markdown or code fences.
-
-        //     "categories_schema":
-        //     {{categoriesSchemaJson}}
-
-        //     "Extracted Text":
-        //     {{shortText}}
-        //     """;
-
-        //     Dictionary<string, string>? parsedAddress = null;
-        //     string? matchedCategory = null;
-        //     Building? matchedBuilding = null;
-        //     Dictionary<string, string?>? keyInformation = null;
-
-        //     // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
-        //     try
-        //     {
-        //         var client = httpClientFactory.CreateClient("Ollama");
-        //         var payload = JsonSerializer.Serialize(new { prompt });
-        //         var resp = await client.PostAsync(
-        //                         "http://ollama:8000/api/Ollama/ask",
-        //                         new StringContent(payload, Encoding.UTF8, "application/json"))
-        //                                 .ConfigureAwait(false);
-
-        //         if (resp.IsSuccessStatusCode)
-        //         {
-        //             var jsonStr = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-        //             var ollama = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-        //                             jsonStr,
-        //                             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        //             _logger.LogInformation("OLLAMA response field:\n{0}", ollama?.Response);
-
-
-        //             if (!string.IsNullOrWhiteSpace(ollama?.Response))
-        //             {
-        //                 // ────────  Ollama JSON fence-strip  ────────────────
-        //                 var cleanedJson = ollama.Response
-        //                     .Replace("```json", "", StringComparison.OrdinalIgnoreCase) // remove fenced block tag
-        //                     .Replace("```", "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
-        //                     .Trim();                                                   // trim spaces / \n etc.
-
-        //                 int first = cleanedJson.IndexOf('{');
-        //                 int last = cleanedJson.LastIndexOf('}');
-        //                 if (first >= 0 && last > first)
-        //                     cleanedJson = cleanedJson[first..(last + 1)];
-
-        //                 _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
-
-        //                 var root = JsonDocument.Parse(cleanedJson).RootElement;
-
-        //                 // ------ A. ADDRESS -------
-        //                 if (root.TryGetProperty("address", out var addrObj) &&
-        //                     addrObj.ValueKind == JsonValueKind.Object)
-        //                 {
-        //                     // nested form
-        //                     parsedAddress = new Dictionary<string, string>
-        //                     {
-        //                         ["street"] = addrObj.GetProperty("street").GetString() ?? "",
-        //                         ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
-        //                         ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
-        //                         ["city"] = addrObj.GetProperty("city").GetString() ?? ""
-        //                     };
-        //                 }
-        //                 else
-        //                 {
-        //                     // flat fallback
-        //                     parsedAddress = new Dictionary<string, string>
-        //                     {
-        //                         ["street"] = root.TryGetProperty("street", out var s) ? s.GetString() ?? "" : "",
-        //                         ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString() ?? "" : "",
-        //                         ["zip_code"] = root.TryGetProperty("zip_code", out var z) ? z.GetString() ?? "" : "",
-        //                         ["city"] = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : ""
-        //                     };
-        //                 }
-        //                 if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
-        //                     parsedAddress = null;
-
-        //                 // ------ B. CATEGORY -------
-        //                 if (root.TryGetProperty("category", out var catElem) &&
-        //                     catElem.ValueKind == JsonValueKind.String)
-        //                 {
-        //                     var cat = catElem.GetString();
-        //                     if (!string.IsNullOrWhiteSpace(cat) &&
-        //                         !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
-        //                         matchedCategory = cat.Trim();
-        //                 }
-
-        //                 // ---------- C. KEY INFORMATION ----------
-        //                 if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
-        //                 {
-        //                     keyInformation = kiObj.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
-        //                 }
-        //             }
-        //         }
-        //         else
-        //         { 
-        //             _logger.LogWarning("⚠️ Ollama service failed (status {Code})", resp.StatusCode);
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "❌ Ollama analysis failed");
-        //     }
-
-        //     // ╭────────────── 5. try to map address → building ───────────╮
-        //     if (parsedAddress != null)
-        //     {
-        //         parsedAddress.TryGetValue("street", out var street);
-        //         parsedAddress.TryGetValue("zip_code", out var zip);
-        //         parsedAddress.TryGetValue("house_number", out var house);
-        //         parsedAddress.TryGetValue("city", out var city);
-
-        //         var orgId = GetCurrentUserOrganizationId();
-        //         var buildings = _context.Buildings
-        //             .Where(b => b.OrganizationId == orgId)
-        //             .ToList();
-        //         foreach (var b in buildings)
-        //         {
-        //             bool okStreet = string.IsNullOrWhiteSpace(street) ||
-        //                             string.Equals(b.StreetName?.Trim(), street.Trim(),
-        //                                         StringComparison.OrdinalIgnoreCase);
-
-        //             bool okZip = string.IsNullOrWhiteSpace(zip) ||
-        //                             string.Equals(b.PostalCode?.Trim(), zip.Trim(),
-        //                                         StringComparison.OrdinalIgnoreCase);
-
-        //             bool okHouse = string.IsNullOrWhiteSpace(house) ||
-        //                             string.Equals(b.HouseNumber?.Trim(), house.Trim(),
-        //                                         StringComparison.OrdinalIgnoreCase);
-
-        //             bool okCity = string.IsNullOrWhiteSpace(city) ||
-        //                             string.Equals(b.City?.Trim(), city.Trim(),
-        //                                         StringComparison.OrdinalIgnoreCase);
-
-        //             if (okStreet && okZip && okHouse && okCity)
-        //             {
-        //                 matchedBuilding = b;
-        //                 break;
-        //             }
-        //         }
-        //     }
-
-        //     // ╭────────────── 6. Try to map matchedCategory (string) to actual category object ───────────╮
-        //     var allCategories = ReadCategories();
-        //     var categoryMatch = allCategories.FirstOrDefault(c =>
-        //         string.Equals(c.Name?.Trim(), matchedCategory, StringComparison.OrdinalIgnoreCase));
-        //     string? matchedCategoryName = categoryMatch?.Name;
-        //     if (categoryMatch == null)
-        //     {
-        //         matchedCategoryName = null;
-        //     }
-
-        //     // ╭──────────────────────────── 7. persist ───────────────────────────────╮
-        //     var document = new Document
-        //     {
-        //         Title = Path.GetFileNameWithoutExtension(file.FileName),
-        //         FileName = file.FileName,
-        //         FilePath = file.FileName,
-        //         FileType = Path.GetExtension(file.FileName)?.TrimStart('.')?.ToLower() ?? "unknown",
-        //         FileSize = (int) file.Length,
-        //         UploadDate = DateTime.UtcNow,
-        //         LastModified = DateTime.UtcNow,
-        //         Version = "1.0",
-        //         Status = "draft",
-        //         IsPublic = false,
-        //         Description = "No description provided",
-        //         Metadata = metadata,
-        //         KeyInformation = keyInformation != null
-        //             ? JsonDocument.Parse(JsonSerializer.Serialize(keyInformation))
-        //             : null,
-        //         UploadedAt = DateTime.UtcNow,
-        //         UploadedBy = null,
-        //         OrganizationId = GetCurrentUserOrganizationId(),
-        //         BuildingId = matchedBuilding?.BuildingId,
-        //         CategoryName = matchedCategoryName,
-        //     };
-
-        //     _context.Documents.Add(document);
-        //     await _context.SaveChangesAsync().ConfigureAwait(false);
-
-        //     // ╭──────────────────────────── 8. response ──────────────────────────────╮
-        //     var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        //     var fileUrl = $"{baseUrl}/documents/{document.FileName}";
-
-        //     return Ok(new
-        //     {
-        //         document.DocumentId,
-        //         FileUrl = fileUrl,
-        //         HasMetadata = metadata != "{}",
-        //         SuggestedAddress = parsedAddress != null &&
-        //                         parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
-        //                         ? parsedAddress
-        //                         : new Dictionary<string, string>
-        //                             {
-        //                                 { "street",       "Couldn't identify" },
-        //                                 { "house_number", "Couldn't identify" },
-        //                                 { "zip_code",     "Couldn't identify" },
-        //                                 { "city",         "Couldn't identify" }
-        //                             },
-        //         BuildingId = matchedBuilding?.BuildingId,
-        //         BuildingName = matchedBuilding?.Name,
-        //         SuggestedCategoryName = matchedCategory,
-        //         CategoryName = matchedCategoryName,
-        //         KeyInformation = keyInformation
-        //     });
-        // }
 
         [HttpPost]
-        public async Task<IActionResult> UploadDocument(IFormFile file, [FromServices] IHttpClientFactory httpClientFactory)
+        public async Task<IActionResult> UploadDocument(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File is required");
 
-            // ╭──────────────────────────── 1. save upload ───────────────────────────╮
+            // 1. Save upload
             var uploadsPath = Path.Combine("/app/documents");
             Directory.CreateDirectory(uploadsPath);
+
+            // Ensure the directory exists for storing text files
+            var textOutputDir = "/app/documents2";
+            Directory.CreateDirectory(textOutputDir);
 
             var fullPath = Path.Combine(uploadsPath, file.FileName);
             using (var fs = new FileStream(fullPath, FileMode.Create))
@@ -368,7 +75,7 @@ namespace BitAndBeam.Controllers
                 await file.CopyToAsync(fs).ConfigureAwait(false);
             }
 
-            // Reset the file stream position to zero before re-reading
+            // Read file bytes for Tika
             byte[] fileBytes;
             using (var ms = new MemoryStream())
             using (var fileStream = file.OpenReadStream())
@@ -377,21 +84,19 @@ namespace BitAndBeam.Controllers
                 fileBytes = ms.ToArray();
             }
 
-            // ╭──────────────────────────── 2. Tika extract ───────────────────────────╮
+            // 2. Tika extract
             string metadata = "{}";
             string textForOllama = string.Empty;
-
             try
             {
                 metadata = await _tikaService.ExtractMetadataAsync(fileBytes, file.FileName).ConfigureAwait(false);
                 textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName).ConfigureAwait(false);
 
-                // ⚡ OCR fallback (Option B)
+                // OCR fallback if text is missing/short
                 if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
                 {
                     textForOllama = await _tikaService.ExtractTextAsync(fileBytes, file.FileName, true).ConfigureAwait(false);
                 }
-
                 _logger.LogInformation("✅ Metadata & text extracted for {File}", file.FileName);
             }
             catch (Exception ex)
@@ -400,159 +105,120 @@ namespace BitAndBeam.Controllers
             }
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
+            // Extract OCR text from HTML if applicable
+            textForOllama = ExtractVisibleText(textForOllama);
+
+            // Clean the extracted text
             var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
+            // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
-            var prompt = $$"""
-            You are an intelligent document analyzer.
+            var prompt = BuildPrompt(shortText, categoriesSchemaJson);
 
-            \nGiven the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
-            
-            \nYour answer MUST include the following top-level fields: "address", "category", and "key_information".
 
-            \n**Example format:**\n
-            {
-                "address":
-                {
-                    "street":"<string|null>",
-                    "house_number":"<string|null>",
-                    "zip_code":"<string|null>",
-                    "city":"<string|null>"
-                },
-                "category":"Energy Consumption Reports",
-                "key_information":
-                {
-                    "report_period":"<string|null>",
-                    "total_energy_kwh":"<string|null>",
-                    "energy_source":"<string|null>",
-                    "benchmark":"<string|null>",
-                    "author":"<string|null>",
-                    "issue_date":"<string|null>"
-                }
-            }
 
-            \n**TASK A** → Extract an **address** if present.\n  
-            Look for labels like: 
-            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift",
-            "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
-            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
-
-            \n**TASK B** → Choose the SINGLE best-matching **category** from "categories_schema"\n  
-            (use null if none fits)
-
-            \n**TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".\n  
-            For every field in the selected category's 'fields' array:
-            • Use the field's **name** as the JSON key.  
-            • Try to extract the corresponding value from the document; if not found, set it to null.  
-            • Only include the fields declared for that category — no extra keys.
-
-            \n**Rules**\n
-            • Every value must be a JSON string or null — no units, no comments.  
-            • Output MUST be valid JSON that parses with 'JSON.parse()'.  
-            • If any field cannot be detected, output it with a null value.  
-            • Do **not** wrap the answer in markdown or code fences.
-
-            \n**categories_schema**:\n
-            {{categoriesSchemaJson}}
-
-            \n**Extracted Text**:\n
-            {{shortText}}
-            """;
-
+            // -- Initialize result fields
             Dictionary<string, string>? parsedAddress = null;
             string? matchedCategory = null;
             Building? matchedBuilding = null;
-            Dictionary<string, string?>? keyInformation = null;
+            Dictionary<string, string?> keyInformation = new();
 
-            // ╭──────────────────────────── 4. call Ollama ───────────────────────────╮
+            // 4. Ollama call
             try
             {
-                var client = httpClientFactory.CreateClient("Ollama");
-                var payload = JsonSerializer.Serialize(new { prompt });
-                var resp = await client.PostAsync(
-                                "http://ollama:8000/api/Ollama/ask",
-                                new StringContent(payload, Encoding.UTF8, "application/json"))
-                                        .ConfigureAwait(false);
+                var ollamaRawResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
+                _logger.LogInformation("OLLAMA response field:\n{0}", ollamaRawResponse);
 
-                if (resp.IsSuccessStatusCode)
+                // Parse main response object
+                var ollamaJsonDoc = JsonDocument.Parse(ollamaRawResponse);
+                var ollamaRoot = ollamaJsonDoc.RootElement;
+
+                if (ollamaRoot.TryGetProperty("response", out var responseElem))
                 {
-                    var jsonStr = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    var ollama = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(
-                                    jsonStr,
-                                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var innerResponseString = responseElem.GetString();
 
-                    _logger.LogInformation("OLLAMA response field:\n{0}", ollama?.Response);
+                    // Remove possible code-fence
+                    var cleanedJson = innerResponseString
+                        .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                        .Replace("```", "", StringComparison.OrdinalIgnoreCase)
+                        .Trim();                                                   // trim spaces / \n etc.
 
+                    int first = cleanedJson.IndexOf('{');
+                    int last = cleanedJson.LastIndexOf('}');
+                    if (first >= 0 && last > first)
+                        cleanedJson = cleanedJson[first..(last + 1)];
 
-                    if (!string.IsNullOrWhiteSpace(ollama?.Response))
+                    _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
+
+                    var cleanedJsonPath = Path.Combine(textOutputDir, "cleaned_ollama_response.json");
+                    using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                    using (var cleanedWriter = new StreamWriter(cleanedStream))
                     {
-                        // ────────  Ollama JSON fence-strip  ────────────────
-                        var cleanedJson = ollama.Response
-                            .Replace("```json", "", StringComparison.OrdinalIgnoreCase) // remove fenced block tag
-                            .Replace("```", "", StringComparison.OrdinalIgnoreCase) // remove any back-ticks
-                            .Trim();                                                   // trim spaces / \n etc.
+                        await cleanedWriter.WriteAsync(cleanedJson).ConfigureAwait(false);
+                    }
 
-                        int first = cleanedJson.IndexOf('{');
-                        int last = cleanedJson.LastIndexOf('}');
-                        if (first >= 0 && last > first)
-                            cleanedJson = cleanedJson[first..(last + 1)];
+                    var root = JsonDocument.Parse(cleanedJson).RootElement;
 
-                        _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
-
-                        var root = JsonDocument.Parse(cleanedJson).RootElement;
-
-                        // ------ A. ADDRESS -------
-                        if (root.TryGetProperty("address", out var addrObj) &&
-                            addrObj.ValueKind == JsonValueKind.Object)
+                    // ADDRESS
+                    if (root.TryGetProperty("address", out var addrObj) && addrObj.ValueKind == JsonValueKind.Object)
+                    {
+                        parsedAddress = new Dictionary<string, string>
                         {
-                            // nested form
-                            parsedAddress = new Dictionary<string, string>
+                            ["street"] = addrObj.GetProperty("street").GetString() ?? "",
+                            ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
+                            ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
+                            ["city"] = addrObj.GetProperty("city").GetString() ?? ""
+                        };
+                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace)) parsedAddress = null;
+                    }
+
+                    // CATEGORY
+                    if (root.TryGetProperty("category", out var catElem) && catElem.ValueKind == JsonValueKind.String)
+                    {
+                        var cat = catElem.GetString();
+                        if (!string.IsNullOrWhiteSpace(cat) && !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
+                            matchedCategory = cat.Trim();
+                    }
+
+                    // KEY INFORMATION
+                    if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
+                    {
+                        // Create a temp list to store all key-value pairs (even duplicates)
+                        var keyInformationTemp = new List<(string Key, string? Value)>();
+                        foreach (var property in kiObj.EnumerateObject())
+                        {
+                            string value = property.Value.ValueKind switch
                             {
-                                ["street"] = addrObj.GetProperty("street").GetString() ?? "",
-                                ["house_number"] = addrObj.GetProperty("house_number").GetString() ?? "",
-                                ["zip_code"] = addrObj.GetProperty("zip_code").GetString() ?? "",
-                                ["city"] = addrObj.GetProperty("city").GetString() ?? ""
+                                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
+                                JsonValueKind.Number => property.Value.GetRawText(),
+                                JsonValueKind.True => "true",
+                                JsonValueKind.False => "false",
+                                JsonValueKind.Null => null,
+                                _ => property.Value.ToString()
                             };
-                        }
-                        else
-                        {
-                            // flat fallback
-                            parsedAddress = new Dictionary<string, string>
+                            keyInformationTemp.Add((property.Name, value));
+                            if (!keyInformation.ContainsKey(property.Name))
                             {
-                                ["street"] = root.TryGetProperty("street", out var s) ? s.GetString() ?? "" : "",
-                                ["house_number"] = root.TryGetProperty("house_number", out var hn) ? hn.GetString() ?? "" : "",
-                                ["zip_code"] = root.TryGetProperty("zip_code", out var z) ? z.GetString() ?? "" : "",
-                                ["city"] = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : ""
-                            };
+                                keyInformation[property.Name] = value;
+                            }
                         }
-                        if (parsedAddress.Values.All(string.IsNullOrWhiteSpace))
-                            parsedAddress = null;
-
-                        // ------ B. CATEGORY -------
-                        if (root.TryGetProperty("category", out var catElem) &&
-                            catElem.ValueKind == JsonValueKind.String)
+                        // Save key_information_temp.txt (all key-value pairs, one per line)
+                        if (keyInformationTemp.Count > 0)
                         {
-                            var cat = catElem.GetString();
-                            if (!string.IsNullOrWhiteSpace(cat) &&
-                                !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
-                                matchedCategory = cat.Trim();
-                        }
-
-                        // ---------- C. KEY INFORMATION ----------
-                        if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
-                        {
-                            keyInformation = kiObj.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
+                            var tempTxtPath = Path.Combine(textOutputDir, "key_information_temp.txt");
+                            var lines = keyInformationTemp.Select(kv => $"{kv.Key}: {kv.Value}");
+                            await System.IO.File.WriteAllLinesAsync(tempTxtPath, lines).ConfigureAwait(false);
                         }
                     }
                 }
-                else _logger.LogWarning("⚠️ Ollama service failed (status {Code})", resp.StatusCode);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Ollama analysis failed");
             }
 
-            // ╭────────────── 5. try to map address → building ───────────╮
+            // 5. Try to map address → building
             if (parsedAddress != null)
             {
                 parsedAddress.TryGetValue("street", out var street);
@@ -566,21 +232,10 @@ namespace BitAndBeam.Controllers
                     .ToList();
                 foreach (var b in buildings)
                 {
-                    bool okStreet = string.IsNullOrWhiteSpace(street) ||
-                                    string.Equals(b.StreetName?.Trim(), street.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
-
-                    bool okZip = string.IsNullOrWhiteSpace(zip) ||
-                                    string.Equals(b.PostalCode?.Trim(), zip.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
-
-                    bool okHouse = string.IsNullOrWhiteSpace(house) ||
-                                    string.Equals(b.HouseNumber?.Trim(), house.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
-
-                    bool okCity = string.IsNullOrWhiteSpace(city) ||
-                                    string.Equals(b.City?.Trim(), city.Trim(),
-                                                StringComparison.OrdinalIgnoreCase);
+                    bool okStreet = string.IsNullOrWhiteSpace(street) || string.Equals(b.StreetName?.Trim(), street.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool okZip = string.IsNullOrWhiteSpace(zip) || string.Equals(b.PostalCode?.Trim(), zip.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool okHouse = string.IsNullOrWhiteSpace(house) || string.Equals(b.HouseNumber?.Trim(), house.Trim(), StringComparison.OrdinalIgnoreCase);
+                    bool okCity = string.IsNullOrWhiteSpace(city) || string.Equals(b.City?.Trim(), city.Trim(), StringComparison.OrdinalIgnoreCase);
 
                     if (okStreet && okZip && okHouse && okCity)
                     {
@@ -590,17 +245,14 @@ namespace BitAndBeam.Controllers
                 }
             }
 
-            // ╭────────────── 6. Try to map matchedCategory (string) to actual category object ───────────╮
+            // 6. Try to map matchedCategory (string) to actual category object
             var allCategories = ReadCategories();
             var categoryMatch = allCategories.FirstOrDefault(c =>
                 string.Equals(c.Name?.Trim(), matchedCategory, StringComparison.OrdinalIgnoreCase));
             string? matchedCategoryName = categoryMatch?.Name;
-            if (categoryMatch == null)
-            {
-                matchedCategoryName = null;
-            }
+            if (categoryMatch == null) matchedCategoryName = null;
 
-            // ╭──────────────────────────── 7. persist ───────────────────────────────╮
+            // 7. persist
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
@@ -626,7 +278,28 @@ namespace BitAndBeam.Controllers
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            // ╭──────────────────────────── 8. response ──────────────────────────────╮
+            // After filling keyInformation, save it as JSON to /app/documents2/key_information.json
+            if (keyInformation != null && keyInformation.Count > 0)
+            {
+                var keyInfoJsonPath = Path.Combine(textOutputDir, "key_information.json");
+                var keyInfoJson = JsonSerializer.Serialize(keyInformation, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson).ConfigureAwait(false);
+            }
+            // Save parsedAddress as JSON to /app/documents2/parsed_address.json
+            if (parsedAddress != null && parsedAddress.Count > 0)
+            {
+                var addressJsonPath = Path.Combine(textOutputDir, "parsed_address.json");
+                var addressJson = JsonSerializer.Serialize(parsedAddress, new JsonSerializerOptions { WriteIndented = true });
+                await System.IO.File.WriteAllTextAsync(addressJsonPath, addressJson).ConfigureAwait(false);
+            }
+            // Save matchedCategory as plain text to /app/documents2/matched_category.txt
+            if (!string.IsNullOrWhiteSpace(matchedCategory))
+            {
+                var categoryTxtPath = Path.Combine(textOutputDir, "matched_category.txt");
+                await System.IO.File.WriteAllTextAsync(categoryTxtPath, matchedCategory).ConfigureAwait(false);
+            }
+
+            // 8. response
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
@@ -635,16 +308,15 @@ namespace BitAndBeam.Controllers
                 document.DocumentId,
                 FileUrl = fileUrl,
                 HasMetadata = metadata != "{}",
-                SuggestedAddress = parsedAddress != null &&
-                                parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
-                                ? parsedAddress
-                                : new Dictionary<string, string>
-                                    {
-                                        { "street",       "Couldn't identify" },
-                                        { "house_number", "Couldn't identify" },
-                                        { "zip_code",     "Couldn't identify" },
-                                        { "city",         "Couldn't identify" }
-                                    },
+                SuggestedAddress = parsedAddress != null && parsedAddress.Values.Any(v => !string.IsNullOrWhiteSpace(v))
+                                    ? parsedAddress
+                                    : new Dictionary<string, string>
+                                        {
+                                            { "street",       "Couldn't identify" },
+                                            { "house_number", "Couldn't identify" },
+                                            { "zip_code",     "Couldn't identify" },
+                                            { "city",         "Couldn't identify" }
+                                        },
                 BuildingId = matchedBuilding?.BuildingId,
                 BuildingName = matchedBuilding?.Name,
                 SuggestedCategoryName = matchedCategory,
@@ -902,6 +574,9 @@ namespace BitAndBeam.Controllers
             {
                 document.BuildingId = null;
             }
+            if (request.KeyInformation != null)
+                document.KeyInformation = JsonDocument.Parse(JsonSerializer.Serialize(request.KeyInformation));
+
 
             _context.SaveChanges();
             // No longer reload navigation properties for Category or Building
@@ -1032,6 +707,7 @@ namespace BitAndBeam.Controllers
         {
             public string? CategoryName { get; set; }
             public int? BuildingId { get; set; }
+            public Dictionary<string, string?>? KeyInformation { get; set; }
         }
 
         public class DocumentUpdateRequest
@@ -1048,8 +724,401 @@ namespace BitAndBeam.Controllers
         //     public string? Description { get; set; }
         //     public List<Dictionary<string, string>>? Fields { get; set; }
         // }
+
+        /// <summary>
+        /// Request model for document chatbot queries
+        /// </summary>
+        public class DocumentChatbotRequest
+        {
+            /// <summary>
+            /// User's input/question to ask about the document
+            /// </summary>
+            public string UserInput { get; set; }
+        }
+
+        /// <summary>
+        /// Response model for document chatbot queries
+        /// </summary>
+        public class DocumentChatbotResponse
+        {
+            /// <summary>
+            /// The response from the chatbot
+            /// </summary>
+            public string Response { get; set; }
+        }
+
+        /// <summary>
+        /// Query the chatbot about a specific document
+        /// </summary>
+        /// <param name="documentId">The ID of the document to query</param>
+        /// <param name="request">The user's input/question</param>
+        /// <param name="httpClientFactory">HTTP client factory for Ollama service</param>
+        /// <returns>The chatbot's response</returns>
+        [HttpPost("{documentId}/ask")]
+        [ProducesResponseType(typeof(DocumentChatbotResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> AskDocumentChatbot(int documentId, [FromBody] DocumentChatbotRequest request, [FromServices] IHttpClientFactory httpClientFactory)
+        {
+            // Validate the request
+            if (request == null || string.IsNullOrWhiteSpace(request.UserInput))
+            {
+                return BadRequest(new { error = "User input is required." });
+            }
+
+            // Get the current user's organization ID
+            var orgId = GetCurrentUserOrganizationId();
+
+            try
+            {
+                // Get the document from the database
+                var document = await _context.Documents
+                    .FirstOrDefaultAsync(d => d.DocumentId == documentId && d.OrganizationId == orgId).ConfigureAwait(false);
+
+                // Check if the document exists
+                if (document == null)
+                {
+                    return NotFound(new { error = $"Document with ID {documentId} not found." });
+                }
+
+                // Get the document content
+                var uploadsPath = Path.Combine("/app/documents");
+
+                // Check if directory exists and log results
+                bool directoryExists = Directory.Exists(uploadsPath);
+                _logger.LogInformation("📂 Documents directory exists: {DirectoryExists}, path: {UploadsPath}", directoryExists, uploadsPath);
+
+                // Check if we have the FilePath from the database vs using filename
+                _logger.LogInformation("📃 Document record info - FilePath: {FilePath}, FileName: {FileName}", document.FilePath, document.FileName);
+
+                // Try both potential paths
+                var fullPathUsingFileName = Path.Combine(uploadsPath, document.FileName);
+                var fullPathUsingFilePath = document.FilePath; // Use the stored FilePath directly
+
+                _logger.LogInformation("📄 Checking file at paths:\n1) {Path1}\n2) {Path2}", fullPathUsingFileName, fullPathUsingFilePath);
+
+                var fullPath = "";
+
+                // Check which path exists
+                if (System.IO.File.Exists(fullPathUsingFileName))
+                {
+                    _logger.LogInformation("✅ File found using FileName at: {Path}", fullPathUsingFileName);
+                    fullPath = fullPathUsingFileName;
+                }
+                else if (System.IO.File.Exists(fullPathUsingFilePath))
+                {
+                    _logger.LogInformation("✅ File found using FilePath at: {Path}", fullPathUsingFilePath);
+                    fullPath = fullPathUsingFilePath;
+                }
+                else
+                {
+                    // Check parent directory contents to debug
+                    if (directoryExists)
+                    {
+                        var files = Directory.GetFiles(uploadsPath);
+                        _logger.LogInformation("📁 Files in upload directory: {FileCount}", files.Length);
+                        foreach (var file in files.Take(10)) // List up to 10 files
+                        {
+                            _logger.LogInformation("📄 Found file: {FileName}", Path.GetFileName(file));
+                        }
+                    }
+
+                    return NotFound(new { error = $"Document file not found on server. Checked paths:\n{fullPathUsingFileName}\n{fullPathUsingFilePath}" });
+                }
+
+                // Extract document content from file
+                string documentContent;
+                try
+                {
+                    _logger.LogInformation("📄 Attempting to read file at path: {FilePath} for document {DocumentId}", fullPath, documentId);
+
+                    // Check if file exists before attempting to read
+                    if (!System.IO.File.Exists(fullPath))
+                    {
+                        _logger.LogError("❌ File not found at path: {FilePath} for document {DocumentId}", fullPath, documentId);
+                        return BadRequest(new { error = $"Document file not found at {fullPath}." });
+                    }
+
+                    try
+                    {
+                        byte[] fileBytes = System.IO.File.ReadAllBytes(fullPath);
+                        _logger.LogInformation("📊 Successfully read {ByteCount} bytes from file for document {DocumentId}", fileBytes.Length, documentId);
+
+                        // Document file read successfully, now attempt extraction
+                        documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName).ConfigureAwait(false);
+                        _logger.LogInformation("📝 Text extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+
+                        // If the extracted text is very short (which may happen with scanned PDFs), try OCR extraction
+                        if (string.IsNullOrWhiteSpace(documentContent) || documentContent.Length < 100)
+                        {
+                            _logger.LogInformation("⚠️ Initial text extraction returned minimal content, trying OCR for document {DocumentId}", documentId);
+                            documentContent = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true).ConfigureAwait(false);
+                            _logger.LogInformation("📝 OCR extraction completed for document {DocumentId}, extracted {CharCount} characters", documentId, documentContent?.Length ?? 0);
+                        }
+                    }
+                    catch (IOException ioEx)
+                    {
+                        _logger.LogError(ioEx, "❌ IO error reading file: {FilePath} for document {DocumentId}", fullPath, documentId);
+                        return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"Error reading document file: {ioEx.Message}" });
+                    }
+
+                    if (string.IsNullOrWhiteSpace(documentContent))
+                    {
+                        return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Failed to extract text from document {DocumentId}", documentId);
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
+                }
+
+                documentContent = ExtractVisibleText(documentContent);
+                // Truncate document content if too long
+                var maxContentLength = 6000; // Adjust based on model context window
+                var truncatedContent = documentContent.Length > maxContentLength
+                    ? documentContent.Substring(0, maxContentLength)
+                    : documentContent;
+
+                // Construct the prompt for Ollama
+                var prompt = $$"""
+                You are a helpful assistant answering questions about contents of document.
+                Use ONLY the information from the **DOCUMENT CONTENT** provided below, to provide a concise and accurate answer to the **USER QUESTION**.
+                If the answer cannot be found in the document, say so clearly - do not create new information.
+                
+                **DOCUMENT CONTENT**:
+                {{truncatedContent}}
+
+                **USER QUESTION**:
+                {{request.UserInput}}
+
+                """;
+
+                try
+                {
+                    // Send the request to Ollama
+                    var jsonResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
+
+                    // Parse the response
+                    var ollamaResponse = JsonSerializer.Deserialize<OllamaController.OllamaResponse>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    // Return the response
+                    return Ok(new DocumentChatbotResponse
+                    {
+                        Response = ollamaResponse?.Response
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Error communicating with Ollama service for document {DocumentId}", documentId);
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Error communicating with Ollama service." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Unexpected error in AskDocumentChatbot for document {DocumentId}: {ErrorMessage}", documentId, ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"An unexpected error occurred: {ex.Message}" });
+            }
+        }
+
+        private string BuildPrompt(string extractedText, string categoriesSchemaJson)
+        {
+            return $$"""
+            You are an intelligent document analyzer.
+
+            Given the **extracted text** and a **categories schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            Your answer MUST include the following top-level fields: "address", "category", and "key_information".
+
+            **Example Format**:
+            {
+                "address": {
+                    "street": "<string|null>",
+                    "house_number": "<string|null>",
+                    "zip_code": "<string|null>",
+                    "city": "<string|null>"
+                },
+                "category": "<string|null>",
+                "key_information": {
+                    "Field 1": "<string|null>",
+                    "Field 2": "<string|null>",
+                    "Field 3": "<string|null>"
+                }
+            }
+
+            **TASK A** → Extract an **address** if present.
+            Look for labels like:
+            "Adresse", "Anschrift", "Standort", "Objektadresse", "Gebäudeadresse", "Hausanschrift", "Liegenschaft", "Baustellenadresse", "Postanschrift", "Immobilienadresse",
+            or field names such as "Straße", "Haus-Nr.", "PLZ", "Ort", and the same terms in free text.
+
+            **TASK B** → Choose the SINGLE best-matching **category** from "categories_schema" (use null if none fits)
+
+            **TASK C** → After choosing a category (TASK B), extract the **key information** fields defined for that category in "categories_schema" and return them under "key_information".
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
+            • Only include the fields declared for that category — no extra keys.
+
+            **Rules**
+
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
+            • Do **not** wrap the answer in markdown or code fences.
+
+            **categories_schema**:
+
+            {{categoriesSchemaJson}}
+
+            **Extracted Text**:
+
+            {{extractedText}}
+            """;
+
+            // return $$"""
+            // You are an intelligent document analyzer for documents in German language, related to buildings.
+
+            // Given the **Extracted Text** and a **categories_schema** (including field definitions) from a German document, your task is to carefully analyze **Extracted Text** and extract the following information in a strict JSON format:
+
+            // 1. **Address**: Extract the address if present. Look for labels like:
+            //    - 'Adresse', 'Anschrift', 'Standort', 'Objektadresse', 'Gebäudeadresse', 'Hausanschrift', 'Liegenschaft', 'Postanschrift'.
+            //    - Field names such as 'Straße', 'Haus-Nr.', 'PLZ', 'Ort'.
+
+            // 2. **Category**: Choose the SINGLE best-matching category from the provided **categories_schema**, that describes the document. If no category fits, return `null`.
+
+            // 3. **Key Information**: From the provided **Extracted Text**, extract only the fields defined in the 'fields' array of the selected category, in the provided **categories_schema**. Use the field's **name** as the JSON key. Find the value of the field in **Extracted Text**. If a value cannot be found, set it to `null`.
+
+            // **Rules**:
+            // - Analyze the document step-by-step, first the address, then the category, and finally the key information.
+            // - Every value must be a JSON string or `null`.
+            // - Output MUST be valid JSON that parses with 'JSON.parse()'.
+            // - Do not include extra keys or comments.
+            // - Do not create information that is not present in **Extracted Text** and do not modify the **categories_schema** provided below.
+
+            // **Example Format**:
+            // {
+            //     \"address\": {
+            //         \"street\": \"<string|null>\",
+            //         \"house_number\": \"<string|null>\",
+            //         \"zip_code\": \"<string|null>\",
+            //         \"city\": \"<string|null>\"
+            //     },
+            //     "\category\": \"<string|null>\",
+            //     "\key_information\": {
+            //         "\Art des Ausweises\": \"<string|null>\",
+            //         \"Ausstellungsdatum\": \"<string|null>\",
+            //         \"Gültigkeit (Ablaufdatum)\": \"<string|null>\",
+            //         \"Registriernummer des Ausweises\": \"<string|null>\",
+            //         \"Baujahr Gebäude\": \"<string|null>\",
+            //     }
+            // }
+
+            // **categories_schema**:
+            // {{categoriesSchemaJson}}
+
+            // **Extracted Text**:
+            // {{extractedText}}
+            // """;
+        }
+
+        private string BuildPromptForCategory(string extractedText, string categoriesSchemaJson, string categoryName)
+        {
+            // Parse the categoriesSchemaJson to extract the fields for the given categoryName
+            using var doc = JsonDocument.Parse(categoriesSchemaJson);
+            var root = doc.RootElement;
+            var categories = root.GetProperty("categories");
+            JsonElement? category = null;
+            foreach (var cat in categories.EnumerateArray())
+            {
+                if (cat.TryGetProperty("name", out var nameProp) && nameProp.GetString() == categoryName)
+                {
+                    category = cat;
+                    break;
+                }
+            }
+            if (category == null)
+            {
+                throw new ArgumentException($"Category '{categoryName}' not found in categories schema.");
+            }
+            // Extract the fields array for the category
+            var fields = category.Value.GetProperty("fields");
+            // Build a list of field names for the prompt example
+            var fieldNames = fields.EnumerateArray().Select(f => f.GetProperty("name").GetString()).ToList();
+            // Build the example JSON for key_information
+            var keyInfoExample = string.Join(",\n        ", fieldNames.Select(fn => $"\"{fn}\": \"<string|null>\""));
+            // Compose the prompt
+            return $$"""
+            You are an intelligent document analyzer.
+
+            Given the **extracted text** and a **category schema** (including field definitions) from a German document, your task is to analyze and extract the following information in a strict JSON format:
+
+            Your answer MUST include the following top-level field: "key_information".
+
+            **Example Format**:
+            {
+                "key_information": {
+                    {keyInfoExample}
+                }
+            }
+
+            **TASK** → For the category "{categoryName}", extract the **key information** fields defined for that category in "category_schema" and return them under "key_information".
+            For every field in the selected category's 'fields' array:
+            • Use the field's **name** as the JSON key.
+            • Try to extract the corresponding value from the document; if not found, set it to null.
+            • Only include the fields declared for that category — no extra keys.
+
+            **Rules**
+            • Every value must be a JSON string or null — no units, no comments.
+            • Output MUST be valid JSON that parses with 'JSON.parse()'.
+            • If any field cannot be detected, output it with a null value.
+            • Do **not** wrap the answer in markdown or code fences.
+
+            **category_schema**:
+            {category.Value}
+
+            **Extracted Text**:
+            {extractedText}
+            """;
+        }
+
+        private string ExtractVisibleText(string tikaHtml)
+        {
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            doc.LoadHtml(tikaHtml);
+
+            // Remove unwanted elements
+            var unwantedTags = new[] { "script", "style", "head", "meta", "link" };
+            foreach (var tag in unwantedTags)
+            {
+                var nodes = doc.DocumentNode.SelectNodes($"//{tag}");
+                if (nodes != null)
+                {
+                    foreach (var node in nodes)
+                        node.Remove();
+                }
+            }
+
+            // Extract visible text from <body>
+            var bodyNode = doc.DocumentNode.SelectSingleNode("//body");
+            if (bodyNode == null)
+                return tikaHtml.Trim(); // fallback
+
+            var textNodes = bodyNode.Descendants()
+                .Where(n => n.NodeType == HtmlNodeType.Text && !string.IsNullOrWhiteSpace(n.InnerText))
+                .Select(n => HtmlEntity.DeEntitize(n.InnerText.Trim()));
+
+            // Join all text nodes with a space
+            var rawText = string.Join(" ", textNodes);
+
+            // Replace all \n with a space
+            rawText = rawText.Replace("\n", " ");
+
+            // Collapse multiple spaces/tabs into a single space
+            var cleanedText = Regex.Replace(rawText, @"[ \t]+", " ");
+
+            return cleanedText.Trim();
+        }
     }
-
 }
-
-

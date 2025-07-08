@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     image: ghcr.io/amosproj/bitandbeam-backend:latest
@@ -8,7 +6,7 @@ services:
       - "5000:5000"
     depends_on:
       - postgres
-      - ollama
+      # - ollama
       - tika
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -18,6 +16,7 @@ services:
       - Tika__ServerUrl=http://tika:9998
     volumes:
       - documentdata:/app/documents:rw
+      - documents2data:/app/documents2:rw
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -57,20 +56,22 @@ services:
       retries: 5
     networks:
       - internal
-
+      
   ollama:
     image: ghcr.io/amosproj/bitandbeam-ollama:latest
     container_name: ollama
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
       interval: 30s
       timeout: 10s
       retries: 3
+    volumes:
+      - ollamadata:/root/.ollama
+    ports:
+      - "11434:11434"
     networks:
       - internal
-    ports:
-      - "8000:8000"
     expose:
       - "11434"
 
@@ -89,7 +90,9 @@ services:
       - "9998"
 
 volumes:
+  ollamadata:
   documentdata:
+  documents2data:
   pgdata:
 
 networks:

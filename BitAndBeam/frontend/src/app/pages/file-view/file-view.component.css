@@ -53,11 +53,13 @@
 }
 
 .metadata-panel {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  height: 100%;
   background-color: var(--bg-secondary);
   padding: 1.5rem;
   border-left: 1px solid var(--border-color);
-  overflow-y: auto;
   position: relative;
   transition: all 0.3s ease;
   min-width: 280px;
@@ -76,8 +78,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
-  padding: 1.5rem 1.5rem 0 1.5rem;
-  margin: 0 -1.5rem 1rem -1.5rem;
+  padding: 0.5rem 1.5rem 0 1.5rem;
 }
 
 .metadata-panel.collapsed .metadata-panel-header {
@@ -120,7 +121,10 @@
 }
 
 .metadata-content {
-  transition: opacity 0.3s ease;
+  flex: 1 1 auto;    /* Fills up remaining vertical space */
+  overflow-y: auto;
+  padding-bottom: 0px; /* makes space for buttons at bottom */
+  max-height: none; /* adjust this as needed */
 }
 
 .metadata-panel.collapsed .metadata-content {
@@ -171,10 +175,12 @@
 }
 
 .meta-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
+  flex-shrink: 0;
+  /* Optional: add your padding and background for the button area */
+  bottom: 0;
+  background-color: var(--bg-secondary);
+  padding: 1rem 0 3rem 0;
+  z-index: 10;
 }
 
 .meta-actions button {
@@ -194,6 +200,17 @@
 .meta-actions button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.ollama-section {
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.metadata-content h4 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .edit-btn {
@@ -225,12 +242,12 @@
 
 /* ✅ Save button style */
 .save-btn {
-  background-color: #0077cc;
+  background-color: #28a745; /* ✅ Green */;
   color: white;
 }
 
 .save-btn:hover {
-  background-color: #005fa3;
+  background-color: #218838; /* ✅ Darker green on hover */
 }
 
 /* ✅ Toast Notification */
