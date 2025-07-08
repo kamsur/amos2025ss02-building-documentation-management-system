@@ -18,11 +18,12 @@ export class DocumentMetadataPopupComponent implements OnInit {
   @Input() documentId: number | null = null;
   @Input() documentName: string = '';
   @Input() documentData: DocumentResponse | null = null;
-  @Input() suggestedCategoryName: string | null = null; // Add input for suggested category
-  @Input() suggestedBuildingId: number | null = null; // Add input for suggested building
+  @Input() suggestedCategoryName: string | null = null;
+  @Input() suggestedBuildingId: number | null = null;
   @Output() closePopup = new EventEmitter<void>();
   @Output() saveMetadata = new EventEmitter<{categoryName: string | null, buildingId: number | null}>();
 
+  // Initialize as empty arrays to prevent undefined errors
   buildings: Building[] = [];
   categories: Category[] = [];
   selectedBuildingId: number | null = null;
@@ -45,17 +46,12 @@ export class DocumentMetadataPopupComponent implements OnInit {
     private categoryService: CategoryService,
     private apiFactory: ApiClientFactory,
     private sidebarRefreshService: SidebarRefreshService
-) {
-  }
+  ) {}
 
   ngOnInit(): void {
     console.log('🔄 DocumentMetadataPopup ngOnInit called');
     this.loadCategories();
     this.loadBuildings();
-    // Set initial values after a short delay to ensure categories are loaded
-    setTimeout(() => {
-      this.setInitialValues();
-    }, 100);
   }
 
   setInitialValues(): void {
@@ -101,7 +97,8 @@ export class DocumentMetadataPopupComponent implements OnInit {
     this.buildingService.getBuildings().subscribe({
       next: (data) => {
         console.log('✅ BuildingService response:', data);
-        this.buildings = data || [];
+        // Ensure buildings is always an array
+        this.buildings = Array.isArray(data) ? data : [];
         console.log('✅ Loaded buildings:', this.buildings.length, this.buildings);
       },
       error: (err) => {
@@ -120,19 +117,8 @@ export class DocumentMetadataPopupComponent implements OnInit {
       .then((response: any) => {
         console.log('✅ Raw categories response:', response);
         
-        // Handle different response structures
-        let categoriesData = response.data;
-        if (categoriesData.categories) {
-          categoriesData = categoriesData.categories;
-        }
-        if (Array.isArray(categoriesData)) {
-          this.categories = categoriesData;
-        } else if (categoriesData && typeof categoriesData === 'object') {
-          // If it's an object, try to extract array
-          this.categories = Object.values(categoriesData);
-        } else {
-          this.categories = [];
-        }
+        // Safely extract categories from response
+        this.categories = this.extractCategoriesFromResponse(response);
         
         console.log('✅ Processed categories:', this.categories.length, this.categories);
         
@@ -147,7 +133,8 @@ export class DocumentMetadataPopupComponent implements OnInit {
         this.categoryService.getCategories().subscribe({
           next: (data) => {
             console.log('✅ CategoryService response:', data);
-            this.categories = data || [];
+            // Ensure categories is always an array
+            this.categories = Array.isArray(data) ? data : [];
             this.setInitialValues();
           },
           error: (fallbackErr) => {
@@ -166,6 +153,37 @@ export class DocumentMetadataPopupComponent implements OnInit {
       });
   }
 
+  /**
+   * Safely extract categories array from various response formats
+   */
+  private extractCategoriesFromResponse(response: any): Category[] {
+    if (!response) return [];
+
+    let categoriesData = response.data || response;
+    
+    // If the response has a categories property, use it
+    if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
+      return categoriesData.categories;
+    }
+    
+    // If the data itself is an array, use it
+    if (Array.isArray(categoriesData)) {
+      return categoriesData;
+    }
+    
+    // If it's an object with numeric keys (like {0: {...}, 1: {...}}), convert to array
+    if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+      const keys = Object.keys(categoriesData);
+      const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+      if (isNumericKeys) {
+        return keys.map(key => categoriesData[key]).filter(item => item && typeof item === 'object');
+      }
+    }
+    
+    // Default to empty array
+    return [];
+  }
+
   onCategoryChange(value: string | null): void {
     console.log('🔄 Category changed to:', value);
     if (value === this.OTHER_CATEGORY_OPTION) {
@@ -179,7 +197,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
   createNewCategory(): void {
     if (!this.otherCategoryName.trim()) {
-      alert('Please enter a category name');
+      this.showErrorNotification('Please enter a category name');
       return;
     }
 
@@ -199,12 +217,13 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
 
   onClose(): void {
+    this.clearNotificationTimeout();
     this.closePopup.emit();
   }
 
   onSave(): void {
     if (!this.documentId) {
-      alert('No document ID available');
+      this.showErrorNotification('No document ID available');
       return;
     }
 
@@ -253,7 +272,6 @@ export class DocumentMetadataPopupComponent implements OnInit {
     const documentsApi = this.apiFactory.create(DocumentsApi);
     
     // Try to use the OpenAPI client method if it exists
-    // Check if the method exists on the API client
     const extractMethod = (documentsApi as any).apiDocumentsIdExtractKeyInformationPost 
                        || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
                        || (documentsApi as any).extractKeyInformation;
@@ -281,7 +299,6 @@ export class DocumentMetadataPopupComponent implements OnInit {
       
       // Fallback to manual HTTP call with proper authentication
       import('axios').then(axios => {
-        // Get the authorization header from the existing documentsApi instance
         const authConfig = this.getAuthenticatedAxiosConfig();
         
         axios.default.post(`/api/Documents/${documentId}/extract-key-information`, {
@@ -314,12 +331,10 @@ export class DocumentMetadataPopupComponent implements OnInit {
   }
 
   private getAuthenticatedAxiosConfig(): any {
-    // Extract authentication configuration from the API factory
     try {
       const documentsApi = this.apiFactory.create(DocumentsApi);
       const apiInstance = documentsApi as any;
       
-      // Try to get the configuration from the API instance
       const config: any = {
         baseURL: window.location.origin.replace(':4200', ':5001').replace(':8080', ':5001'),
         headers: {}
@@ -399,7 +414,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
   private completeSave(categoryName: string | null, buildingId: number | null): void {
     // Emit metadata saved event
     this.saveMetadata.emit({ categoryName, buildingId });
-    this.sidebarRefreshService.triggerRefresh(); // Refresh sidebar
+    this.sidebarRefreshService.triggerRefresh();
     
     // Show final success notification and close
     this.showSuccessNotification('Document saved successfully');
@@ -460,5 +475,9 @@ export class DocumentMetadataPopupComponent implements OnInit {
       clearTimeout(this.notificationTimeout);
       this.notificationTimeout = null;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.clearNotificationTimeout();
   }
 }
