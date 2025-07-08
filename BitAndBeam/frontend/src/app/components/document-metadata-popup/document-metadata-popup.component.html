@@ -16,19 +16,11 @@
     <div class="popup-body">
       <p class="document-name">📄 <strong>{{ documentName }}</strong></p>
       
-      <!-- Show suggestion info if available -->
+      <!-- Show AI suggestions info only if suggestions exist -->
       <div class="suggestion-info" *ngIf="suggestedCategoryName || suggestedBuildingId">
         <div class="suggestion-header">
-          <span class="suggestion-icon">💡</span>
-          <span class="suggestion-text">AI Suggestions</span>
-        </div>
-        <div class="suggestion-details">
-          <span *ngIf="suggestedCategoryName" class="suggestion-item">
-            Category: <strong>{{ suggestedCategoryName }}</strong>
-          </span>
-          <span *ngIf="suggestedBuildingId" class="suggestion-item">
-            Building: <strong>{{ getBuildingName(suggestedBuildingId) }}</strong>
-          </span>
+          <span class="suggestion-icon">🤖</span>
+          <span class="suggestion-text">AI has analyzed your document and made suggestions below</span>
         </div>
       </div>
       
@@ -43,8 +35,8 @@
             <optgroup label="Available Categories" *ngIf="categories.length > 0">
               <option *ngFor="let category of categories" [value]="category.name">
                 {{ category.name }}
-                <!-- Show if this is the suggested category -->
-                <span *ngIf="category.name === suggestedCategoryName"> (Suggested)</span>
+                <!-- Show AI suggestion indicator -->
+                <span *ngIf="category.name === suggestedCategoryName"> (AI Suggested)</span>
               </option>
             </optgroup>
             
@@ -86,8 +78,8 @@
             <optgroup label="Available Buildings" *ngIf="buildings.length > 0">
               <option *ngFor="let building of buildings" [value]="building.id">
                 {{ building.name }}
-                <!-- Show if this is the suggested building -->
-                <span *ngIf="building.id === suggestedBuildingId"> (Suggested)</span>
+                <!-- Show AI suggestion indicator -->
+                <span *ngIf="building.id === suggestedBuildingId"> (AI Suggested)</span>
               </option>
             </optgroup>
           </select>
