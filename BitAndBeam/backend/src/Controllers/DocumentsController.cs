@@ -642,7 +642,7 @@ namespace BitAndBeam.Controllers
         }
 
         [HttpPatch("{id}")]
-        public IActionResult UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
+        public async Task<IActionResult> UpdateDocumentMetadata(int id, [FromBody] DocumentMetadataPatchRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
             var orgId = GetCurrentUserOrganizationId();
@@ -657,11 +657,12 @@ namespace BitAndBeam.Controllers
                     d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
 
-
             if (document == null)
                 return NotFound();
 
-            // Handle CategoryName logic (creation removed)
+            var previousCategoryName = document.CategoryName;
+
+            // Handle CategoryName logic
             if (request.CategoryName != null)
             {
                 document.CategoryName = request.CategoryName;
@@ -682,12 +683,39 @@ namespace BitAndBeam.Controllers
             {
                 document.BuildingId = null;
             }
+
+            // Handle KeyInformation - but only if provided explicitly
             if (request.KeyInformation != null)
                 document.KeyInformation = JsonDocument.Parse(JsonSerializer.Serialize(request.KeyInformation));
 
-
+            // If category changed, trigger key information re-extraction
+            bool categoryChanged = !string.Equals(previousCategoryName, document.CategoryName, StringComparison.OrdinalIgnoreCase);
+            
             _context.SaveChanges();
-            // No longer reload navigation properties for Category or Building
+
+            // Re-extract key information if category changed and new category is not null
+            if (categoryChanged && !string.IsNullOrWhiteSpace(document.CategoryName))
+            {
+                try
+                {
+                    _logger.LogInformation("Category changed for document {DocumentId}, re-extracting key information", document.DocumentId);
+                    
+                    // Call the key information extraction method
+                    var extractRequest = new ExtractKeyInformationRequest { CategoryName = document.CategoryName };
+                    var extractResult = await ExtractKeyInformationForDocument(document.DocumentId, extractRequest);
+                    
+                    if (extractResult != null)
+                    {
+                        // Reload the document to get updated key information
+                        document = _context.Documents.FirstOrDefault(d => d.DocumentId == id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to re-extract key information for document {DocumentId} after category change", document.DocumentId);
+                    // Continue with the response even if key information extraction fails
+                }
+            }
 
             var dto = new BitAndBeam.Dto.DocumentDto
             {
@@ -838,6 +866,15 @@ namespace BitAndBeam.Controllers
                 Console.WriteLine($"⚠️ File not found at: {filePath}");
             }
 
+            // Also delete extracted text file
+            var textOutputDir = "/app/documents2";
+            var extractedTextPath = Path.Combine(textOutputDir, $"extracted_text_{document.DocumentId}.txt");
+            if (System.IO.File.Exists(extractedTextPath))
+            {
+                System.IO.File.Delete(extractedTextPath);
+                Console.WriteLine($"✅ Extracted text file deleted: {extractedTextPath}");
+            }
+
             _context.Documents.Remove(document);
             _context.SaveChanges();
 
@@ -858,7 +895,6 @@ namespace BitAndBeam.Controllers
                     d.DocumentId == id &&
                     d.OrganizationId == orgId &&
                     (d.BuildingId == null || buildingIds.Contains(d.BuildingId.Value)));
-
 
             if (document == null)
                 return NotFound();
