@@ -69,13 +69,13 @@ jobs:
       - name: Wait before next upload
         run: sleep 61
 
-      - name: Upload docker-compose-prod.yml to server
+      - name: Upload docker-compose-prod-ollama.yml to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.PROJECT_SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "BitAndBeam/docker-compose-prod.yml"
+          source: "BitAndBeam/docker-compose-prod-ollama.yml"
           target: "~/BitAndBeam_ollama/"
           strip_components: 1
 
@@ -100,12 +100,12 @@ jobs:
           script: |
             cd ~/BitAndBeam_ollama
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose -f docker-compose-prod.yml stop ollama || true
+            docker compose -f docker-compose-prod-ollama.yml stop ollama || true
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
               echo "Ollama folder changed – removing old image."
               docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
             else
               echo "Ollama folder unchanged – keeping existing image."
             fi
-            docker compose -f docker-compose-prod.yml pull ollama
-            docker compose -f docker-compose-prod.yml up -d ollama
+            docker compose -f docker-compose-prod-ollama.yml pull ollama
+            docker compose -f docker-compose-prod-ollama.yml up -d ollama
