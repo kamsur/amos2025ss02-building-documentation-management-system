@@ -13,10 +13,10 @@ sleep 10
 # ollama list
 
 # Pull base model
-ollama pull gemma3:1b
+ollama pull gemma3:4b
 
 # Create custom named model (overwrite if exists)
-ollama cp gemma3:1b gemma3-1b:latest
+ollama cp gemma3:4b gemma3-4b:latest
 
 # Create custom model with 8192 context tokens
 # ollama create gemma3-4b-8k -f /app/Modelfile
