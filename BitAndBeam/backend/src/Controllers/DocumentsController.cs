@@ -116,7 +116,7 @@ namespace BitAndBeam.Controllers
                 fileBytes = ms.ToArray();
             }
 
-            // 2. Tika extract
+            // 2. Tika extract (OCR as first step)
             string metadata = "{}";
             string textForOllama = string.Empty;
             try
@@ -136,31 +136,24 @@ namespace BitAndBeam.Controllers
                 _logger.LogError(ex, "❌ Tika extraction failed for {File}", file.FileName);
             }
 
-            // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
-            // Extract OCR text from HTML if applicable
+            // 3. Initial prompt - Only extract address and suggest category (NO key information yet)
             textForOllama = ExtractVisibleText(textForOllama);
-
-            // Clean the extracted text
             var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
-            // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
-            // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
-            var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
+            // Read categories directly from file as raw JSON to avoid double serialization
+            var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
 
-            var prompt = BuildPrompt(shortText, categoriesSchemaJson);
+            var initialPrompt = BuildInitialPrompt(shortText, categoriesSchemaJson);
 
-
-
-            // -- Initialize result fields
+            // Initialize result fields
             Dictionary<string, string>? parsedAddress = null;
-            string? matchedCategory = null;
+            string? suggestedCategory = null;
             Building? matchedBuilding = null;
-            Dictionary<string, string?> keyInformation = new();
 
-            // 4. Ollama call
+            // 4. Initial Ollama call - only for address and category suggestion
             try
             {
-                var ollamaRawResponse = await _ollamaService.GenerateAsync(prompt).ConfigureAwait(false);
-                _logger.LogInformation("OLLAMA response field:\n{0}", ollamaRawResponse);
+                var ollamaRawResponse = await _ollamaService.GenerateAsync(initialPrompt).ConfigureAwait(false);
+                _logger.LogInformation("OLLAMA initial response:\n{0}", ollamaRawResponse);
 
                 // Parse main response object
                 var ollamaJsonDoc = JsonDocument.Parse(ollamaRawResponse);
@@ -174,7 +167,7 @@ namespace BitAndBeam.Controllers
                     var cleanedJson = innerResponseString
                         .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
                         .Replace("```", "", StringComparison.OrdinalIgnoreCase)
-                        .Trim();                                                   // trim spaces / \n etc.
+                        .Trim();
 
                     int first = cleanedJson.IndexOf('{');
                     int last = cleanedJson.LastIndexOf('}');
@@ -183,7 +176,7 @@ namespace BitAndBeam.Controllers
 
                     _logger.LogInformation("🧼 Cleaned Ollama JSON: {Cleaned}", cleanedJson);
 
-                    var cleanedJsonPath = Path.Combine(textOutputDir, "cleaned_ollama_response.json");
+                    var cleanedJsonPath = Path.Combine(textOutputDir, "initial_ollama_response.json");
                     using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
                     using (var cleanedWriter = new StreamWriter(cleanedStream))
                     {
@@ -205,49 +198,18 @@ namespace BitAndBeam.Controllers
                         if (parsedAddress.Values.All(string.IsNullOrWhiteSpace)) parsedAddress = null;
                     }
 
-                    // CATEGORY
+                    // CATEGORY (only suggestion, not final)
                     if (root.TryGetProperty("category", out var catElem) && catElem.ValueKind == JsonValueKind.String)
                     {
                         var cat = catElem.GetString();
                         if (!string.IsNullOrWhiteSpace(cat) && !string.Equals(cat, "null", StringComparison.OrdinalIgnoreCase))
-                            matchedCategory = cat.Trim();
-                    }
-
-                    // KEY INFORMATION
-                    if (root.TryGetProperty("key_information", out var kiObj) && kiObj.ValueKind == JsonValueKind.Object)
-                    {
-                        // Create a temp list to store all key-value pairs (even duplicates)
-                        var keyInformationTemp = new List<(string Key, string? Value)>();
-                        foreach (var property in kiObj.EnumerateObject())
-                        {
-                            string value = property.Value.ValueKind switch
-                            {
-                                JsonValueKind.String => property.Value.GetString() ?? string.Empty,
-                                JsonValueKind.Number => property.Value.GetRawText(),
-                                JsonValueKind.True => "true",
-                                JsonValueKind.False => "false",
-                                JsonValueKind.Null => null,
-                                _ => property.Value.ToString()
-                            };
-                            keyInformationTemp.Add((property.Name, value));
-                            if (!keyInformation.ContainsKey(property.Name))
-                            {
-                                keyInformation[property.Name] = value;
-                            }
-                        }
-                        // Save key_information_temp.txt (all key-value pairs, one per line)
-                        if (keyInformationTemp.Count > 0)
-                        {
-                            var tempTxtPath = Path.Combine(textOutputDir, "key_information_temp.txt");
-                            var lines = keyInformationTemp.Select(kv => $"{kv.Key}: {kv.Value}");
-                            await System.IO.File.WriteAllLinesAsync(tempTxtPath, lines).ConfigureAwait(false);
-                        }
+                            suggestedCategory = cat.Trim();
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Ollama analysis failed");
+                _logger.LogError(ex, "❌ Initial Ollama analysis failed");
             }
 
             // 5. Try to map address → building
@@ -277,14 +239,14 @@ namespace BitAndBeam.Controllers
                 }
             }
 
-            // 6. Try to map matchedCategory (string) to actual category object
+            // 6. Validate suggested category exists
             var allCategories = ReadCategories();
             var categoryMatch = allCategories.FirstOrDefault(c =>
-                string.Equals(c.Name?.Trim(), matchedCategory, StringComparison.OrdinalIgnoreCase));
-            string? matchedCategoryName = categoryMatch?.Name;
-            if (categoryMatch == null) matchedCategoryName = null;
+                string.Equals(c.Name?.Trim(), suggestedCategory, StringComparison.OrdinalIgnoreCase));
+            string? suggestedCategoryName = categoryMatch?.Name;
+            if (categoryMatch == null) suggestedCategoryName = null;
 
-            // 7. persist
+            // 7. Save document WITHOUT key information (will be extracted after user confirmation)
             var document = new Document
             {
                 Title = Path.GetFileNameWithoutExtension(file.FileName),
@@ -299,39 +261,36 @@ namespace BitAndBeam.Controllers
                 IsPublic = false,
                 Description = "No description provided",
                 Metadata = metadata,
-                KeyInformation = keyInformation != null ? JsonDocument.Parse(JsonSerializer.Serialize(keyInformation)) : null,
+                KeyInformation = null, // Will be extracted after user confirmation
                 UploadedAt = DateTime.UtcNow,
                 UploadedBy = null,
                 OrganizationId = GetCurrentUserOrganizationId(),
                 BuildingId = matchedBuilding?.BuildingId,
-                CategoryName = matchedCategoryName,
+                CategoryName = null, // Will be set after user confirmation
             };
 
             _context.Documents.Add(document);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            // After filling keyInformation, save it as JSON to /app/documents2/key_information.json
-            if (keyInformation != null && keyInformation.Count > 0)
-            {
-                var keyInfoJsonPath = Path.Combine(textOutputDir, "key_information.json");
-                var keyInfoJson = JsonSerializer.Serialize(keyInformation, new JsonSerializerOptions { WriteIndented = true });
-                await System.IO.File.WriteAllTextAsync(keyInfoJsonPath, keyInfoJson).ConfigureAwait(false);
-            }
-            // Save parsedAddress as JSON to /app/documents2/parsed_address.json
+            // Store the extracted text for later use in key information extraction
+            var extractedTextPath = Path.Combine(textOutputDir, $"extracted_text_{document.DocumentId}.txt");
+            await System.IO.File.WriteAllTextAsync(extractedTextPath, textForOllama).ConfigureAwait(false);
+
+            // Save initial analysis results
             if (parsedAddress != null && parsedAddress.Count > 0)
             {
-                var addressJsonPath = Path.Combine(textOutputDir, "parsed_address.json");
+                var addressJsonPath = Path.Combine(textOutputDir, "suggested_address.json");
                 var addressJson = JsonSerializer.Serialize(parsedAddress, new JsonSerializerOptions { WriteIndented = true });
                 await System.IO.File.WriteAllTextAsync(addressJsonPath, addressJson).ConfigureAwait(false);
             }
-            // Save matchedCategory as plain text to /app/documents2/matched_category.txt
-            if (!string.IsNullOrWhiteSpace(matchedCategory))
+
+            if (!string.IsNullOrWhiteSpace(suggestedCategory))
             {
-                var categoryTxtPath = Path.Combine(textOutputDir, "matched_category.txt");
-                await System.IO.File.WriteAllTextAsync(categoryTxtPath, matchedCategory).ConfigureAwait(false);
+                var categoryTxtPath = Path.Combine(textOutputDir, "suggested_category.txt");
+                await System.IO.File.WriteAllTextAsync(categoryTxtPath, suggestedCategory).ConfigureAwait(false);
             }
 
-            // 8. response
+            // 8. Response with suggestions (user will confirm these in frontend)
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var fileUrl = $"{baseUrl}/documents/{document.FileName}";
 
@@ -349,11 +308,9 @@ namespace BitAndBeam.Controllers
                                             { "zip_code",     "Couldn't identify" },
                                             { "city",         "Couldn't identify" }
                                         },
-                BuildingId = matchedBuilding?.BuildingId,
-                BuildingName = matchedBuilding?.Name,
-                SuggestedCategoryName = matchedCategory,
-                CategoryName = matchedCategoryName,
-                KeyInformation = keyInformation
+                SuggestedBuildingId = matchedBuilding?.BuildingId,
+                SuggestedBuildingName = matchedBuilding?.Name,
+                SuggestedCategoryName = suggestedCategoryName,
             });
         }
 
