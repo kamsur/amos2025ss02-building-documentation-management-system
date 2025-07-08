@@ -37,7 +37,6 @@ namespace BitAndBeam.Controllers
             _logger = logger;
         }
 
-
         private static string CategoriesJsonPath => Path.Combine("/app/resources", "document_categories.json");
 
         private int GetCurrentUserOrganizationId()
@@ -84,7 +83,6 @@ namespace BitAndBeam.Controllers
                 return new List<DocumentCategory>();
             }
         }
-
 
         [HttpPost]
         public async Task<IActionResult> UploadDocument(IFormFile file)
