@@ -1,0 +1,13 @@
+services:      
+  
+  ollama:
+    image: ghcr.io/amosproj/bitandbeam-ollama:latest
+    container_name: ollama
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "11434:11434"

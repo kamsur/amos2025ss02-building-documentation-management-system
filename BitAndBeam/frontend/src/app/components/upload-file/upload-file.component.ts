@@ -36,6 +36,9 @@ export class UploadFileComponent implements OnInit {
   // Metadata popup control
   showMetadataPopup = false;
 
+  //Holds full esponse including suggestedCategoryName
+  uploadedDocument:any | null = null;
+
   private documentsApi: DocumentsApi;
 
   constructor(private apiFactory: ApiClientFactory, private sidebarRefreshService: SidebarRefreshService) {
@@ -116,6 +119,7 @@ export class UploadFileComponent implements OnInit {
     }).then((response: AxiosResponse<any>) => {
       console.log('Upload successful', response.data);
       this.uploading = false;
+      this.uploadedDocument = response.data; // Store the full response for later use
       this.uploadedDocumentId = response.data.id || response.data.documentId;
       this.successMessage = `File "${file.name}" uploaded successfully!`;
 

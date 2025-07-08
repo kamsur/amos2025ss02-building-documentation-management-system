@@ -1,19 +1,24 @@
 #!/bin/sh
 
-MAX_RETRIES=10
-RETRY_COUNT=0
+# MAX_RETRIES=5
+# RETRY_COUNT=0
 
 echo "Waiting for backend Swagger spec at ${SWAGGER_URL}/swagger/v1/swagger.json..."
 
-until wget -qO /tmp/swagger.json "${SWAGGER_URL}/swagger/v1/swagger.json"; do
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-        echo "Error: Failed to fetch Swagger spec after $MAX_RETRIES attempts"
-        exit 1
-    fi
-    echo "Waiting... (Attempt $RETRY_COUNT of $MAX_RETRIES)"
-    sleep 3
-done
+# until wget -qO /tmp/swagger.json "${SWAGGER_URL}/swagger/v1/swagger.json"; do
+#     RETRY_COUNT=$((RETRY_COUNT + 1))
+#     if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+#         echo "Error: Failed to fetch Swagger spec after $MAX_RETRIES attempts"
+#         exit 1
+#     fi
+#     echo "Waiting... (Attempt $RETRY_COUNT of $MAX_RETRIES)"
+#     sleep 5
+# done
+
+wget -qO /tmp/swagger.json "${SWAGGER_URL}/swagger/v1/swagger.json" || {
+    echo "Error: Failed to fetch Swagger spec from ${SWAGGER_URL}/swagger/v1/swagger.json"
+    exit 1
+}
 
 echo "Swagger spec available. Generating SDK..."
 openapi-generator-cli generate \

@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y curl dos2unix && rm -rf /var/lib/apt/li
 
 # To allow configurable ports via environment variable
 ENV ASPNETCORE_URLS=http://+:5000
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
 
 # Copy build artifacts from previous stage
