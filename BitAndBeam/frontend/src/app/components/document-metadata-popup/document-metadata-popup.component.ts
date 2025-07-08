@@ -250,52 +250,150 @@ export class DocumentMetadataPopupComponent implements OnInit {
     // Show loading notification
     this.showSuccessNotification('Extracting key information...');
 
-    // Use the correct backend URL - same as other API calls
-    import('axios').then(axios => {
-      axios.default.post(`/api/Documents/${documentId}/extract-key-information`, {
-        categoryName: categoryName
-      }, {
-        // Use the same base URL as other API calls
-        baseURL: window.location.origin.replace(':4200', ':5001').replace(':8080', ':5001')
-      })
-      .then((response: any) => {
-        console.log('✅ Key information extracted:', response.data);
-        this.isExtractingKeyInfo = false;
-        this.showSuccessNotification('Key information extracted successfully!');
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    
+    // Try to use the OpenAPI client method if it exists
+    // Check if the method exists on the API client
+    const extractMethod = (documentsApi as any).apiDocumentsIdExtractKeyInformationPost 
+                       || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
+                       || (documentsApi as any).extractKeyInformation;
+
+    if (extractMethod && typeof extractMethod === 'function') {
+      console.log('✅ Using OpenAPI client method for key extraction');
+      
+      extractMethod.call(documentsApi, documentId, { categoryName: categoryName })
+        .then((response: any) => {
+          console.log('✅ Key information extracted via OpenAPI:', response.data);
+          this.isExtractingKeyInfo = false;
+          this.showSuccessNotification('Key information extracted successfully!');
+          
+          // Wait a bit to show success message, then complete save
+          setTimeout(() => {
+            this.completeSave(categoryName, this.selectedBuildingId);
+          }, 1000);
+        })
+        .catch((error: any) => {
+          console.error('❌ OpenAPI key extraction failed:', error);
+          this.handleKeyExtractionError(error, categoryName);
+        });
+    } else {
+      console.log('⚠️ OpenAPI method not found, using manual HTTP call');
+      
+      // Fallback to manual HTTP call with proper authentication
+      import('axios').then(axios => {
+        // Get the authorization header from the existing documentsApi instance
+        const authConfig = this.getAuthenticatedAxiosConfig();
         
-        // Wait a bit to show success message, then complete save
+        axios.default.post(`/api/Documents/${documentId}/extract-key-information`, {
+          categoryName: categoryName
+        }, authConfig)
+        .then((response: any) => {
+          console.log('✅ Key information extracted via manual call:', response.data);
+          this.isExtractingKeyInfo = false;
+          this.showSuccessNotification('Key information extracted successfully!');
+          
+          // Wait a bit to show success message, then complete save
+          setTimeout(() => {
+            this.completeSave(categoryName, this.selectedBuildingId);
+          }, 1000);
+        })
+        .catch((error: any) => {
+          console.error('❌ Manual key extraction failed:', error);
+          this.handleKeyExtractionError(error, categoryName);
+        });
+      }).catch(() => {
+        // Fallback if axios import fails - just complete the save
+        console.log('⚠️ Key information extraction skipped - Axios not available');
+        this.isExtractingKeyInfo = false;
+        this.showSuccessNotification('Document saved successfully (key extraction skipped)');
         setTimeout(() => {
           this.completeSave(categoryName, this.selectedBuildingId);
         }, 1000);
-      })
-      .catch((error: any) => {
-        console.error('❌ Failed to extract key information', error);
-        this.isExtractingKeyInfo = false;
-        
-        // Show more specific error message
-        let errorMsg = 'Document saved but key information extraction failed';
-        if (error.response?.status === 405) {
-          errorMsg = 'Key information extraction endpoint not available yet';
-        } else if (error.response?.status === 404) {
-          errorMsg = 'Document not found for key information extraction';
-        }
-        
-        this.showErrorNotification(errorMsg);
-        
-        // Still complete the save even if key extraction fails
-        setTimeout(() => {
-          this.completeSave(categoryName, this.selectedBuildingId);
-        }, 1500);
       });
-    }).catch(() => {
-      // Fallback if axios import fails - just complete the save
-      console.log('⚠️ Key information extraction skipped - Axios not available');
-      this.isExtractingKeyInfo = false;
-      this.showSuccessNotification('Document saved successfully');
-      setTimeout(() => {
-        this.completeSave(categoryName, this.selectedBuildingId);
-      }, 1000);
-    });
+    }
+  }
+
+  private getAuthenticatedAxiosConfig(): any {
+    // Extract authentication configuration from the API factory
+    try {
+      const documentsApi = this.apiFactory.create(DocumentsApi);
+      const apiInstance = documentsApi as any;
+      
+      // Try to get the configuration from the API instance
+      const config: any = {
+        baseURL: window.location.origin.replace(':4200', ':5001').replace(':8080', ':5001'),
+        headers: {}
+      };
+
+      // Try to extract auth headers from the existing API client
+      if (apiInstance.configuration) {
+        const authConfig = apiInstance.configuration;
+        if (authConfig.apiKey) {
+          config.headers['Authorization'] = `Bearer ${authConfig.apiKey}`;
+        }
+        if (authConfig.accessToken) {
+          config.headers['Authorization'] = `Bearer ${authConfig.accessToken}`;
+        }
+      }
+
+      // Try to get auth from the default axios instance if available
+      if (apiInstance.defaults?.headers?.common?.Authorization) {
+        config.headers['Authorization'] = apiInstance.defaults.headers.common.Authorization;
+      }
+
+      // Get CSRF token if available
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) {
+        config.headers['X-CSRF-TOKEN'] = csrfToken;
+      }
+
+      console.log('🔐 Auth config prepared:', { ...config, headers: { ...config.headers, Authorization: config.headers.Authorization ? '[HIDDEN]' : undefined } });
+      
+      return config;
+    } catch (error) {
+      console.error('❌ Failed to get auth config:', error);
+      return {
+        baseURL: window.location.origin.replace(':4200', ':5001').replace(':8080', ':5001')
+      };
+    }
+  }
+
+  private getCsrfToken(): string | null {
+    // Try to get CSRF token from meta tag
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
+    if (csrfMeta) {
+      return csrfMeta.content;
+    }
+    
+    // Try to get from cookie
+    const csrfCookie = document.cookie.split(';')
+      .find(cookie => cookie.trim().startsWith('XSRF-TOKEN='));
+    if (csrfCookie) {
+      return decodeURIComponent(csrfCookie.split('=')[1]);
+    }
+    
+    return null;
+  }
+
+  private handleKeyExtractionError(error: any, categoryName: string): void {
+    this.isExtractingKeyInfo = false;
+    
+    // Show more specific error message
+    let errorMsg = 'Document saved but key information extraction failed';
+    if (error.response?.status === 401) {
+      errorMsg = 'Authentication failed for key information extraction';
+    } else if (error.response?.status === 405) {
+      errorMsg = 'Key information extraction endpoint not available yet';
+    } else if (error.response?.status === 404) {
+      errorMsg = 'Document not found for key information extraction';
+    }
+    
+    this.showErrorNotification(errorMsg);
+    
+    // Still complete the save even if key extraction fails
+    setTimeout(() => {
+      this.completeSave(categoryName, this.selectedBuildingId);
+    }, 1500);
   }
 
   private completeSave(categoryName: string | null, buildingId: number | null): void {
