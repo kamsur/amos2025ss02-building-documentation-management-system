@@ -47,12 +47,44 @@ namespace BitAndBeam.Controllers
 
         private static List<DocumentCategory> ReadCategories()
         {
-            var json = System.IO.File.ReadAllText(CategoriesJsonPath);
-            using var doc = JsonDocument.Parse(json);
-            var categoriesElem = doc.RootElement.GetProperty("categories");
-            var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(categoriesElem.GetRawText()) ?? new();
-            return categories;
+            try
+            {
+                var json = System.IO.File.ReadAllText(CategoriesJsonPath);
+                Console.WriteLine($"🔍 Raw categories JSON: {json}");
+                
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                Console.WriteLine($"🏗️ Root element type: {root.ValueKind}");
+                
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    Console.WriteLine("📁 Root is array, deserializing directly");
+                    var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(json) ?? new();
+                    Console.WriteLine($"✅ Deserialized {categories.Count} categories from array");
+                    return categories;
+                }
+                else if (root.TryGetProperty("categories", out var categoriesElem))
+                {
+                    Console.WriteLine("📁 Root has 'categories' property");
+                    var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(categoriesElem.GetRawText()) ?? new();
+                    Console.WriteLine($"✅ Deserialized {categories.Count} categories from property");
+                    return categories;
+                }
+                else
+                {
+                    Console.WriteLine("❌ Neither array nor object with 'categories' property");
+                    Console.WriteLine($"🔍 Root properties: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
+                    return new List<DocumentCategory>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error reading categories: {ex.Message}");
+                Console.WriteLine($"🔍 Stack trace: {ex.StackTrace}");
+                return new List<DocumentCategory>();
+            }
         }
+
 
 
         [HttpPost]
