@@ -311,7 +311,7 @@ namespace BitAndBeam.Controllers
             });
         }
 
-
+        // NEW: Endpoint to extract key information after user confirmation
         [HttpPost("{id}/extract-key-information")]
         public async Task<IActionResult> ExtractKeyInformation(int id, [FromBody] ExtractKeyInformationRequest request)
         {
