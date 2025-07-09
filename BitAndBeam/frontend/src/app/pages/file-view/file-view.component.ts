@@ -47,13 +47,6 @@ export class FileViewComponent implements OnInit, OnDestroy {
   loadingKeyInfo: boolean = false;
   keyInfo: any = null;
   hasChanges: boolean = false;
-  // 🟡 Tracks if a field has been touched for validation feedback
-  touchedFields: { [label: string]: boolean } = {};
-
-  originalKeyInformation: { [key: string]: string } = {};
-  originalCategoryName: string | null = null;
-  originalBuildingId: number | null = null;
-
 
   // ✅ New variables for Analysis button
   originalCategoryName: string | null = null;
@@ -333,10 +326,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
- * Builds patch request and sends metadata updates to backend.
- * Regenerates view after successful save.
- */
+  // ✅ New method: update building/category
   saveMetadataChanges(): void {
     if (!this.selectedFile?.id) return;
 
@@ -546,24 +536,27 @@ export class FileViewComponent implements OnInit, OnDestroy {
     this.isMetadataPanelCollapsed = !this.isMetadataPanelCollapsed;
   }
 
-  zoomIn(): void {
+  zoomIn() {
     if (this.isImage) {
-      this.imageZoom = Math.min(this.imageZoom + 0.2, 5);
+      this.imageZoom += 0.2;
     } else if (this.isPdf) {
-      this.pdfZoom = Math.min(this.pdfZoom + 0.2, 5);
+      this.pdfZoom += 0.2;
     }
   }
 
-  zoomOut(): void {
+  zoomOut() {
     if (this.isImage) {
-      this.imageZoom = Math.max(this.imageZoom - 0.2, 0.2);
+      this.imageZoom = Math.max(0.2, this.imageZoom - 0.2);
     } else if (this.isPdf) {
-      this.pdfZoom = Math.max(this.pdfZoom - 0.2, 0.2);
+      this.pdfZoom = Math.max(0.2, this.pdfZoom - 0.2);
     }
   }
 
-  resetZoom(): void {
-    this.imageZoom = 1;
-    this.pdfZoom = 1;
+  resetZoom() {
+    if (this.isImage) {
+      this.imageZoom = 1;
+    } else if (this.isPdf) {
+      this.pdfZoom = 1;
+    }
   }
 }
