@@ -920,7 +920,6 @@ export interface User {
     'documentPermissions'?: Array<DocumentPermission> | null;
 }
 
-
 /**
  * AuthApi - axios parameter creator
  * @export
@@ -1108,12 +1107,6 @@ export const BitAndBeamApiAxiosParamCreator = function (configuration?: Configur
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
         rootGet: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -1177,12 +1170,6 @@ export const BitAndBeamApiFactory = function (configuration?: Configuration, bas
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
         rootGet(options?: any): AxiosPromise<string> {
             return localVarFp.rootGet(options).then((request) => request(axios, basePath));
         },
@@ -1196,14 +1183,6 @@ export const BitAndBeamApiFactory = function (configuration?: Configuration, bas
  * @extends {BaseAPI}
  */
 export class BitAndBeamApi extends BaseAPI {
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof BitAndBeamApi
-     */
-
-
     /**
      * 
      * @param {*} [options] Override http request option.
