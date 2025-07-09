@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BuildingService, Building, DocumentResponse } from '../../services/building.service';
@@ -14,7 +14,7 @@ import { SidebarRefreshService }  from '../../services/sidebar-refresh.service';
   templateUrl: './document-metadata-popup.component.html',
   styleUrls: ['./document-metadata-popup.component.css']
 })
-export class DocumentMetadataPopupComponent implements OnInit {
+export class DocumentMetadataPopupComponent implements OnInit, OnDestroy {
   @Input() documentId: number | null = null;
   @Input() documentName: string = '';
   @Input() documentData: DocumentResponse | null = null;
@@ -52,6 +52,10 @@ export class DocumentMetadataPopupComponent implements OnInit {
     console.log('🔄 DocumentMetadataPopup ngOnInit called');
     this.loadCategories();
     this.loadBuildings();
+  }
+
+  ngOnDestroy(): void {
+    this.clearNotificationTimeout();
   }
 
   setInitialValues(): void {
@@ -232,8 +236,91 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
     console.log('💾 Saving with category:', categoryName, 'and building:', this.selectedBuildingId);
 
-    // First update the document metadata
-    this.updateDocumentMetadata(this.documentId!, categoryName, this.selectedBuildingId);
+    // Show processing message immediately
+    this.isExtractingKeyInfo = true;
+    // this.showSuccessNotification('Processing document...');
+
+    // Make both API calls in parallel if category is selected
+    if (categoryName && categoryName.trim()) {
+      this.saveWithKeyExtraction(this.documentId, categoryName, this.selectedBuildingId);
+    } else {
+      // Just update metadata without key extraction
+      this.updateDocumentMetadata(this.documentId, categoryName, this.selectedBuildingId);
+    }
+  }
+
+  /**
+   * Save metadata and extract key information in parallel
+   */
+  private saveWithKeyExtraction(documentId: number, categoryName: string, buildingId: number | null): void {
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+
+    // Prepare patch request
+    const patchRequest: DocumentMetadataPatchRequest = {
+      categoryName: categoryName,
+      buildingId: buildingId
+    };
+
+    console.log('🔄 Saving and extracting in parallel...');
+
+    // Execute both operations in parallel
+    Promise.all([
+      // Update metadata
+      documentsApi.apiDocumentsIdPatch(documentId, patchRequest),
+      // Extract key information
+      this.extractKeyInformationPromise(documentId, categoryName)
+    ]).then(([metadataResponse, extractionResponse]) => {
+      console.log('✅ Both operations completed successfully');
+      this.isExtractingKeyInfo = false;
+      this.showSuccessNotification('Document processed successfully!');
+      
+      // Complete save after short delay
+      setTimeout(() => {
+        this.completeSave(categoryName, buildingId);
+      }, 500);
+    }).catch((error) => {
+      console.error('❌ Operation failed:', error);
+      this.isExtractingKeyInfo = false;
+      
+      // Check if metadata update succeeded at least
+      documentsApi.apiDocumentsIdGet(documentId).then(() => {
+        this.showErrorNotification('Document saved but key extraction failed');
+        setTimeout(() => {
+          this.completeSave(categoryName, buildingId);
+        }, 1000);
+      }).catch(() => {
+        this.showErrorNotification('Failed to save document');
+      });
+    });
+  }
+
+  /**
+   * Extract key information as a promise
+   */
+  private extractKeyInformationPromise(documentId: number, categoryName: string): Promise<any> {
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    
+    // Try to use the OpenAPI client method if it exists
+    const extractMethod = (documentsApi as any).apiDocumentsIdExtractKeyInformationPost 
+                       || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
+                       || (documentsApi as any).extractKeyInformation;
+
+    if (extractMethod && typeof extractMethod === 'function') {
+      console.log('✅ Using OpenAPI client method for key extraction');
+      return extractMethod.call(documentsApi, documentId, { categoryName: categoryName });
+    } else {
+      console.log('⚠️ OpenAPI method not found, using manual HTTP call');
+      
+      // Fallback to manual HTTP call
+      return import('axios').then(axios => {
+        const authConfig = this.getAuthenticatedAxiosConfig();
+        return axios.default.post(
+          `${authConfig.baseURL}/api/Documents/${documentId}/extract-key-information`,
+          { categoryName: categoryName },
+          authConfig
+        );
+      });
+    }
   }
 
   private updateDocumentMetadata(documentId: number, categoryName: string | null, buildingId: number | null): void {
@@ -248,86 +335,13 @@ export class DocumentMetadataPopupComponent implements OnInit {
 
     documentsApi.apiDocumentsIdPatch(documentId, patchRequest).then(response => {
       console.log('✅ Document metadata updated:', response.data);
-      
-      // If a category was selected, trigger key information extraction
-      if (categoryName && categoryName.trim()) {
-        this.extractKeyInformation(documentId, categoryName);
-      } else {
-        // No category selected, just close the popup
-        this.completeSave(categoryName, buildingId);
-      }
+      this.isExtractingKeyInfo = false;
+      this.completeSave(categoryName, buildingId);
     }).catch(error => {
       console.error('❌ Failed to update document metadata', error);
+      this.isExtractingKeyInfo = false;
       this.showErrorNotification('Failed to update document metadata');
     });
-  }
-
-  private extractKeyInformation(documentId: number, categoryName: string): void {
-    console.log('🔍 Extracting key information for category:', categoryName);
-    this.isExtractingKeyInfo = true;
-    
-    // Show loading notification
-    this.showSuccessNotification('Extracting key information...');
-
-    const documentsApi = this.apiFactory.create(DocumentsApi);
-    
-    // Try to use the OpenAPI client method if it exists
-    const extractMethod = (documentsApi as any).apiDocumentsIdExtractKeyInformationPost 
-                       || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
-                       || (documentsApi as any).extractKeyInformation;
-
-    if (extractMethod && typeof extractMethod === 'function') {
-      console.log('✅ Using OpenAPI client method for key extraction');
-      
-      extractMethod.call(documentsApi, documentId, { categoryName: categoryName })
-        .then((response: any) => {
-          console.log('✅ Key information extracted via OpenAPI:', response.data);
-          this.isExtractingKeyInfo = false;
-          this.showSuccessNotification('Key information extracted successfully!');
-          
-          // Wait a bit to show success message, then complete save
-          setTimeout(() => {
-            this.completeSave(categoryName, this.selectedBuildingId);
-          }, 1000);
-        })
-        .catch((error: any) => {
-          console.error('❌ OpenAPI key extraction failed:', error);
-          this.handleKeyExtractionError(error, categoryName);
-        });
-    } else {
-      console.log('⚠️ OpenAPI method not found, using manual HTTP call');
-      
-      // Fallback to manual HTTP call with proper authentication
-      import('axios').then(axios => {
-        const authConfig = this.getAuthenticatedAxiosConfig();
-        
-        axios.default.post(`/api/Documents/${documentId}/extract-key-information`, {
-          categoryName: categoryName
-        }, authConfig)
-        .then((response: any) => {
-          console.log('✅ Key information extracted via manual call:', response.data);
-          this.isExtractingKeyInfo = false;
-          this.showSuccessNotification('Key information extracted successfully!');
-          
-          // Wait a bit to show success message, then complete save
-          setTimeout(() => {
-            this.completeSave(categoryName, this.selectedBuildingId);
-          }, 1000);
-        })
-        .catch((error: any) => {
-          console.error('❌ Manual key extraction failed:', error);
-          this.handleKeyExtractionError(error, categoryName);
-        });
-      }).catch(() => {
-        // Fallback if axios import fails - just complete the save
-        console.log('⚠️ Key information extraction skipped - Axios not available');
-        this.isExtractingKeyInfo = false;
-        this.showSuccessNotification('Document saved successfully (key extraction skipped)');
-        setTimeout(() => {
-          this.completeSave(categoryName, this.selectedBuildingId);
-        }, 1000);
-      });
-    }
   }
 
   private getAuthenticatedAxiosConfig(): any {
@@ -390,39 +404,13 @@ export class DocumentMetadataPopupComponent implements OnInit {
     return null;
   }
 
-  private handleKeyExtractionError(error: any, categoryName: string): void {
-    this.isExtractingKeyInfo = false;
-    
-    // Show more specific error message
-    let errorMsg = 'Document saved but key information extraction failed';
-    if (error.response?.status === 401) {
-      errorMsg = 'Authentication failed for key information extraction';
-    } else if (error.response?.status === 405) {
-      errorMsg = 'Key information extraction endpoint not available yet';
-    } else if (error.response?.status === 404) {
-      errorMsg = 'Document not found for key information extraction';
-    }
-    
-    this.showErrorNotification(errorMsg);
-    
-    // Still complete the save even if key extraction fails
-    setTimeout(() => {
-      this.completeSave(categoryName, this.selectedBuildingId);
-    }, 1500);
-  }
-
   private completeSave(categoryName: string | null, buildingId: number | null): void {
     // Emit metadata saved event
     this.saveMetadata.emit({ categoryName, buildingId });
     this.sidebarRefreshService.triggerRefresh();
     
-    // Show final success notification and close
-    this.showSuccessNotification('Document saved successfully');
-    
-    // Close popup after a short delay to show the success message
-    setTimeout(() => {
-      this.onClose();
-    }, 1500);
+    // Close popup immediately
+    this.onClose();
   }
 
   /**
@@ -433,9 +421,13 @@ export class DocumentMetadataPopupComponent implements OnInit {
     this.notificationMessage = message;
     this.showNotification = true;
     this.clearNotificationTimeout();
-    this.notificationTimeout = setTimeout(() => {
-      this.showNotification = false;
-    }, 5000);
+    
+    // Don't auto-hide if we're processing
+    if (!this.isExtractingKeyInfo) {
+      this.notificationTimeout = setTimeout(() => {
+        this.showNotification = false;
+      }, 3000);
+    }
   }
 
   /**
@@ -463,7 +455,7 @@ export class DocumentMetadataPopupComponent implements OnInit {
    */
   getBuildingName(buildingId: number | null): string {
     if (!buildingId) return 'Unknown Building';
-    const building = this.buildings.find(b => b.id === buildingId);
+    const building = this.buildings.find((b: Building) => b.id === buildingId);
     return building ? building.name : `Building #${buildingId}`;
   }
 
@@ -475,9 +467,5 @@ export class DocumentMetadataPopupComponent implements OnInit {
       clearTimeout(this.notificationTimeout);
       this.notificationTimeout = null;
     }
-  }
-
-  ngOnDestroy(): void {
-    this.clearNotificationTimeout();
   }
 }
