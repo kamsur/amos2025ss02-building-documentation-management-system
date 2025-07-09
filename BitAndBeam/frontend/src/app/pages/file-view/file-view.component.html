@@ -56,7 +56,7 @@
           <div class="metadata-content">
             <div class="metadata-item">
               <label for="building-select"><strong>Building:</strong></label>
-              <select id="building-select" [(ngModel)]="selectedBuildingId">
+              <select id="building-select" [(ngModel)]="selectedBuildingId" (change)="checkForChanges()" (ngModelChange)="hasChanges = true">
                 <option [ngValue]="null">No Building</option>
                 <option *ngFor="let b of buildings" [ngValue]="b.id">{{ b.name }}</option>
               </select>
@@ -92,7 +92,6 @@
                     <li *ngFor="let item of keyInformation">
                       <strong>{{ item.label }}:</strong>
                       <input
-                        [type]="getInputType(item.label)"
                         [(ngModel)]="item.value"
                         (ngModelChange)="checkForChanges()"
                         (blur)="touchedFields[item.label] = true"
