@@ -65,9 +65,10 @@
               <label for="category-select"><strong>Category:</strong></label>
               <div class="category-with-analyze">
                 <select id="category-select" [(ngModel)]="selectedCategoryName" (ngModelChange)="onCategoryChange()">
-                  <option [ngValue]="null">No Category</option>
-                  <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
+                    <option [ngValue]="null">No Category</option>
+                    <option *ngFor="let c of categories" [ngValue]="c.name">{{ c.name }}</option>
                 </select>
+
                 <button class="analyze-btn" 
                         (click)="analyzeWithNewCategory()" 
                         [disabled]="!canAnalyze || isAnalyzing"
@@ -115,19 +116,9 @@
                   <ul>
                     <li *ngFor="let item of keyInformation">
                       <strong>{{ item.label }}:</strong>
-                      <input
-                        [type]="getInputType(item.label)"
-                        [(ngModel)]="item.value"
-                        (ngModelChange)="checkForChanges()"
-                        (blur)="touchedFields[item.label] = true"
-                      />
-                      <!-- 🟥 Validation message -->
-                      <div class="validation-message"
-                          *ngIf="isFieldRequired(item.label) && touchedFields[item.label] && !item.value?.trim()">
-                        <small style="color: red;">This field is required.</small>
-                      </div>
+                      <input type="text" [(ngModel)]="item.value" (ngModelChange)="hasChanges = true"/>
                     </li>
-                </ul>
+                  </ul>
                 </ng-container>
                 <ng-template #noKeyInfo>
                   <p>No key information found.</p>
