@@ -29,7 +29,6 @@ namespace BitAndBeam.Controllers
 
         public DocumentsController(AppDbContext context, IWebHostEnvironment env, TikaService tikaService, OllamaService ollamaService, ILogger<DocumentsController> logger)
         {
-            Console.WriteLine("🚀 DocumentsController loaded");
             _context = context;
             _env = env;
             _tikaService = tikaService;
@@ -49,37 +48,27 @@ namespace BitAndBeam.Controllers
             try
             {
                 var json = System.IO.File.ReadAllText(CategoriesJsonPath);
-                Console.WriteLine($"🔍 Raw categories JSON: {json}");
                 
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
-                Console.WriteLine($"🏗️ Root element type: {root.ValueKind}");
                 
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    Console.WriteLine("📁 Root is array, deserializing directly");
                     var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(json) ?? new();
-                    Console.WriteLine($"✅ Deserialized {categories.Count} categories from array");
                     return categories;
                 }
                 else if (root.TryGetProperty("categories", out var categoriesElem))
                 {
-                    Console.WriteLine("📁 Root has 'categories' property");
                     var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(categoriesElem.GetRawText()) ?? new();
-                    Console.WriteLine($"✅ Deserialized {categories.Count} categories from property");
                     return categories;
                 }
                 else
                 {
-                    Console.WriteLine("❌ Neither array nor object with 'categories' property");
-                    Console.WriteLine($"🔍 Root properties: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
                     return new List<DocumentCategory>();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error reading categories: {ex.Message}");
-                Console.WriteLine($"🔍 Stack trace: {ex.StackTrace}");
                 return new List<DocumentCategory>();
             }
         }
@@ -388,6 +377,13 @@ namespace BitAndBeam.Controllers
                         cleanedJson = cleanedJson[first..(last + 1)];
 
                     _logger.LogInformation("🧼 Cleaned Key Info JSON: {Cleaned}", cleanedJson);
+
+                    // Defensive: Check if cleanedJson is valid JSON object before parsing
+                    if (string.IsNullOrWhiteSpace(cleanedJson) || !cleanedJson.Trim().StartsWith("{"))
+                    {
+                        _logger.LogError("❌ Invalid key info JSON received from AI: {Cleaned}", cleanedJson);
+                        return StatusCode(500, new { error = "AI key extraction returned invalid JSON.", raw = cleanedJson });
+                    }
 
                     var cleanedJsonPath = Path.Combine(textOutputDir, "key_info_ollama_response.json");
                     using (var cleanedStream = new FileStream(cleanedJsonPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
@@ -859,11 +855,9 @@ namespace BitAndBeam.Controllers
             if (System.IO.File.Exists(filePath))
             {
                 System.IO.File.Delete(filePath);
-                Console.WriteLine($"✅ File deleted: {filePath}");
             }
             else
             {
-                Console.WriteLine($"⚠️ File not found at: {filePath}");
             }
 
             // Also delete extracted text file
@@ -872,7 +866,6 @@ namespace BitAndBeam.Controllers
             if (System.IO.File.Exists(extractedTextPath))
             {
                 System.IO.File.Delete(extractedTextPath);
-                Console.WriteLine($"✅ Extracted text file deleted: {extractedTextPath}");
             }
 
             _context.Documents.Remove(document);
