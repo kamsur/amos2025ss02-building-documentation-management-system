@@ -30,9 +30,11 @@ export class FileViewComponent implements OnInit, OnDestroy {
   isPdf = false;
   isImage = false;
   buildings: any[] = [];
-  categories: Category[] = []; // Always initialize as empty array
+  categories: Category[] = []; // Current categories in dropdown
+  allCategories: Category[] = []; // All available categories
   selectedBuildingId: number | null = null;
   selectedCategoryName: string | null = null;
+  originalCategoryName: string | null = null; // For tracking changes
   loading = false;
   toastMessage = '';
   isMetadataPanelCollapsed = false;
@@ -40,7 +42,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
   imageZoom = 1;
   pdfZoom = 1;
 
-  // ✅ New variables for key info
+  // ✅ Key info variables
   metadataRaw: string = '';
   parsedMetadata: { label: string; value: string }[] = [];
   keyInformation: { label: string; value: string | null }[] = [];
@@ -48,8 +50,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
   keyInfo: any = null;
   hasChanges: boolean = false;
 
-  // ✅ New variables for Analysis button
-  originalCategoryName: string | null = null;
+  // ✅ Analysis variables
   isAnalyzing: boolean = false;
   analysisMessage: string = '';
   analysisSuccess: boolean = true;
@@ -72,6 +73,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
     // Initialize arrays to prevent undefined errors
     this.buildings = [];
     this.categories = [];
+    this.allCategories = [];
   }
 
   ngOnInit(): void {
@@ -108,7 +110,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load buildings and categories with proper error handling
+   * ✅ Fixed load buildings and categories - same approach as popup component
    */
   private loadBuildingsAndCategories(): void {
     // Load buildings
@@ -123,19 +125,75 @@ export class FileViewComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Load categories
-    this.categoryService.getCategories().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (categories) => {
-        this.categories = Array.isArray(categories) ? categories : [];
-        console.log('✅ Loaded categories:', this.categories.length);
-      },
-      error: (err) => {
-        console.error('❌ Failed to load categories:', err);
-        this.categories = [];
-      }
-    });
+    // ✅ Enhanced categories loading - SAME AS POPUP COMPONENT
+    this.loadCategories();
   }
 
+  /**
+   * ✅ Load categories using same approach as document-metadata-popup
+   */
+  private loadCategories(): void {
+    console.log('🏷️ Loading categories...');
+    
+    // Primary method: Try using DocumentsApi directly
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    documentsApi.apiDocumentsCategoriesGet()
+      .then((response: any) => {
+        // Safely extract categories from response
+        this.allCategories = this.extractCategoriesFromResponse(response);
+        this.categories = [...this.allCategories]; // Copy all categories for dropdown
+      })
+      .catch((err: any) => {
+        console.error('❌ DocumentsApi categories failed:', err);
+        
+        // Fallback: Try CategoryService
+        this.categoryService.getCategories().pipe(takeUntil(this.destroy$)).subscribe({
+          next: (data) => {
+            // Ensure categories is always an array
+            this.allCategories = Array.isArray(data) ? data : [];
+            this.categories = [...this.allCategories];
+          },
+          error: (fallbackErr) => {
+            console.error('❌ CategoryService also failed:', fallbackErr);
+          }
+        });
+      });
+  }
+
+  /**
+   * ✅ Safely extract categories array from various response formats - SAME AS POPUP
+   */
+  private extractCategoriesFromResponse(response: any): Category[] {
+    if (!response) return [];
+
+    let categoriesData = response.data || response;
+    
+    // If the response has a categories property, use it
+    if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
+      return categoriesData.categories;
+    }
+    
+    // If the data itself is an array, use it
+    if (Array.isArray(categoriesData)) {
+      return categoriesData;
+    }
+    
+    // If it's an object with numeric keys (like {0: {...}, 1: {...}}), convert to array
+    if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+      const keys = Object.keys(categoriesData);
+      const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+      if (isNumericKeys) {
+        return keys.map(key => categoriesData[key]).filter(item => item && typeof item === 'object');
+      }
+    }
+    
+    // Default to empty array
+    return [];
+  }
+
+  /**
+   * ✅ Enhanced loadDocument method
+   */
   loadDocument(id: number): void {
     this.buildingService.getDocumentById(id).pipe(takeUntil(this.destroy$)).subscribe({
       next: (doc: ApiDocument) => {
@@ -172,6 +230,22 @@ export class FileViewComponent implements OnInit, OnDestroy {
           }
         }
 
+        // ✅ Store original category name for comparison
+        this.originalCategoryName = doc.categoryName ?? null;
+        this.selectedCategoryName = doc.categoryName ?? null;
+        this.selectedBuildingId = doc.buildingId ?? null;
+
+        // ✅ Ensure all categories are available in dropdown
+        // If document has a category that's not in our list, add it
+        if (doc.categoryName && !this.allCategories.some(c => c.name === doc.categoryName)) {
+          this.categories = [
+            ...this.allCategories,
+            { name: doc.categoryName, description: 'Document category' } as Category
+          ];
+        } else {
+          this.categories = [...this.allCategories];
+        }
+
         const token = this.session.getToken();
         const previewUrl = `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`;
 
@@ -203,15 +277,6 @@ export class FileViewComponent implements OnInit, OnDestroy {
                   { label: 'Type', value: doc.fileType ?? 'unknown' },
                 ]
               };
-              
-              this.selectedBuildingId = doc.buildingId ?? null;
-              this.selectedCategoryName = doc.categoryName ?? null;
-              this.originalCategoryName = doc.categoryName ?? null; // Store original category
-
-              // ✅ FIXED: Add safe check before using array methods
-              if (doc.categoryName && Array.isArray(this.categories) && !this.categories.some(c => c.name === doc.categoryName)) {
-                this.categories.push({ name: doc.categoryName } as Category);
-              }
 
               if (doc.keyInformation) {
                 this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
@@ -242,7 +307,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ New method: fetch key information
+  // ✅ Fetch key information
   fetchKeyInfo(id: number): void {
     this.loadingKeyInfo = true;
     const token = this.session.getToken();
@@ -271,7 +336,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
             };
           }
           
-          // ✅ FIXED: Add safe checks for array operations
+          // ✅ Add safe checks for array operations
           if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
               this.selectedCategoryName && Array.isArray(this.categories) && this.categories.length > 0) {
             const match = this.categories.find(c => c.name === this.selectedCategoryName);
@@ -326,62 +391,14 @@ export class FileViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ New method: update building/category
-  saveMetadataChanges(): void {
-    if (!this.selectedFile?.id) return;
-
-    this.loading = true;
-    this.toastMessage = '';
-
-    // ✅ FIXED: Add safe checks for array operations
-    if ((!this.keyInformation || this.keyInformation.length === 0) &&
-        this.selectedCategoryName && Array.isArray(this.categories) && this.categories.length > 0) {
-      const match = this.categories.find(c => c.name === this.selectedCategoryName);
-      if (match && Array.isArray(match.fields) && match.fields.length > 0) {
-        this.keyInformation = match.fields.map(f => ({
-          label: f.name,
-          value: ''
-        }));
-      }
-    }
-
-    const patchRequest: DocumentMetadataPatchRequest & {
-      keyInformation?: any;
-    } = {
-      buildingId: this.selectedBuildingId,
-      categoryName: this.selectedCategoryName ?? undefined,
-      keyInformation: Object.fromEntries(
-        this.keyInformation.map(k => [k.label.toLowerCase().replace(/ /g, '_'), k.value])
-      )
-    };
-
-    console.log('📦 Patch request payload:', patchRequest);
-    const documentsApi = this.apiFactory.create(DocumentsApi);
-    documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
-      .then(() => {
-        this.toastMessage = '✅ Metadata updated successfully.';
-        this.hasChanges = false;
-        this.originalCategoryName = this.selectedCategoryName; // Update original category after save
-        this.sidebarRefreshService.triggerRefresh();
-
-        // ✅ After save, reload document to update UI
-        this.loadDocument(this.selectedFile!.id);
-        this.fetchKeyInfo(this.selectedFile!.id);
-
-        setTimeout(() => this.toastMessage = '', 4000);
-      })
-      .catch((err) => {
-        console.error('❌ Failed to update metadata:', err);
-        this.toastMessage = '❌ Failed to update metadata.';
-        setTimeout(() => this.toastMessage = '', 4000);
-      })
-      .finally(() => {
-        this.loading = false;
-      });
-  }
-
+  /**
+   * ✅ Enhanced onCategoryChange method
+   */
   onCategoryChange(): void {
-    // ✅ FIXED: Add safe check for array
+    // Clear any previous analysis messages when category changes
+    this.analysisMessage = '';
+    
+    // ✅ Load field template for new category if available
     if (!Array.isArray(this.categories)) {
       console.warn('Categories is not an array');
       return;
@@ -389,29 +406,85 @@ export class FileViewComponent implements OnInit, OnDestroy {
     
     const selected = this.categories.find(c => c.name === this.selectedCategoryName);
     if (selected && Array.isArray(selected.fields)) {
-      this.keyInformation = selected.fields.map(field => ({
-        label: field.name,
-        value: ''
-      }));
+      // Load field template but keep existing values if they match
+      const newKeyInfo = selected.fields.map(field => {
+        const existing = this.keyInformation.find(k => k.label === field.name);
+        return {
+          label: field.name,
+          value: existing?.value || ''
+        };
+      });
+      this.keyInformation = newKeyInfo;
     }
     
     this.hasChanges = true;
-    this.analysisMessage = ''; // Clear any previous analysis messages
   }
 
   /**
-   * Check if the Analyze button should be enabled
+   * ✅ Enhanced saveMetadataChanges method
+   */
+  saveMetadataChanges(): void {
+    if (!this.selectedFile?.id) return;
+
+    this.loading = true;
+    this.toastMessage = '';
+
+    // ✅ Prepare key information properly
+    const keyInfoObject = Object.fromEntries(
+      this.keyInformation.map(k => [
+        k.label.toLowerCase().replace(/ /g, '_'), 
+        k.value || null
+      ])
+    );
+
+    const patchRequest: DocumentMetadataPatchRequest & {
+      keyInformation?: any;
+    } = {
+      buildingId: this.selectedBuildingId,
+      categoryName: this.selectedCategoryName ?? undefined,
+      keyInformation: keyInfoObject
+    };
+
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
+      .then(() => {
+        this.toastMessage = '✅ Metadata saved successfully.';
+        this.hasChanges = false;
+        
+        // ✅ Update original category after successful save
+        this.originalCategoryName = this.selectedCategoryName;
+        
+        this.sidebarRefreshService.triggerRefresh();
+        
+        // Reload to refresh UI with latest data
+        this.fetchKeyInfo(this.selectedFile!.id);
+
+        setTimeout(() => this.toastMessage = '', 4000);
+      })
+      .catch((err) => {
+        console.error('❌ Failed to save metadata:', err);
+        this.toastMessage = '❌ Failed to save metadata.';
+        setTimeout(() => this.toastMessage = '', 4000);
+      })
+      .finally(() => {
+        this.loading = false;
+      });
+  }
+
+  /**
+   * ✅ Improved canAnalyze getter
    */
   get canAnalyze(): boolean {
     return !!(
       this.selectedCategoryName && 
       this.selectedCategoryName !== this.originalCategoryName &&
-      !this.isAnalyzing
+      !this.isAnalyzing &&
+      this.selectedFile?.id
     );
   }
 
   /**
-   * Get tooltip for the Analyze button
+   * ✅ Enhanced getAnalyzeButtonTooltip method
    */
   getAnalyzeButtonTooltip(): string {
     if (this.isAnalyzing) {
@@ -421,22 +494,23 @@ export class FileViewComponent implements OnInit, OnDestroy {
       return 'Please select a category first';
     }
     if (this.selectedCategoryName === this.originalCategoryName) {
-      return 'Category has not changed';
+      return 'Category has not changed from original';
     }
-    return 'Re-analyze document with new category';
+    return `Re-analyze document with "${this.selectedCategoryName}" category`;
   }
 
   /**
-   * Analyze document with new category
+   * ✅ Enhanced analyzeWithNewCategory method
    */
   analyzeWithNewCategory(): void {
-    if (!this.selectedFile?.id || !this.selectedCategoryName) return;
+    if (!this.selectedFile?.id || !this.selectedCategoryName || !this.canAnalyze) {
+      console.warn('Cannot analyze: missing requirements');
+      return;
+    }
 
     this.isAnalyzing = true;
-    this.analysisMessage = '';
+    this.analysisSuccess = true;
     
-    console.log('🔍 Starting AI analysis with category:', this.selectedCategoryName);
-
     const documentsApi = this.apiFactory.create(DocumentsApi);
     
     // Try to use the OpenAPI client method for key extraction
@@ -444,84 +518,73 @@ export class FileViewComponent implements OnInit, OnDestroy {
                        || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
                        || (documentsApi as any).extractKeyInformation;
 
-    if (extractMethod && typeof extractMethod === 'function') {
-      console.log('✅ Using OpenAPI client method for key extraction');
-      
-      extractMethod.call(documentsApi, this.selectedFile.id, { categoryName: this.selectedCategoryName })
-        .then((response: any) => {
-          console.log('✅ Key information extracted:', response.data);
-          this.isAnalyzing = false;
-          this.analysisSuccess = true;
-          this.analysisMessage = '✅ AI analysis completed successfully!';
-          
-          // Reload document to get new key information
-          this.loadDocument(this.selectedFile!.id);
-          this.fetchKeyInfo(this.selectedFile!.id);
-          
-          // Clear message after delay
-          setTimeout(() => {
-            this.analysisMessage = '';
-          }, 5000);
-        })
-        .catch((error: any) => {
-          console.error('❌ Key extraction failed:', error);
-          this.handleAnalysisError(error);
-        });
-    } else {
-      console.log('⚠️ OpenAPI method not found, using manual HTTP call');
-      
-      // Fallback to manual HTTP call
-      const token = this.session.getToken();
-      const headers = new HttpHeaders({
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      });
+    const analysisPromise = extractMethod && typeof extractMethod === 'function'
+      ? extractMethod.call(documentsApi, this.selectedFile.id, { categoryName: this.selectedCategoryName })
+      : this.fallbackHttpAnalysis();
 
-      this.http.post(
-        `${this.config.apiUrl}/api/Documents/${this.selectedFile.id}/extract-key-information`,
-        { categoryName: this.selectedCategoryName },
-        { headers }
-      ).pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response: any) => {
-          console.log('✅ Key information extracted:', response);
-          this.isAnalyzing = false;
-          this.analysisSuccess = true;
-          this.analysisMessage = '✅ AI analysis completed successfully!';
-          
-          // Reload document to get new key information
-          this.loadDocument(this.selectedFile!.id);
-          this.fetchKeyInfo(this.selectedFile!.id);
-          
-          // Clear message after delay
-          setTimeout(() => {
-            this.analysisMessage = '';
-          }, 5000);
-        },
-        error: (error) => {
-          console.error('❌ Key extraction failed:', error);
-          this.handleAnalysisError(error);
-        }
+    analysisPromise
+      .then((response: any) => {
+        console.log('✅ Key information extracted:', response.data || response);
+        this.isAnalyzing = false;
+        this.analysisSuccess = true;
+        this.analysisMessage = '✅ AI analysis completed successfully!';
+        
+        // ✅ Update original category after successful analysis
+        this.originalCategoryName = this.selectedCategoryName;
+        
+        // Reload document to get new key information
+        this.fetchKeyInfo(this.selectedFile!.id);
+        
+        // Clear message after delay
+        setTimeout(() => {
+          this.analysisMessage = '';
+        }, 4000);
+      })
+      .catch((error: any) => {
+        console.error('❌ Key extraction failed:', error);
+        this.handleAnalysisError(error);
       });
-    }
   }
 
   /**
-   * Handle analysis errors
+   * ✅ New fallback HTTP analysis method
+   */
+  private fallbackHttpAnalysis(): Promise<any> {
+    const token = this.session.getToken();
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.post(
+      `${this.config.apiUrl}/api/Documents/${this.selectedFile!.id}/extract-key-information`,
+      { categoryName: this.selectedCategoryName },
+      { headers }
+    ).toPromise();
+  }
+
+  /**
+   * ✅ Enhanced error handling
    */
   private handleAnalysisError(error: any): void {
     this.isAnalyzing = false;
     this.analysisSuccess = false;
     
     let errorMsg = 'AI analysis failed';
-    if (error.response?.status === 401 || error.status === 401) {
-      errorMsg = 'Authentication failed for AI analysis';
-    } else if (error.response?.status === 405 || error.status === 405) {
-      errorMsg = 'AI analysis endpoint not available';
-    } else if (error.response?.status === 404 || error.status === 404) {
-      errorMsg = 'Document not found for AI analysis';
-    } else if (error.response?.data?.message || error.error?.message) {
+    
+    // Better error message handling
+    if (error?.response?.status === 401 || error?.status === 401) {
+      errorMsg = 'Authentication failed - please check your session';
+    } else if (error?.response?.status === 405 || error?.status === 405) {
+      errorMsg = 'AI analysis feature not available';
+    } else if (error?.response?.status === 404 || error?.status === 404) {
+      errorMsg = 'Document not found';
+    } else if (error?.response?.status === 500 || error?.status === 500) {
+      errorMsg = 'Server error during analysis';
+    } else if (error?.response?.data?.message || error?.error?.message) {
       errorMsg = error.response?.data?.message || error.error?.message;
+    } else if (error?.message) {
+      errorMsg = error.message;
     }
     
     this.analysisMessage = `❌ ${errorMsg}`;
@@ -529,34 +592,38 @@ export class FileViewComponent implements OnInit, OnDestroy {
     // Clear error message after delay
     setTimeout(() => {
       this.analysisMessage = '';
-    }, 5000);
+    }, 6000);
+  }
+
+  /**
+   * ✅ TrackBy function for categories to improve performance
+   */
+  trackByCategory(index: number, category: Category): any {
+    return category.name || index;
   }
 
   toggleMetadataPanel(): void {
     this.isMetadataPanelCollapsed = !this.isMetadataPanelCollapsed;
   }
 
-  zoomIn() {
+  zoomIn(): void {
     if (this.isImage) {
-      this.imageZoom += 0.2;
+      this.imageZoom = Math.min(this.imageZoom + 0.2, 5);
     } else if (this.isPdf) {
-      this.pdfZoom += 0.2;
+      this.pdfZoom = Math.min(this.pdfZoom + 0.2, 5);
     }
   }
 
-  zoomOut() {
+  zoomOut(): void {
     if (this.isImage) {
-      this.imageZoom = Math.max(0.2, this.imageZoom - 0.2);
+      this.imageZoom = Math.max(this.imageZoom - 0.2, 0.2);
     } else if (this.isPdf) {
-      this.pdfZoom = Math.max(0.2, this.pdfZoom - 0.2);
+      this.pdfZoom = Math.max(this.pdfZoom - 0.2, 0.2);
     }
   }
 
-  resetZoom() {
-    if (this.isImage) {
-      this.imageZoom = 1;
-    } else if (this.isPdf) {
-      this.pdfZoom = 1;
-    }
+  resetZoom(): void {
+    this.imageZoom = 1;
+    this.pdfZoom = 1;
   }
 }
