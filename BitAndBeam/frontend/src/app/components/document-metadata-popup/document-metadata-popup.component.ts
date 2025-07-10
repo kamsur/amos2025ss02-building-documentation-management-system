@@ -238,7 +238,6 @@ export class DocumentMetadataPopupComponent implements OnInit, OnDestroy {
 
     // Show processing message immediately
     this.isExtractingKeyInfo = true;
-    // this.showSuccessNotification('Processing document...');
 
     // Make both API calls in parallel if category is selected
     if (categoryName && categoryName.trim()) {
@@ -250,7 +249,7 @@ export class DocumentMetadataPopupComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Save metadata and extract key information in parallel
+   * Save metadata and extract key information with better error handling
    */
   private saveWithKeyExtraction(documentId: number, categoryName: string, buildingId: number | null): void {
     const documentsApi = this.apiFactory.create(DocumentsApi);
@@ -261,37 +260,42 @@ export class DocumentMetadataPopupComponent implements OnInit, OnDestroy {
       buildingId: buildingId
     };
 
-    console.log('🔄 Saving and extracting in parallel...');
+    console.log('🔄 Saving document metadata...');
 
-    // Execute both operations in parallel
-    Promise.all([
-      // Update metadata
-      documentsApi.apiDocumentsIdPatch(documentId, patchRequest),
-      // Extract key information
-      this.extractKeyInformationPromise(documentId, categoryName)
-    ]).then(([metadataResponse, extractionResponse]) => {
-      console.log('✅ Both operations completed successfully');
-      this.isExtractingKeyInfo = false;
-      this.showSuccessNotification('Document processed successfully!');
-      
-      // Complete save after short delay
-      setTimeout(() => {
-        this.completeSave(categoryName, buildingId);
-      }, 500);
-    }).catch((error) => {
-      console.error('❌ Operation failed:', error);
-      this.isExtractingKeyInfo = false;
-      
-      // Check if metadata update succeeded at least
-      documentsApi.apiDocumentsIdGet(documentId).then(() => {
-        this.showErrorNotification('Document saved but key extraction failed');
-        setTimeout(() => {
-          this.completeSave(categoryName, buildingId);
-        }, 1000);
-      }).catch(() => {
+    // First save the metadata
+    documentsApi.apiDocumentsIdPatch(documentId, patchRequest)
+      .then((metadataResponse) => {
+        console.log('✅ Document metadata saved successfully');
+        
+        // Now try to extract key information
+        console.log('🔍 Attempting to extract key information...');
+        
+        this.extractKeyInformationPromise(documentId, categoryName)
+          .then((extractionResponse) => {
+            console.log('✅ Key information extracted successfully');
+            this.isExtractingKeyInfo = false;
+            this.showSuccessNotification('Document processed successfully!');
+            
+            setTimeout(() => {
+              this.completeSave(categoryName, buildingId);
+            }, 500);
+          })
+          .catch((extractionError) => {
+            console.warn('⚠️ Key extraction failed, but document was saved:', extractionError);
+            this.isExtractingKeyInfo = false;
+            // Don't show error - document was saved successfully
+            this.showSuccessNotification('Document saved successfully!');
+            
+            setTimeout(() => {
+              this.completeSave(categoryName, buildingId);
+            }, 500);
+          });
+      })
+      .catch((error) => {
+        console.error('❌ Failed to save document metadata:', error);
+        this.isExtractingKeyInfo = false;
         this.showErrorNotification('Failed to save document');
       });
-    });
   }
 
   /**
