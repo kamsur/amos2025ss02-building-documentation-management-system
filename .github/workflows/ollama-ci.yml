@@ -8,6 +8,7 @@ on:
     paths:
       - 'BitAndBeam/ollama/**'
       - '.github/workflows/ollama-ci.yml'
+      - 'BitAndBeam/docker-compose-prod-ollama.yml'
   # workflow_call:
   #   outputs:
   #     ollama_built:
