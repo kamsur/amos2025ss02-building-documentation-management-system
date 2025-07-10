@@ -48,10 +48,10 @@ namespace BitAndBeam.Controllers
             try
             {
                 var json = System.IO.File.ReadAllText(CategoriesJsonPath);
-                
+
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
-                
+
                 if (root.ValueKind == JsonValueKind.Array)
                 {
                     var categories = JsonSerializer.Deserialize<List<DocumentCategory>>(json) ?? new();
@@ -319,11 +319,11 @@ namespace BitAndBeam.Controllers
                 // Read the previously extracted text
                 var textOutputDir = "/app/documents2";
                 var extractedTextPath = Path.Combine(textOutputDir, $"extracted_text_{document.DocumentId}.txt");
-                
+
                 if (!System.IO.File.Exists(extractedTextPath))
                 {
                     _logger.LogWarning("Extracted text file not found for document {DocumentId}, re-extracting", document.DocumentId);
-                    
+
                     // Re-extract text if file doesn't exist
                     var filePath = Path.Combine("/app/documents", document.FileName);
                     if (!System.IO.File.Exists(filePath))
@@ -331,12 +331,12 @@ namespace BitAndBeam.Controllers
 
                     var fileBytes = System.IO.File.ReadAllBytes(filePath);
                     var textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName).ConfigureAwait(false);
-                    
+
                     if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
                     {
                         textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true).ConfigureAwait(false);
                     }
-                    
+
                     textForOllama = ExtractVisibleText(textForOllama);
                     await System.IO.File.WriteAllTextAsync(extractedTextPath, textForOllama).ConfigureAwait(false);
                 }
@@ -346,11 +346,11 @@ namespace BitAndBeam.Controllers
 
                 // Read categories directly from file as raw JSON to avoid double serialization
                 var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
-                
+
                 // Debug log the categories schema structure
                 _logger.LogInformation("Categories schema for key extraction: {Schema}", categoriesSchemaJson);
                 _logger.LogInformation("Requested category name: {CategoryName}", request.CategoryName);
-                
+
                 var keyInfoPrompt = BuildKeyInformationPrompt(shortText, categoriesSchemaJson, request.CategoryName);
 
                 // Extract key information using second Ollama call
@@ -537,23 +537,23 @@ namespace BitAndBeam.Controllers
         {
             if (!System.IO.File.Exists(CategoriesJsonPath))
                 return NotFound("document_categories.json not found");
-            
+
             try
             {
                 // Read raw file content for debugging
                 var rawContent = System.IO.File.ReadAllText(CategoriesJsonPath);
                 _logger.LogInformation("📋 Raw categories file content: {Content}", rawContent);
-                
+
                 var categories = ReadCategories();
                 _logger.LogInformation("🔍 Parsed {Count} categories", categories.Count);
-                
+
                 var result = categories.Select(c => new
                 {
                     name = c.Name,
                     description = c.Description,
                     fields = c.Fields,
                 }).ToList();
-                
+
                 // Also return debugging info
                 return Ok(new
                 {
@@ -686,7 +686,7 @@ namespace BitAndBeam.Controllers
 
             // If category changed, trigger key information re-extraction
             bool categoryChanged = !string.Equals(previousCategoryName, document.CategoryName, StringComparison.OrdinalIgnoreCase);
-            
+
             _context.SaveChanges();
 
             // Re-extract key information if category changed and new category is not null
@@ -695,11 +695,11 @@ namespace BitAndBeam.Controllers
                 try
                 {
                     _logger.LogInformation("Category changed for document {DocumentId}, re-extracting key information", document.DocumentId);
-                    
+
                     // Call the key information extraction method
                     var extractRequest = new ExtractKeyInformationRequest { CategoryName = document.CategoryName };
-                    var extractResult = await ExtractKeyInformationForDocument(document.DocumentId, extractRequest);
-                    
+                    var extractResult = await ExtractKeyInformationForDocument(document.DocumentId, extractRequest).ConfigureAwait(false);
+
                     if (extractResult != null)
                     {
                         // Reload the document to get updated key information
@@ -749,7 +749,7 @@ namespace BitAndBeam.Controllers
                 // Read the previously extracted text
                 var textOutputDir = "/app/documents2";
                 var extractedTextPath = Path.Combine(textOutputDir, $"extracted_text_{document.DocumentId}.txt");
-                
+
                 if (!System.IO.File.Exists(extractedTextPath))
                 {
                     // Re-extract text if file doesn't exist
@@ -758,12 +758,12 @@ namespace BitAndBeam.Controllers
 
                     var fileBytes = System.IO.File.ReadAllBytes(filePath);
                     var textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName).ConfigureAwait(false);
-                    
+
                     if (string.IsNullOrWhiteSpace(textForOllama) || textForOllama.Length < 50)
                     {
                         textForOllama = await _tikaService.ExtractTextAsync(fileBytes, document.FileName, true).ConfigureAwait(false);
                     }
-                    
+
                     textForOllama = ExtractVisibleText(textForOllama);
                     await System.IO.File.WriteAllTextAsync(extractedTextPath, textForOllama).ConfigureAwait(false);
                 }
@@ -1222,14 +1222,14 @@ namespace BitAndBeam.Controllers
             {
                 throw new ArgumentException($"Category '{categoryName}' not found in categories schema.");
             }
-            
+
             // Extract the fields array for the category
             var fields = category.Value.GetProperty("fields");
             // Build a list of field names for the prompt example
             var fieldNames = fields.EnumerateArray().Select(f => f.GetProperty("name").GetString()).ToList();
             // Build the example JSON for key_information
             var keyInfoExample = string.Join(",\n        ", fieldNames.Select(fn => $"\"{fn}\": \"<string|null>\""));
-            
+
             // Compose the prompt
             return $$"""
             You are an intelligent document analyzer specialized in extracting key information from German documents.
