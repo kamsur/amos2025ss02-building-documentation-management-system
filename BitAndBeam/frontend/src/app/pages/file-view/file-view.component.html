@@ -80,8 +80,6 @@
                   <optgroup label="Available Categories" *ngIf="categories && categories.length > 0">
                     <option *ngFor="let c of categories; trackBy: trackByCategory" [ngValue]="c.name">
                       {{ c.name }}
-                      <!-- ✅ Show indicator for current/original category -->
-                      <span *ngIf="c.name === originalCategoryName"> (Current)</span>
                     </option>
                   </optgroup>
                   
