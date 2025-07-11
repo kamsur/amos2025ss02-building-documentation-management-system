@@ -4,7 +4,7 @@ on:
   # workflow_dispatch:
   push:
     branches:
-      - main
+      - llm-gpu-experiment
     paths:
       - 'BitAndBeam/ollama/**'
       - '.github/workflows/ollama-ci.yml'
