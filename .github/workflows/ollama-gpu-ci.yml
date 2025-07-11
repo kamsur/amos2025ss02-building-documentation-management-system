@@ -1,4 +1,4 @@
-name: Start Ollama Service Only
+name: Start Ollama Service Only with GPU Support
 
 on:
   # workflow_dispatch:
@@ -8,7 +8,7 @@ on:
     paths:
       - 'BitAndBeam/ollama/**'
       - '.github/workflows/ollama-ci.yml'
-      - 'BitAndBeam/docker-compose-prod-ollama.yml'
+      - 'BitAndBeam/docker-compose-prod-ollama-gpu.yml'
   # workflow_call:
   #   outputs:
   #     ollama_built:
@@ -53,16 +53,16 @@ jobs:
           context: ./BitAndBeam/ollama
           push: true
           tags: |
-            ghcr.io/amosproj/bitandbeam-ollama:latest
+            ghcr.io/amosproj/bitandbeam-ollama-gpu:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Upload ollama folder to server
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.GPU_PROJECT_SERVER_IP }}
+          username: ${{ secrets.GPU_SSH_USER }}
+          key: ${{ secrets.GPU_SSH_PRIVATE_KEY }}
           source: "BitAndBeam/ollama/"
           target: "~/BitAndBeam_ollama"
           strip_components: 1
@@ -70,22 +70,22 @@ jobs:
       - name: Wait before next upload
         run: sleep 61
 
-      - name: Upload docker-compose-prod-ollama.yml to server
+      - name: Upload docker-compose-prod-ollama-gpu.yml to server
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "BitAndBeam/docker-compose-prod-ollama.yml"
+          host: ${{ secrets.GPU_PROJECT_SERVER_IP }}
+          username: ${{ secrets.GPU_SSH_USER }}
+          key: ${{ secrets.GPU_SSH_PRIVATE_KEY }}
+          source: "BitAndBeam/docker-compose-prod-ollama-gpu.yml"
           target: "~/BitAndBeam_ollama/"
           strip_components: 1
 
       - name: Verify remote files
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.GPU_PROJECT_SERVER_IP }}
+          username: ${{ secrets.GPU_SSH_USER }}
+          key: ${{ secrets.GPU_SSH_PRIVATE_KEY }}
           script: |
             echo "Listing ~/BitAndBeam contents:"
             ls -l ~/BitAndBeam_ollama
@@ -95,18 +95,18 @@ jobs:
       - name: Deploy Ollama to Remote Server
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.PROJECT_SERVER_IP }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.GPU_PROJECT_SERVER_IP }}
+          username: ${{ secrets.GPU_SSH_USER }}
+          key: ${{ secrets.GPU_SSH_PRIVATE_KEY }}
           script: |
             cd ~/BitAndBeam_ollama
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose -f docker-compose-prod-ollama.yml stop ollama || true
+            docker compose -f docker-compose-prod-ollama-gpu.yml stop ollama || true
             if [ "${{ steps.changed.outputs.changed }}" = "true" ]; then
               echo "Ollama folder changed – removing old image."
-              docker rmi ghcr.io/amosproj/bitandbeam-ollama:latest || true
+              docker rmi ghcr.io/amosproj/bitandbeam-ollama-gpu:latest || true
             else
               echo "Ollama folder unchanged – keeping existing image."
             fi
-            docker compose -f docker-compose-prod-ollama.yml pull ollama
-            docker compose -f docker-compose-prod-ollama.yml up -d ollama
+            docker compose -f docker-compose-prod-ollama-gpu.yml pull ollama
+            docker compose -f docker-compose-prod-ollama-gpu.yml up -d ollama
