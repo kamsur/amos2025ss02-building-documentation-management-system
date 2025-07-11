@@ -61,13 +61,7 @@ CREATE TABLE "documents" (
     "key_information" JSONB -- Stores extracted key information in JSON format
 );
 
--- Document Tags Table
-CREATE TABLE "document_tags" (
-    "tag_id" SERIAL PRIMARY KEY,
-    "name" VARCHAR(50) NOT NULL UNIQUE,
-    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
+ 
 -- Document-Tag Relationship (Many-to-Many)
 CREATE TABLE "document_tag_relations" (
     "document_id" INTEGER REFERENCES "documents" ("document_id") ON DELETE CASCADE,
