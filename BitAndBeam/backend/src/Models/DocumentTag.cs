@@ -15,4 +15,5 @@ namespace BitAndBeam.Models
     }
 }
 
+//Check OK: This Table can be deleted in the database. 
 
