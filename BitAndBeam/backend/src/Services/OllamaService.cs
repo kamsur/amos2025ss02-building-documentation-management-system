@@ -18,6 +18,7 @@ namespace BitAndBeam.Services
             _httpClient = httpClient;
             _ollamaBaseUrl = configuration["Ollama:BaseUrl"];
             _model = configuration["Ollama:Model"];
+            _maxPromptTokens = int.Parse(configuration["Ollama:Options:MaxPromptTokens"]);
         }
 
         public async Task<string> GenerateAsync(string prompt)
@@ -36,7 +37,12 @@ namespace BitAndBeam.Services
             {
                 model = _model,
                 prompt = prompt,
-                stream = false
+                stream = false,
+                options = new
+                {
+                    num_ctx = _maxPromptTokens, // Adjust based on your model's context window
+                    temperature = 0.7
+                }
             };
             Console.WriteLine($"🧠 Using model: {_model}");
             var modelPath = Path.Combine(textOutputDir, "model.txt");
