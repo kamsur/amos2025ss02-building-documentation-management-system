@@ -109,10 +109,10 @@ namespace BitAndBeam.Controllers
             textForOllama = ExtractVisibleText(textForOllama);
 
             // Clean the extracted text
-            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            // var shortText = textForOllama.Length > 7_000 ? textForOllama[..7_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
-            // var shortText = textForOllama;
+            var shortText = textForOllama;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = BuildPrompt(shortText, categoriesSchemaJson);
@@ -878,11 +878,11 @@ namespace BitAndBeam.Controllers
 
                 documentContent = ExtractVisibleText(documentContent);
                 // Truncate document content if too long
-                var maxContentLength = 6000; // Adjust based on model context window
-                var truncatedContent = documentContent.Length > maxContentLength
-                    ? documentContent.Substring(0, maxContentLength)
-                    : documentContent;
-                // var truncatedContent = documentContent;
+                var maxContentLength = 7000; // Adjust based on model context window
+                // var truncatedContent = documentContent.Length > maxContentLength
+                //     ? documentContent.Substring(0, maxContentLength)
+                //     : documentContent;
+                var truncatedContent = documentContent;
 
                 // Construct the prompt for Ollama
                 var prompt = $$"""

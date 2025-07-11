@@ -13,6 +13,7 @@ namespace BitAndBeam.Services
         private readonly string _ollamaBaseUrl;
         private readonly string _model;
         private readonly int _maxPromptTokens;
+        private readonly float _temperature; // Default temperature, can be adjusted
 
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
@@ -20,6 +21,7 @@ namespace BitAndBeam.Services
             _ollamaBaseUrl = configuration["Ollama:BaseUrl"];
             _model = configuration["Ollama:Model"];
             _maxPromptTokens = int.Parse(configuration["Ollama:Options:MaxPromptTokens"]);
+            _temperature = float.Parse(configuration["Ollama:Options:Temperature"]);
         }
 
         public async Task<string> GenerateAsync(string prompt)
@@ -38,7 +40,11 @@ namespace BitAndBeam.Services
             {
                 model = _model,
                 prompt = prompt,
-                stream = false
+                stream = false,
+                options = new
+                {
+                    temperature = _temperature
+                }
             };
             Console.WriteLine($"🧠 Using model: {_model}");
             var modelPath = Path.Combine(textOutputDir, "model.txt");
