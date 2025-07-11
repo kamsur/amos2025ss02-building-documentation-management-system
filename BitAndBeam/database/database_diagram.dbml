@@ -54,14 +54,7 @@ Table documents {
 }
 
  
-Table document_tag_relations {
-  document_id integer [ref: > documents.document_id]
-  tag_id integer [ref: > document_tags.tag_id]
-  
-  indexes {
-    (document_id, tag_id) [pk]
-  }
-}
+
 
 Table document_permissions {
   document_id integer [ref: > documents.document_id]
