@@ -19,8 +19,7 @@ namespace BitAndBeam.Models
         public int OrganizationId { get; set; }
         public Organization Organization { get; set; }
 
-        public ICollection<Document> UploadedDocuments { get; set; }
-        public ICollection<DocumentPermission> DocumentPermissions { get; set; }
+        public ICollection<Document> UploadedDocuments { get; set; } 
     }
 }
 
