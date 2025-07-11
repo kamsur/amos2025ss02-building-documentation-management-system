@@ -9,5 +9,5 @@ namespace BitAndBeam.Models
         public DocumentTag Tag { get; set; }
     }
 }
-
+//Check OK: This Table can be deleted in the database. 
 
