@@ -10,9 +10,9 @@ namespace BitAndBeam.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Building> Buildings { get; set; }
-        // public DbSet<DocumentCategory> DocumentCategories { get; set; }
+        
         public DbSet<Document> Documents { get; set; }
-        public DbSet<DocumentTag> DocumentTags { get; set; }
+       
         public DbSet<DocumentTagRelation> DocumentTagRelations { get; set; }
         //public DbSet<DocumentPermission> DocumentPermissions { get; set; }
         public DbSet<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
@@ -82,8 +82,7 @@ namespace BitAndBeam.Data
 
             modelBuilder.Entity<Document>()
                 .Property(d => d.CategoryName);
-
-            modelBuilder.Ignore<DocumentTag>();
+ 
 
             // Configure JSONB columns for Document
             modelBuilder.Entity<Document>()
