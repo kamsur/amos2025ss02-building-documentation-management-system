@@ -12,6 +12,7 @@ namespace BitAndBeam.Services
         private readonly HttpClient _httpClient;
         private readonly string _ollamaBaseUrl;
         private readonly string _model;
+        private readonly int _maxPromptTokens;
 
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
@@ -37,12 +38,7 @@ namespace BitAndBeam.Services
             {
                 model = _model,
                 prompt = prompt,
-                stream = false,
-                options = new
-                {
-                    num_ctx = _maxPromptTokens, // Adjust based on your model's context window
-                    temperature = 0.7
-                }
+                stream = false
             };
             Console.WriteLine($"🧠 Using model: {_model}");
             var modelPath = Path.Combine(textOutputDir, "model.txt");
