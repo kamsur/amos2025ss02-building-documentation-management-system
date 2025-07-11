@@ -106,13 +106,13 @@ namespace BitAndBeam.Controllers
 
             // ╭─────────────── 3. build prompt (address + category + key infos) ───────────────╮
             // Extract OCR text from HTML if applicable
-            // textForOllama = ExtractVisibleText(textForOllama);
+            textForOllama = ExtractVisibleText(textForOllama);
 
             // Clean the extracted text
-            // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
             // var cleanedText = OcrTextPreprocessor.Preprocess(textForOllama);
             // var shortText = cleanedText.Length > 4_000 ? cleanedText[..4_000] : cleanedText;
-            var shortText = textForOllama;
+            // var shortText = textForOllama;
             var categoriesSchemaJson = JsonSerializer.Serialize(ReadCategories());
 
             var prompt = BuildPrompt(shortText, categoriesSchemaJson);
@@ -876,13 +876,13 @@ namespace BitAndBeam.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Failed to extract text from document." });
                 }
 
-                // documentContent = ExtractVisibleText(documentContent);
+                documentContent = ExtractVisibleText(documentContent);
                 // Truncate document content if too long
                 var maxContentLength = 6000; // Adjust based on model context window
-                // var truncatedContent = documentContent.Length > maxContentLength
-                //     ? documentContent.Substring(0, maxContentLength)
-                //     : documentContent;
-                var truncatedContent = documentContent;
+                var truncatedContent = documentContent.Length > maxContentLength
+                    ? documentContent.Substring(0, maxContentLength)
+                    : documentContent;
+                // var truncatedContent = documentContent;
 
                 // Construct the prompt for Ollama
                 var prompt = $$"""
