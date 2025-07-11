@@ -56,17 +56,7 @@ Table documents {
  
 
 
-Table document_permissions {
-  document_id integer [ref: > documents.document_id]
-  user_id integer [ref: > users.user_id]
-  permission_type varchar(20) [default: 'read']
-  granted_at timestamp [default: `CURRENT_TIMESTAMP`]
-  granted_by integer [ref: > users.user_id]
-  
-  indexes {
-    (document_id, user_id) [pk]
-  }
-}
+
 
 
 Table organizations {
