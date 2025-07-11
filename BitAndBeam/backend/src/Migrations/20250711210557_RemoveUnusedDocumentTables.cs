@@ -13,18 +13,11 @@ namespace BitAndBeam.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "DocumentPermissions");
 
-            migrationBuilder.DropTable(
-                name: "DocumentTagRelations");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS \"DocumentTags\" CASCADE;");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS \"DocumentTagRelations\" CASCADE;");
+            migrationBuilder.Sql("DROP TABLE IF EXISTS \"DocumentPermissions\" CASCADE;");
 
-            migrationBuilder.DropTable(
-                name: "DocumentTags");
-
-            migrationBuilder.DropColumn(
-                name: "GroupId",
-                table: "Documents");
 
             migrationBuilder.AlterColumn<JsonDocument>(
                 name: "KeyInformation",
