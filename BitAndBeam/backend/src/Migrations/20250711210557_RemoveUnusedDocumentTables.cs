@@ -26,13 +26,7 @@ namespace BitAndBeam.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "jsonb");
-
-            migrationBuilder.AddColumn<int>(
-                name: "OrganizationId",
-                table: "Documents",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
+ 
         }
 
         /// <inheritdoc />
