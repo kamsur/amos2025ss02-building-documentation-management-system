@@ -36,8 +36,6 @@
             <optgroup label="Available Categories" *ngIf="categories && categories.length > 0">
               <option *ngFor="let category of categories; trackBy: trackByCategory" [value]="category.name">
                 {{ category.name }}
-                <!-- Show AI suggestion indicator -->
-                <span *ngIf="category.name === suggestedCategoryName"> (AI Suggested)</span>
               </option>
             </optgroup>
             
