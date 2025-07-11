@@ -12,9 +12,7 @@ namespace BitAndBeam.Data
         public DbSet<Building> Buildings { get; set; }
         
         public DbSet<Document> Documents { get; set; }
-       
-        public DbSet<DocumentTagRelation> DocumentTagRelations { get; set; }
-        //public DbSet<DocumentPermission> DocumentPermissions { get; set; }
+        
         public DbSet<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
         public DbSet<Organization> Organizations { get; set; }
 
@@ -37,18 +35,7 @@ namespace BitAndBeam.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email).IsUnique();
 
-            // DocumentTagRelation (many-to-many)
-            modelBuilder.Entity<DocumentTagRelation>()
-                .HasKey(dtr => new { dtr.DocumentId, dtr.TagId });
-
-            modelBuilder.Entity<DocumentTagRelation>()
-                .HasOne(dtr => dtr.Document)
-                .WithMany(d => d.DocumentTagRelations)
-                .HasForeignKey(dtr => dtr.DocumentId);
-            modelBuilder.Entity<DocumentTagRelation>()
-                .HasOne(dtr => dtr.Tag)
-                .WithMany(t => t.DocumentTagRelations)
-                .HasForeignKey(dtr => dtr.TagId);
+            
 
            
 
