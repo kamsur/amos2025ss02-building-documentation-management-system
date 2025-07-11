@@ -73,8 +73,7 @@ CREATE TABLE "building_document_relations" (
 
 -- Create indexes for performance
 CREATE INDEX idx_documents_building_id ON documents(building_id); 
-CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
-CREATE INDEX idx_document_tags_name ON document_tags(name);
+CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by); 
 CREATE INDEX idx_documents_key_information ON documents USING GIN (key_information);
 
 -- Add trigger to update last_modified timestamp
