@@ -62,12 +62,7 @@ CREATE TABLE "documents" (
 );
 
  
--- Document-Tag Relationship (Many-to-Many)
-CREATE TABLE "document_tag_relations" (
-    "document_id" INTEGER REFERENCES "documents" ("document_id") ON DELETE CASCADE,
-    "tag_id" INTEGER REFERENCES "document_tags" ("tag_id") ON DELETE CASCADE,
-    PRIMARY KEY ("document_id", "tag_id")
-);
+
 
 -- Document Access Permissions (Many-to-Many)
 CREATE TABLE "document_permissions" (
