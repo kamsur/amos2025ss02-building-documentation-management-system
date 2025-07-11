@@ -14,7 +14,7 @@ namespace BitAndBeam.Data
         public DbSet<Document> Documents { get; set; }
         public DbSet<DocumentTag> DocumentTags { get; set; }
         public DbSet<DocumentTagRelation> DocumentTagRelations { get; set; }
-        public DbSet<DocumentPermission> DocumentPermissions { get; set; }
+        //public DbSet<DocumentPermission> DocumentPermissions { get; set; }
         public DbSet<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
         public DbSet<Organization> Organizations { get; set; }
 
@@ -50,22 +50,7 @@ namespace BitAndBeam.Data
                 .WithMany(t => t.DocumentTagRelations)
                 .HasForeignKey(dtr => dtr.TagId);
 
-            // DocumentPermission (many-to-many)
-            modelBuilder.Entity<DocumentPermission>()
-                .HasKey(dp => new { dp.DocumentId, dp.UserId });
-            modelBuilder.Entity<DocumentPermission>()
-                .HasOne(dp => dp.Document)
-                .WithMany(d => d.DocumentPermissions)
-                .HasForeignKey(dp => dp.DocumentId);
-            modelBuilder.Entity<DocumentPermission>()
-                .HasOne(dp => dp.User)
-                .WithMany(u => u.DocumentPermissions)
-                .HasForeignKey(dp => dp.UserId);
-            modelBuilder.Entity<DocumentPermission>()
-                .HasOne(dp => dp.GrantedByUser)
-                .WithMany()
-                .HasForeignKey(dp => dp.GrantedBy)
-                .OnDelete(DeleteBehavior.SetNull);
+           
 
             // BuildingDocumentRelation (many-to-many)
             modelBuilder.Entity<BuildingDocumentRelation>()
