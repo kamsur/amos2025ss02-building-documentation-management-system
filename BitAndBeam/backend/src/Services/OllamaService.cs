@@ -12,13 +12,11 @@ namespace BitAndBeam.Services
         private readonly HttpClient _httpClient;
         private readonly string _ollamaBaseUrl;
         private readonly string _model;
-        private readonly float _temperature;
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _ollamaBaseUrl = configuration["Ollama:BaseUrl"];
             _model = configuration["Ollama:Model"];
-            _temperature = float.Parse(configuration["Ollama:Options:Temperature"]);
         }
 
         public async Task<string> GenerateAsync(string prompt)
@@ -37,11 +35,7 @@ namespace BitAndBeam.Services
             {
                 model = _model,
                 prompt = prompt,
-                stream = false,
-                options = new
-                {
-                    temperature = _temperature
-                }
+                stream = false
             };
             Console.WriteLine($"🧠 Using model: {_model}");
             var modelPath = Path.Combine(textOutputDir, "model.txt");
