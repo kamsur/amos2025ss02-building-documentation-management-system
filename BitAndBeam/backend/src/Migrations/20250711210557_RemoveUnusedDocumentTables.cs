@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -26,7 +26,7 @@ namespace BitAndBeam.Migrations
                 nullable: true,
                 oldClrType: typeof(string),
                 oldType: "jsonb");
- 
+
         }
 
         /// <inheritdoc />

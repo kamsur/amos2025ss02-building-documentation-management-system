@@ -10,9 +10,9 @@ namespace BitAndBeam.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Building> Buildings { get; set; }
-        
+
         public DbSet<Document> Documents { get; set; }
-        
+
         public DbSet<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
         public DbSet<Organization> Organizations { get; set; }
 
@@ -35,9 +35,9 @@ namespace BitAndBeam.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email).IsUnique();
 
-            
 
-           
+
+
 
             // BuildingDocumentRelation (many-to-many)
             modelBuilder.Entity<BuildingDocumentRelation>()
@@ -69,7 +69,7 @@ namespace BitAndBeam.Data
 
             modelBuilder.Entity<Document>()
                 .Property(d => d.CategoryName);
- 
+
 
             // Configure JSONB columns for Document
             modelBuilder.Entity<Document>()

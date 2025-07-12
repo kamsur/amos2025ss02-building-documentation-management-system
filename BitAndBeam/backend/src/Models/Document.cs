@@ -25,7 +25,7 @@ namespace BitAndBeam.Models
         public string FileName { get; set; }
         public DateTime UploadedAt { get; set; }
         public int OrganizationId { get; set; }
-        public User Uploader { get; set; } 
+        public User Uploader { get; set; }
         public ICollection<BuildingDocumentRelation> BuildingDocumentRelations { get; set; }
     }
 }
