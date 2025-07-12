@@ -12,15 +12,12 @@ namespace BitAndBeam.Services
         private readonly HttpClient _httpClient;
         private readonly string _ollamaBaseUrl;
         private readonly string _model;
-        private readonly int _maxPromptTokens;
-        private readonly float _temperature; // Default temperature, can be adjusted
-
+        private readonly float _temperature;
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _ollamaBaseUrl = configuration["Ollama:BaseUrl"];
             _model = configuration["Ollama:Model"];
-            _maxPromptTokens = int.Parse(configuration["Ollama:Options:MaxPromptTokens"]);
             _temperature = float.Parse(configuration["Ollama:Options:Temperature"]);
         }
 
