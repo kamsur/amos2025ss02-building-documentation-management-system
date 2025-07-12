@@ -1111,6 +1111,7 @@ namespace BitAndBeam.Controllers
                 var truncatedContent = documentContent.Length > maxContentLength
                     ? documentContent.Substring(0, maxContentLength)
                     : documentContent;
+                // var truncatedContent = documentContent;
 
                 // Construct the prompt for Ollama
                 var prompt = $$"""
