@@ -13,7 +13,7 @@ sleep 10
 # ollama list
 
 # Pull base model
-ollama pull gemma3:12b
+ollama pull gemma3:4b
 
 # Create custom named model (overwrite if exists)
 # ollama cp gemma3:4b gemma3-4b:latest
