@@ -344,7 +344,7 @@ namespace BitAndBeam.Controllers
 
                 var extractedText = await System.IO.File.ReadAllTextAsync(extractedTextPath).ConfigureAwait(false);
                 // var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
-                var shortText = textForOllama;
+                var shortText = extractedText;
 
                 // Read categories directly from file as raw JSON to avoid double serialization
                 var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
@@ -772,7 +772,7 @@ namespace BitAndBeam.Controllers
 
                 var extractedText = await System.IO.File.ReadAllTextAsync(extractedTextPath).ConfigureAwait(false);
                 // var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
-                var shortText = textForOllama;
+                var shortText = extractedText;
 
                 // Build category-specific prompt for key information extraction
                 // Read categories directly from file as raw JSON to avoid double serialization
