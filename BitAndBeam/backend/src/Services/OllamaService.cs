@@ -12,7 +12,6 @@ namespace BitAndBeam.Services
         private readonly HttpClient _httpClient;
         private readonly string _ollamaBaseUrl;
         private readonly string _model;
-
         public OllamaService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;

@@ -124,7 +124,8 @@ namespace BitAndBeam.Controllers
 
             // 3. Initial prompt - Only extract address and suggest category (NO key information yet)
             textForOllama = ExtractVisibleText(textForOllama);
-            var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            // var shortText = textForOllama.Length > 4_000 ? textForOllama[..4_000] : textForOllama;
+            var shortText = textForOllama;
             // Read categories directly from file as raw JSON to avoid double serialization
             var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
 
@@ -342,7 +343,8 @@ namespace BitAndBeam.Controllers
                 }
 
                 var extractedText = await System.IO.File.ReadAllTextAsync(extractedTextPath).ConfigureAwait(false);
-                var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
+                // var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
+                var shortText = extractedText;
 
                 // Read categories directly from file as raw JSON to avoid double serialization
                 var categoriesSchemaJson = System.IO.File.ReadAllText(CategoriesJsonPath);
@@ -769,7 +771,8 @@ namespace BitAndBeam.Controllers
                 }
 
                 var extractedText = await System.IO.File.ReadAllTextAsync(extractedTextPath).ConfigureAwait(false);
-                var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
+                // var shortText = extractedText.Length > 4_000 ? extractedText[..4_000] : extractedText;
+                var shortText = extractedText;
 
                 // Build category-specific prompt for key information extraction
                 // Read categories directly from file as raw JSON to avoid double serialization
@@ -1107,11 +1110,11 @@ namespace BitAndBeam.Controllers
 
                 documentContent = ExtractVisibleText(documentContent);
                 // Truncate document content if too long
-                var maxContentLength = 6000; // Adjust based on model context window
-                var truncatedContent = documentContent.Length > maxContentLength
-                    ? documentContent.Substring(0, maxContentLength)
-                    : documentContent;
-                // var truncatedContent = documentContent;
+                var maxContentLength = 7000; // Adjust based on model context window
+                // var truncatedContent = documentContent.Length > maxContentLength
+                //     ? documentContent.Substring(0, maxContentLength)
+                //     : documentContent;
+                var truncatedContent = documentContent;
 
                 // Construct the prompt for Ollama
                 var prompt = $$"""
