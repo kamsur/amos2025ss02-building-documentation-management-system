@@ -15,6 +15,7 @@ import { SessionService } from '../../services/session.service';
 import { AiAssistantComponent } from '../../components/ai-assistant/ai-assistant.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { from } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -246,58 +247,50 @@ export class FileViewComponent implements OnInit, OnDestroy {
           this.categories = [...this.allCategories];
         }
 
-        const token = this.session.getToken();
-        const previewUrl = `${this.config.apiUrl}/api/Documents/${doc.documentId}/preview`;
-
-        const headers = new HttpHeaders({
-          Authorization: `Bearer ${token}`
-        });
-
-        this.http.get(previewUrl, { headers, responseType: 'blob' })
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (blob) => {
-              // Clean up previous blob URL if exists
-              if (this.blobUrl) {
-                URL.revokeObjectURL(this.blobUrl);
-              }
-              
-              this.blobUrl = URL.createObjectURL(blob);
-
-              this.selectedFile = {
-                id: doc.documentId!,
-                name: doc.fileName ?? '',
-                url: this.blobUrl,
-                metadata: [
-                  { label: 'Uploaded', value: doc.uploadDate ?? '' },
-                  {
-                    label: 'Size',
-                    value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
-                  },
-                  { label: 'Type', value: doc.fileType ?? 'unknown' },
-                ]
-              };
-
-              if (doc.keyInformation) {
-                this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
-                  label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                  value: value !== null ? String(value) : 'N/A'
-                }));
-              } else {
-                this.keyInformation = [];
-              }
-
-              const fileType = (doc.fileType ?? '').toLowerCase();
-              this.isPdf = fileType === 'pdf';
-              this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
-
-              // ✅ Fetch key info
-              this.fetchKeyInfo(id);
-            },
-            error: (err) => {
-              console.error('❌ Failed to load document preview:', err);
-              this.notFound = true;
+        // Use OpenAPI SDK to fetch document preview (blob)
+        const documentsApi = this.apiFactory.create(DocumentsApi);
+        documentsApi.apiDocumentsIdPreviewGet(doc.documentId!, { responseType: 'blob' })
+          .then((response: any) => {
+            // Clean up previous blob URL if exists
+            if (this.blobUrl) {
+              URL.revokeObjectURL(this.blobUrl);
             }
+            // response.data is the blob
+            this.blobUrl = URL.createObjectURL(response.data);
+
+            this.selectedFile = {
+              id: doc.documentId!,
+              name: doc.fileName ?? '',
+              url: this.blobUrl,
+              metadata: [
+                { label: 'Uploaded', value: doc.uploadDate ?? '' },
+                {
+                  label: 'Size',
+                  value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
+                },
+                { label: 'Type', value: doc.fileType ?? 'unknown' },
+              ]
+            };
+
+            if (doc.keyInformation) {
+              this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
+                label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                value: value !== null ? String(value) : 'N/A'
+              }));
+            } else {
+              this.keyInformation = [];
+            }
+
+            const fileType = (doc.fileType ?? '').toLowerCase();
+            this.isPdf = fileType === 'pdf';
+            this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+
+            // ✅ Fetch key info
+            this.fetchKeyInfo(id);
+          })
+          .catch((err: any) => {
+            console.error('❌ Failed to load document preview:', err);
+            this.notFound = true;
           });
       },
       error: (err) => {
@@ -310,23 +303,22 @@ export class FileViewComponent implements OnInit, OnDestroy {
   // ✅ Fetch key information
   fetchKeyInfo(id: number): void {
     this.loadingKeyInfo = true;
-    const token = this.session.getToken();
-    const url = `${this.config.apiUrl}/api/Documents/${id}`;
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`
-    });
-
-    this.http.get<any>(url, { headers })
+    const documentsApi = this.apiFactory.create(DocumentsApi);
+    from(
+      documentsApi.apiDocumentsIdGet(id).then(res =>
+        (res as unknown as import('axios').AxiosResponse<ApiDocument>).data
+      )
+    )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
+        next: (data: ApiDocument) => {
+          // ApiDocument does not have hasMetadata or suggestedAddress, so only use available fields
           this.keyInfo = {
-            hasMetadata: data.hasMetadata,
-            suggestedAddress: data.suggestedAddress,
             rawMetadata: data.metadata,
+            // Add other fields if needed from ApiDocument
           };
-          
-          // Safely fallback if address is missing
+
+          // Safely fallback for address (if you expect address info in metadata or keyInformation)
           if (!this.keyInfo.suggestedAddress) {
             this.keyInfo.suggestedAddress = {
               street: '',
@@ -335,7 +327,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
               city: ''
             };
           }
-          
+
           // ✅ Add safe checks for array operations
           if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
               this.selectedCategoryName && Array.isArray(this.categories) && this.categories.length > 0) {
@@ -352,14 +344,14 @@ export class FileViewComponent implements OnInit, OnDestroy {
               value: value !== null ? String(value) : 'N/A'
             }));
           }
-          
+
           if (!this.keyInformation.length && this.selectedCategoryName) {
             this.onCategoryChange();
           }
 
           this.loadingKeyInfo = false;
         },
-        error: (err) => {
+        error: (err: unknown) => {
           console.error('❌ Failed to load key info:', err);
           this.loadingKeyInfo = false;
         }
@@ -514,14 +506,9 @@ export class FileViewComponent implements OnInit, OnDestroy {
     const documentsApi = this.apiFactory.create(DocumentsApi);
     
     // Try to use the OpenAPI client method for key extraction
-    const extractMethod = (documentsApi as any).apiDocumentsIdExtractKeyInformationPost 
-                       || (documentsApi as any).apiDocumentsDocumentIdExtractKeyInformationPost
-                       || (documentsApi as any).extractKeyInformation;
+    const extractMethod = documentsApi.apiDocumentsIdExtractKeyInformationPost;
 
-    const analysisPromise = extractMethod && typeof extractMethod === 'function'
-      ? extractMethod.call(documentsApi, this.selectedFile.id, { categoryName: this.selectedCategoryName })
-      : this.fallbackHttpAnalysis();
-
+    const analysisPromise = extractMethod.call(documentsApi, this.selectedFile.id, { categoryName: this.selectedCategoryName });
     analysisPromise
       .then((response: any) => {
         console.log('✅ Key information extracted:', response.data || response);
@@ -546,22 +533,22 @@ export class FileViewComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * ✅ New fallback HTTP analysis method
-   */
-  private fallbackHttpAnalysis(): Promise<any> {
-    const token = this.session.getToken();
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
+  // /**
+  //  * ✅ New fallback HTTP analysis method
+  //  */
+  // private fallbackHttpAnalysis(): Promise<any> {
+  //   const token = this.session.getToken();
+  //   const headers = new HttpHeaders({
+  //     Authorization: `Bearer ${token}`,
+  //     'Content-Type': 'application/json'
+  //   });
 
-    return this.http.post(
-      `${this.config.apiUrl}/api/Documents/${this.selectedFile!.id}/extract-key-information`,
-      { categoryName: this.selectedCategoryName },
-      { headers }
-    ).toPromise();
-  }
+  //   return this.http.post(
+  //     `${this.config.apiUrl}/api/Documents/${this.selectedFile!.id}/extract-key-information`,
+  //     { categoryName: this.selectedCategoryName },
+  //     { headers }
+  //   ).toPromise();
+  // }
 
   /**
    * ✅ Enhanced error handling
