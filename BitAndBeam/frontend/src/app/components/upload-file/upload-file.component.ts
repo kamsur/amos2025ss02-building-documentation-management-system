@@ -36,8 +36,8 @@ interface UploadResponse {
     CommonModule,
     SidebarComponent,
     AiAssistantComponent,
-    DocumentMetadataPopupComponent
-  ]
+    DocumentMetadataPopupComponent,
+  ],
 })
 export class UploadFileComponent implements OnInit, OnDestroy {
   // For building association with documents
@@ -62,8 +62,8 @@ export class UploadFileComponent implements OnInit, OnDestroy {
   private documentsApi: DocumentsApi;
 
   constructor(
-    private apiFactory: ApiClientFactory, 
-    private sidebarRefreshService: SidebarRefreshService
+    private apiFactory: ApiClientFactory,
+    private sidebarRefreshService: SidebarRefreshService,
   ) {
     this.documentsApi = this.apiFactory.create<DocumentsApi>(DocumentsApi);
   }
@@ -95,11 +95,11 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     if (this.uploading) return;
     event.preventDefault();
     event.stopPropagation();
-    
+
     // Check if we're actually leaving the drag zone
     const target = event.target as HTMLElement;
     const relatedTarget = event.relatedTarget as HTMLElement;
-    
+
     if (!target.contains(relatedTarget)) {
       this.isDragOver = false;
     }
@@ -125,14 +125,14 @@ export class UploadFileComponent implements OnInit, OnDestroy {
    */
   onFileSelected(event: Event): void {
     if (this.uploading) return;
-    
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     if (file) {
       this.validateAndUploadFile(file);
     }
-    
+
     // Reset input value to allow re-upload of the same file
     input.value = '';
   }
@@ -155,17 +155,28 @@ export class UploadFileComponent implements OnInit, OnDestroy {
       'text/plain',
       'image/png',
       'image/jpeg',
-      'image/jpg'
+      'image/jpg',
     ];
 
     if (!allowedTypes.includes(file.type)) {
       // Check by extension as fallback
-      const allowedExtensions = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
+      const allowedExtensions = [
+        '.pdf',
+        '.docx',
+        '.txt',
+        '.png',
+        '.jpg',
+        '.jpeg',
+      ];
       const fileName = file.name.toLowerCase();
-      const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-      
+      const hasAllowedExtension = allowedExtensions.some((ext) =>
+        fileName.endsWith(ext),
+      );
+
       if (!hasAllowedExtension) {
-        this.showError('Invalid file type. Please upload PDF, DOCX, TXT, PNG, or JPG files.');
+        this.showError(
+          'Invalid file type. Please upload PDF, DOCX, TXT, PNG, or JPG files.',
+        );
         return;
       }
     }
@@ -188,20 +199,25 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     console.log('📤 Starting file upload:', file.name);
 
     // Pass the file directly as the API expects a File object, not FormData
-    this.documentsApi.apiDocumentsPost(file, {
-      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-        if (progressEvent.total) {
-          this.uploadProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          console.log(`📊 Upload progress: ${this.uploadProgress}%`);
-        }
-      }
-    }).then((response: AxiosResponse<any>) => {
-      console.log('✅ Upload successful:', response.data);
-      this.handleUploadSuccess(response.data, file.name);
-    }).catch((error: any) => {
-      console.error('❌ Upload failed:', error);
-      this.handleUploadError(error);
-    });
+    this.documentsApi
+      .apiDocumentsPost(file, {
+        onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+          if (progressEvent.total) {
+            this.uploadProgress = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            console.log(`📊 Upload progress: ${this.uploadProgress}%`);
+          }
+        },
+      })
+      .then((response: AxiosResponse<any>) => {
+        console.log('✅ Upload successful:', response.data);
+        this.handleUploadSuccess(response.data, file.name);
+      })
+      .catch((error: any) => {
+        console.error('❌ Upload failed:', error);
+        this.handleUploadError(error);
+      });
   }
 
   /**
@@ -209,11 +225,11 @@ export class UploadFileComponent implements OnInit, OnDestroy {
    */
   private handleUploadSuccess(data: any, fileName: string): void {
     this.uploading = false;
-    
+
     // Store the complete upload response
     this.uploadResponse = data as UploadResponse;
     this.uploadedDocumentId = data.documentId;
-    
+
     // Build success message with AI suggestions
     let suggestionInfo = '';
     if (data.suggestedCategoryName) {
@@ -222,7 +238,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     if (data.suggestedBuildingName) {
       suggestionInfo += ` AI suggested building: ${data.suggestedBuildingName}.`;
     }
-    
+
     this.successMessage = `File "${fileName}" uploaded successfully!${suggestionInfo}`;
 
     // Show metadata popup after successful upload
@@ -245,10 +261,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
   private handleUploadError(error: any): void {
     this.uploading = false;
     this.uploadResponse = null;
-    
+
     // Extract error message
     let errorMsg = 'Upload failed: ';
-    
+
     if (error.response?.data?.message) {
       errorMsg += error.response.data.message;
     } else if (error.response?.data?.error) {
@@ -258,7 +274,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     } else {
       errorMsg += 'Unknown error occurred';
     }
-    
+
     // Handle specific error codes
     if (error.response?.status === 413) {
       errorMsg = 'File too large. Please upload a smaller file.';
@@ -267,7 +283,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
     } else if (error.response?.status === 401) {
       errorMsg = 'Authentication failed. Please log in again.';
     }
-    
+
     this.showError(errorMsg);
   }
 
@@ -276,7 +292,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
    */
   private showError(message: string): void {
     this.errorMessage = message;
-    
+
     // Clear error message after delay
     setTimeout(() => {
       this.errorMessage = '';
@@ -291,10 +307,10 @@ export class UploadFileComponent implements OnInit, OnDestroy {
       console.log('⚠️ No document ID provided to onFileUploaded');
       return;
     }
-    
+
     console.log('📄 File uploaded with document ID:', documentId);
     this.uploadedDocumentId = documentId;
-    
+
     // Trigger sidebar refresh after upload
     this.sidebarRefreshService.triggerRefresh();
   }
@@ -305,7 +321,7 @@ export class UploadFileComponent implements OnInit, OnDestroy {
   closeMetadataPopup(): void {
     console.log('❌ Closing metadata popup');
     this.showMetadataPopup = false;
-    
+
     // Reset upload state
     setTimeout(() => {
       this.uploadedDocumentId = null;
@@ -317,12 +333,15 @@ export class UploadFileComponent implements OnInit, OnDestroy {
   /**
    * Save document metadata - handled by popup component
    */
-  saveDocumentMetadata(metadata: {categoryName: string | null, buildingId: number | null}): void {
+  saveDocumentMetadata(metadata: {
+    categoryName: string | null;
+    buildingId: number | null;
+  }): void {
     console.log('💾 Document metadata saved:', metadata);
-    
+
     // Trigger sidebar refresh to show updated document
     this.sidebarRefreshService.triggerRefresh();
-    
+
     // Close the popup
     this.closeMetadataPopup();
   }
