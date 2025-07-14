@@ -4,8 +4,17 @@ import { CommonModule } from '@angular/common';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { ConfigService } from '../../config.service';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
-import { BuildingService, DocumentItem, DocumentResponse } from '../../services/building.service';
-import { Configuration, DocumentsApi, Document as ApiDocument, DocumentMetadataPatchRequest } from '../../../api';
+import {
+  BuildingService,
+  DocumentItem,
+  DocumentResponse,
+} from '../../services/building.service';
+import {
+  Configuration,
+  DocumentsApi,
+  Document as ApiDocument,
+  DocumentMetadataPatchRequest,
+} from '../../../api';
 import { CategoryService, Category } from '../../services/category.service';
 import { ApiClientFactory } from '../../services/api-client.factory';
 import { SidebarRefreshService } from '../../services/sidebar-refresh.service';
@@ -22,10 +31,15 @@ import { from } from 'rxjs';
   selector: 'app-file-view',
   templateUrl: './file-view.component.html',
   styleUrls: ['./file-view.component.css'],
-  imports: [CommonModule, PdfViewerModule, SidebarComponent, FormsModule, AiAssistantComponent]
+  imports: [
+    CommonModule,
+    PdfViewerModule,
+    SidebarComponent,
+    FormsModule,
+    AiAssistantComponent,
+  ],
 })
 export class FileViewComponent implements OnInit, OnDestroy {
-
   selectedFile: DocumentItem | null = null;
   notFound = false;
   isPdf = false;
@@ -69,7 +83,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
     private apiFactory: ApiClientFactory,
     private sidebarRefreshService: SidebarRefreshService,
     private http: HttpClient,
-    private session: SessionService
+    private session: SessionService,
   ) {
     // Initialize arrays to prevent undefined errors
     this.buildings = [];
@@ -79,7 +93,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Watch for route param changes
-    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(paramMap => {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((paramMap) => {
       const idParam = paramMap.get('id');
       const id = Number(idParam);
 
@@ -103,7 +117,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     // Clean up blob URL
     if (this.blobUrl) {
       URL.revokeObjectURL(this.blobUrl);
@@ -115,16 +129,19 @@ export class FileViewComponent implements OnInit, OnDestroy {
    */
   private loadBuildingsAndCategories(): void {
     // Load buildings
-    this.buildingService.getBuildings().pipe(takeUntil(this.destroy$)).subscribe({
-      next: (buildings) => {
-        this.buildings = Array.isArray(buildings) ? buildings : [];
-        console.log('✅ Loaded buildings:', this.buildings.length);
-      },
-      error: (err) => {
-        console.error('❌ Failed to load buildings:', err);
-        this.buildings = [];
-      }
-    });
+    this.buildingService
+      .getBuildings()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (buildings) => {
+          this.buildings = Array.isArray(buildings) ? buildings : [];
+          console.log('✅ Loaded buildings:', this.buildings.length);
+        },
+        error: (err) => {
+          console.error('❌ Failed to load buildings:', err);
+          this.buildings = [];
+        },
+      });
 
     // ✅ Enhanced categories loading - SAME AS POPUP COMPONENT
     this.loadCategories();
@@ -135,10 +152,11 @@ export class FileViewComponent implements OnInit, OnDestroy {
    */
   private loadCategories(): void {
     console.log('🏷️ Loading categories...');
-    
+
     // Primary method: Try using DocumentsApi directly
     const documentsApi = this.apiFactory.create(DocumentsApi);
-    documentsApi.apiDocumentsCategoriesGet()
+    documentsApi
+      .apiDocumentsCategoriesGet()
       .then((response: any) => {
         // Safely extract categories from response
         this.allCategories = this.extractCategoriesFromResponse(response);
@@ -146,18 +164,21 @@ export class FileViewComponent implements OnInit, OnDestroy {
       })
       .catch((err: any) => {
         console.error('❌ DocumentsApi categories failed:', err);
-        
+
         // Fallback: Try CategoryService
-        this.categoryService.getCategories().pipe(takeUntil(this.destroy$)).subscribe({
-          next: (data) => {
-            // Ensure categories is always an array
-            this.allCategories = Array.isArray(data) ? data : [];
-            this.categories = [...this.allCategories];
-          },
-          error: (fallbackErr) => {
-            console.error('❌ CategoryService also failed:', fallbackErr);
-          }
-        });
+        this.categoryService
+          .getCategories()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (data) => {
+              // Ensure categories is always an array
+              this.allCategories = Array.isArray(data) ? data : [];
+              this.categories = [...this.allCategories];
+            },
+            error: (fallbackErr) => {
+              console.error('❌ CategoryService also failed:', fallbackErr);
+            },
+          });
       });
   }
 
@@ -168,26 +189,32 @@ export class FileViewComponent implements OnInit, OnDestroy {
     if (!response) return [];
 
     let categoriesData = response.data || response;
-    
+
     // If the response has a categories property, use it
     if (categoriesData.categories && Array.isArray(categoriesData.categories)) {
       return categoriesData.categories;
     }
-    
+
     // If the data itself is an array, use it
     if (Array.isArray(categoriesData)) {
       return categoriesData;
     }
-    
+
     // If it's an object with numeric keys (like {0: {...}, 1: {...}}), convert to array
-    if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+    if (
+      categoriesData &&
+      typeof categoriesData === 'object' &&
+      !Array.isArray(categoriesData)
+    ) {
       const keys = Object.keys(categoriesData);
-      const isNumericKeys = keys.every(key => !isNaN(Number(key)));
+      const isNumericKeys = keys.every((key) => !isNaN(Number(key)));
       if (isNumericKeys) {
-        return keys.map(key => categoriesData[key]).filter(item => item && typeof item === 'object');
+        return keys
+          .map((key) => categoriesData[key])
+          .filter((item) => item && typeof item === 'object');
       }
     }
-    
+
     // Default to empty array
     return [];
   }
@@ -196,108 +223,155 @@ export class FileViewComponent implements OnInit, OnDestroy {
    * ✅ Enhanced loadDocument method
    */
   loadDocument(id: number): void {
-    this.buildingService.getDocumentById(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (doc: ApiDocument) => {
-        this.metadataRaw = doc.metadata ?? '';
-        if (doc.metadata) {
-          try {
-            const entries = doc.metadata
-              .split(/[\r\n]+/)
-              .map(line => {
-                const separator = line.includes('=') ? '=' : line.includes(',') ? ',' : ':';
-                const [key, ...rest] = line.split(separator).map(s => s.trim());
-                const value = rest.join(separator);
-                return [key, value];
-              })
-              .filter(arr => arr.length >= 2);
+    this.buildingService
+      .getDocumentById(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (doc: ApiDocument) => {
+          this.metadataRaw = doc.metadata ?? '';
+          if (doc.metadata) {
+            try {
+              const entries = doc.metadata
+                .split(/[\r\n]+/)
+                .map((line) => {
+                  const separator = line.includes('=')
+                    ? '='
+                    : line.includes(',')
+                      ? ','
+                      : ':';
+                  const [key, ...rest] = line
+                    .split(separator)
+                    .map((s) => s.trim());
+                  const value = rest.join(separator);
+                  return [key, value];
+                })
+                .filter((arr) => arr.length >= 2);
 
-            const metadataObject: { [key: string]: string } = {};
-            entries.forEach(([key, value]) => {
-              metadataObject[key] = value;
-            });
+              const metadataObject: { [key: string]: string } = {};
+              entries.forEach(([key, value]) => {
+                metadataObject[key] = value;
+              });
 
-            this.parsedMetadata = [
-              { label: 'Title', value: metadataObject['resourceName'] || 'N/A' },
-              { label: 'Author', value: metadataObject['dc:creator'] || metadataObject['pdf:docinfo:creator'] || 'N/A' },
-              { label: 'Created Date', value: metadataObject['dcterms:created']?.split('T')[0] || 'N/A' },
-              { label: 'Modified Date', value: metadataObject['dcterms:modified']?.split('T')[0] || 'N/A' },
-              { label: 'Page Count', value: metadataObject['pdf:ocrPageCount'] || metadataObject['xmpTPg:NPages'] || 'N/A' },
-              { label: 'File Type', value: metadataObject['Content-Type'] || 'N/A' },
-              { label: 'Category', value: doc.categoryName || 'N/A' },
-            ];
-          } catch (e) {
-            console.error('❌ Failed to parse metadata', e);
-            this.parsedMetadata = [];
-          }
-        }
-
-        // ✅ Store original category name for comparison
-        this.originalCategoryName = doc.categoryName ?? null;
-        this.selectedCategoryName = doc.categoryName ?? null;
-        this.selectedBuildingId = doc.buildingId ?? null;
-
-        // ✅ Ensure all categories are available in dropdown
-        // If document has a category that's not in our list, add it
-        if (doc.categoryName && !this.allCategories.some(c => c.name === doc.categoryName)) {
-          this.categories = [
-            ...this.allCategories,
-            { name: doc.categoryName, description: 'Document category' } as Category
-          ];
-        } else {
-          this.categories = [...this.allCategories];
-        }
-
-        // Use OpenAPI SDK to fetch document preview (blob)
-        const documentsApi = this.apiFactory.create(DocumentsApi);
-        documentsApi.apiDocumentsIdPreviewGet(doc.documentId!, { responseType: 'blob' })
-          .then((response: any) => {
-            // Clean up previous blob URL if exists
-            if (this.blobUrl) {
-              URL.revokeObjectURL(this.blobUrl);
-            }
-            // response.data is the blob
-            this.blobUrl = URL.createObjectURL(response.data);
-
-            this.selectedFile = {
-              id: doc.documentId!,
-              name: doc.fileName ?? '',
-              url: this.blobUrl,
-              metadata: [
-                { label: 'Uploaded', value: doc.uploadDate ?? '' },
+              this.parsedMetadata = [
                 {
-                  label: 'Size',
-                  value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
+                  label: 'Title',
+                  value: metadataObject['resourceName'] || 'N/A',
                 },
-                { label: 'Type', value: doc.fileType ?? 'unknown' },
-              ]
-            };
-
-            if (doc.keyInformation) {
-              this.keyInformation = Object.entries(doc.keyInformation).map(([key, value]) => ({
-                label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                value: value !== null ? String(value) : 'N/A'
-              }));
-            } else {
-              this.keyInformation = [];
+                {
+                  label: 'Author',
+                  value:
+                    metadataObject['dc:creator'] ||
+                    metadataObject['pdf:docinfo:creator'] ||
+                    'N/A',
+                },
+                {
+                  label: 'Created Date',
+                  value:
+                    metadataObject['dcterms:created']?.split('T')[0] || 'N/A',
+                },
+                {
+                  label: 'Modified Date',
+                  value:
+                    metadataObject['dcterms:modified']?.split('T')[0] || 'N/A',
+                },
+                {
+                  label: 'Page Count',
+                  value:
+                    metadataObject['pdf:ocrPageCount'] ||
+                    metadataObject['xmpTPg:NPages'] ||
+                    'N/A',
+                },
+                {
+                  label: 'File Type',
+                  value: metadataObject['Content-Type'] || 'N/A',
+                },
+                { label: 'Category', value: doc.categoryName || 'N/A' },
+              ];
+            } catch (e) {
+              console.error('❌ Failed to parse metadata', e);
+              this.parsedMetadata = [];
             }
+          }
 
-            const fileType = (doc.fileType ?? '').toLowerCase();
-            this.isPdf = fileType === 'pdf';
-            this.isImage = fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+          // ✅ Store original category name for comparison
+          this.originalCategoryName = doc.categoryName ?? null;
+          this.selectedCategoryName = doc.categoryName ?? null;
+          this.selectedBuildingId = doc.buildingId ?? null;
 
-            // ✅ Fetch key info
-            this.fetchKeyInfo(id);
-          })
-          .catch((err: any) => {
-            console.error('❌ Failed to load document preview:', err);
-            this.notFound = true;
-          });
-      },
-      error: (err) => {
-        console.error('❌ Failed to load document metadata:', err);
-        this.notFound = true;
-      }
-    });
+          // ✅ Ensure all categories are available in dropdown
+          // If document has a category that's not in our list, add it
+          if (
+            doc.categoryName &&
+            !this.allCategories.some((c) => c.name === doc.categoryName)
+          ) {
+            this.categories = [
+              ...this.allCategories,
+              {
+                name: doc.categoryName,
+                description: 'Document category',
+              } as Category,
+            ];
+          } else {
+            this.categories = [...this.allCategories];
+          }
+
+          // Use OpenAPI SDK to fetch document preview (blob)
+          const documentsApi = this.apiFactory.create(DocumentsApi);
+          documentsApi
+            .apiDocumentsIdPreviewGet(doc.documentId!, { responseType: 'blob' })
+            .then((response: any) => {
+              // Clean up previous blob URL if exists
+              if (this.blobUrl) {
+                URL.revokeObjectURL(this.blobUrl);
+              }
+              // response.data is the blob
+              this.blobUrl = URL.createObjectURL(response.data);
+
+              this.selectedFile = {
+                id: doc.documentId!,
+                name: doc.fileName ?? '',
+                url: this.blobUrl,
+                metadata: [
+                  { label: 'Uploaded', value: doc.uploadDate ?? '' },
+                  {
+                    label: 'Size',
+                    value: `${((doc.fileSize ?? 0) / 1024).toFixed(2)} KB`,
+                  },
+                  { label: 'Type', value: doc.fileType ?? 'unknown' },
+                ],
+              };
+
+              if (doc.keyInformation) {
+                this.keyInformation = Object.entries(doc.keyInformation).map(
+                  ([key, value]) => ({
+                    label: key
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, (c) => c.toUpperCase()),
+                    value: value !== null ? String(value) : 'N/A',
+                  }),
+                );
+              } else {
+                this.keyInformation = [];
+              }
+
+              const fileType = (doc.fileType ?? '').toLowerCase();
+              this.isPdf = fileType === 'pdf';
+              this.isImage =
+                fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg';
+
+              // ✅ Fetch key info
+              this.fetchKeyInfo(id);
+            })
+            .catch((err: any) => {
+              console.error('❌ Failed to load document preview:', err);
+              this.notFound = true;
+            });
+        },
+        error: (err) => {
+          console.error('❌ Failed to load document metadata:', err);
+          this.notFound = true;
+        },
+      });
   }
 
   // ✅ Fetch key information
@@ -305,9 +379,12 @@ export class FileViewComponent implements OnInit, OnDestroy {
     this.loadingKeyInfo = true;
     const documentsApi = this.apiFactory.create(DocumentsApi);
     from(
-      documentsApi.apiDocumentsIdGet(id).then(res =>
-        (res as unknown as import('axios').AxiosResponse<ApiDocument>).data
-      )
+      documentsApi
+        .apiDocumentsIdGet(id)
+        .then(
+          (res) =>
+            (res as unknown as import('axios').AxiosResponse<ApiDocument>).data,
+        ),
     )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -324,25 +401,36 @@ export class FileViewComponent implements OnInit, OnDestroy {
               street: '',
               house_number: '',
               zip_code: '',
-              city: ''
+              city: '',
             };
           }
 
           // ✅ Add safe checks for array operations
-          if ((!data.keyInformation || Object.keys(data.keyInformation).length === 0) &&
-              this.selectedCategoryName && Array.isArray(this.categories) && this.categories.length > 0) {
-            const match = this.categories.find(c => c.name === this.selectedCategoryName);
+          if (
+            (!data.keyInformation ||
+              Object.keys(data.keyInformation).length === 0) &&
+            this.selectedCategoryName &&
+            Array.isArray(this.categories) &&
+            this.categories.length > 0
+          ) {
+            const match = this.categories.find(
+              (c) => c.name === this.selectedCategoryName,
+            );
             if (match && Array.isArray(match.fields)) {
-              this.keyInformation = match.fields.map(f => ({
+              this.keyInformation = match.fields.map((f) => ({
                 label: f.name,
-                value: ''
+                value: '',
               }));
             }
           } else {
-            this.keyInformation = Object.entries(data.keyInformation || {}).map(([key, value]) => ({
-              label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-              value: value !== null ? String(value) : 'N/A'
-            }));
+            this.keyInformation = Object.entries(data.keyInformation || {}).map(
+              ([key, value]) => ({
+                label: key
+                  .replace(/_/g, ' ')
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                value: value !== null ? String(value) : 'N/A',
+              }),
+            );
           }
 
           if (!this.keyInformation.length && this.selectedCategoryName) {
@@ -354,20 +442,24 @@ export class FileViewComponent implements OnInit, OnDestroy {
         error: (err: unknown) => {
           console.error('❌ Failed to load key info:', err);
           this.loadingKeyInfo = false;
-        }
+        },
       });
   }
 
   downloadFile(): void {
     if (!this.selectedFile?.id) return;
-    this.buildingService.downloadDocument(this.selectedFile.id, this.selectedFile.name);
+    this.buildingService.downloadDocument(
+      this.selectedFile.id,
+      this.selectedFile.name,
+    );
   }
 
   deleteFile(): void {
     if (!this.selectedFile?.id) return;
 
     if (confirm('Are you sure you want to delete this document?')) {
-      this.buildingService.deleteDocument(this.selectedFile.id)
+      this.buildingService
+        .deleteDocument(this.selectedFile.id)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -377,8 +469,8 @@ export class FileViewComponent implements OnInit, OnDestroy {
           error: (err) => {
             console.error('Delete failed:', err);
             this.toastMessage = '❌ Failed to delete document.';
-            setTimeout(() => this.toastMessage = '', 4000);
-          }
+            setTimeout(() => (this.toastMessage = ''), 4000);
+          },
         });
     }
   }
@@ -389,26 +481,30 @@ export class FileViewComponent implements OnInit, OnDestroy {
   onCategoryChange(): void {
     // Clear any previous analysis messages when category changes
     this.analysisMessage = '';
-    
+
     // ✅ Load field template for new category if available
     if (!Array.isArray(this.categories)) {
       console.warn('Categories is not an array');
       return;
     }
-    
-    const selected = this.categories.find(c => c.name === this.selectedCategoryName);
+
+    const selected = this.categories.find(
+      (c) => c.name === this.selectedCategoryName,
+    );
     if (selected && Array.isArray(selected.fields)) {
       // Load field template but keep existing values if they match
-      const newKeyInfo = selected.fields.map(field => {
-        const existing = this.keyInformation.find(k => k.label === field.name);
+      const newKeyInfo = selected.fields.map((field) => {
+        const existing = this.keyInformation.find(
+          (k) => k.label === field.name,
+        );
         return {
           label: field.name,
-          value: existing?.value || ''
+          value: existing?.value || '',
         };
       });
       this.keyInformation = newKeyInfo;
     }
-    
+
     this.hasChanges = true;
   }
 
@@ -423,10 +519,10 @@ export class FileViewComponent implements OnInit, OnDestroy {
 
     // ✅ Prepare key information properly
     const keyInfoObject = Object.fromEntries(
-      this.keyInformation.map(k => [
-        k.label.toLowerCase().replace(/ /g, '_'), 
-        k.value || null
-      ])
+      this.keyInformation.map((k) => [
+        k.label.toLowerCase().replace(/ /g, '_'),
+        k.value || null,
+      ]),
     );
 
     const patchRequest: DocumentMetadataPatchRequest & {
@@ -434,29 +530,30 @@ export class FileViewComponent implements OnInit, OnDestroy {
     } = {
       buildingId: this.selectedBuildingId,
       categoryName: this.selectedCategoryName ?? undefined,
-      keyInformation: keyInfoObject
+      keyInformation: keyInfoObject,
     };
 
     const documentsApi = this.apiFactory.create(DocumentsApi);
-    documentsApi.apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
+    documentsApi
+      .apiDocumentsIdPatch(this.selectedFile.id, patchRequest)
       .then(() => {
         this.toastMessage = '✅ Metadata saved successfully.';
         this.hasChanges = false;
-        
+
         // ✅ Update original category after successful save
         this.originalCategoryName = this.selectedCategoryName;
-        
+
         this.sidebarRefreshService.triggerRefresh();
-        
+
         // Reload to refresh UI with latest data
         this.fetchKeyInfo(this.selectedFile!.id);
 
-        setTimeout(() => this.toastMessage = '', 4000);
+        setTimeout(() => (this.toastMessage = ''), 4000);
       })
       .catch((err) => {
         console.error('❌ Failed to save metadata:', err);
         this.toastMessage = '❌ Failed to save metadata.';
-        setTimeout(() => this.toastMessage = '', 4000);
+        setTimeout(() => (this.toastMessage = ''), 4000);
       })
       .finally(() => {
         this.loading = false;
@@ -468,7 +565,7 @@ export class FileViewComponent implements OnInit, OnDestroy {
    */
   get canAnalyze(): boolean {
     return !!(
-      this.selectedCategoryName && 
+      this.selectedCategoryName &&
       this.selectedCategoryName !== this.originalCategoryName &&
       !this.isAnalyzing &&
       this.selectedFile?.id
@@ -495,33 +592,41 @@ export class FileViewComponent implements OnInit, OnDestroy {
    * ✅ Enhanced analyzeWithNewCategory method
    */
   analyzeWithNewCategory(): void {
-    if (!this.selectedFile?.id || !this.selectedCategoryName || !this.canAnalyze) {
+    if (
+      !this.selectedFile?.id ||
+      !this.selectedCategoryName ||
+      !this.canAnalyze
+    ) {
       console.warn('Cannot analyze: missing requirements');
       return;
     }
 
     this.isAnalyzing = true;
     this.analysisSuccess = true;
-    
+
     const documentsApi = this.apiFactory.create(DocumentsApi);
-    
+
     // Try to use the OpenAPI client method for key extraction
     const extractMethod = documentsApi.apiDocumentsIdExtractKeyInformationPost;
 
-    const analysisPromise = extractMethod.call(documentsApi, this.selectedFile.id, { categoryName: this.selectedCategoryName });
+    const analysisPromise = extractMethod.call(
+      documentsApi,
+      this.selectedFile.id,
+      { categoryName: this.selectedCategoryName },
+    );
     analysisPromise
       .then((response: any) => {
         console.log('✅ Key information extracted:', response.data || response);
         this.isAnalyzing = false;
         this.analysisSuccess = true;
         this.analysisMessage = '✅ AI analysis completed successfully!';
-        
+
         // ✅ Update original category after successful analysis
         this.originalCategoryName = this.selectedCategoryName;
-        
+
         // Reload document to get new key information
         this.fetchKeyInfo(this.selectedFile!.id);
-        
+
         // Clear message after delay
         setTimeout(() => {
           this.analysisMessage = '';
@@ -533,32 +638,15 @@ export class FileViewComponent implements OnInit, OnDestroy {
       });
   }
 
-  // /**
-  //  * ✅ New fallback HTTP analysis method
-  //  */
-  // private fallbackHttpAnalysis(): Promise<any> {
-  //   const token = this.session.getToken();
-  //   const headers = new HttpHeaders({
-  //     Authorization: `Bearer ${token}`,
-  //     'Content-Type': 'application/json'
-  //   });
-
-  //   return this.http.post(
-  //     `${this.config.apiUrl}/api/Documents/${this.selectedFile!.id}/extract-key-information`,
-  //     { categoryName: this.selectedCategoryName },
-  //     { headers }
-  //   ).toPromise();
-  // }
-
   /**
    * ✅ Enhanced error handling
    */
   private handleAnalysisError(error: any): void {
     this.isAnalyzing = false;
     this.analysisSuccess = false;
-    
+
     let errorMsg = 'AI analysis failed';
-    
+
     // Better error message handling
     if (error?.response?.status === 401 || error?.status === 401) {
       errorMsg = 'Authentication failed - please check your session';
@@ -573,9 +661,9 @@ export class FileViewComponent implements OnInit, OnDestroy {
     } else if (error?.message) {
       errorMsg = error.message;
     }
-    
+
     this.analysisMessage = `❌ ${errorMsg}`;
-    
+
     // Clear error message after delay
     setTimeout(() => {
       this.analysisMessage = '';
