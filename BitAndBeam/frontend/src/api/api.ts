@@ -373,144 +373,132 @@ export interface BuildingDto {
  * @interface Document
  */
 export interface Document {
-  /**
-   *
-   * @type {number}
-   * @memberof Document
-   */
-  documentId?: number;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  title?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  filePath?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  fileType?: string | null;
-  /**
-   *
-   * @type {number}
-   * @memberof Document
-   */
-  fileSize?: number;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  categoryName?: string | null;
-  /**
-   *
-   * @type {number}
-   * @memberof Document
-   */
-  buildingId?: number | null;
-  /**
-   *
-   * @type {number}
-   * @memberof Document
-   */
-  uploadedBy?: number | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  uploadDate?: string;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  lastModified?: string;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  version?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  status?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  description?: string | null;
-  /**
-   *
-   * @type {boolean}
-   * @memberof Document
-   */
-  isPublic?: boolean;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  metadata?: string | null;
-  /**
-   *
-   * @type {any}
-   * @memberof Document
-   */
-  keyInformation?: any | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  fileName?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof Document
-   */
-  uploadedAt?: string;
-  /**
-   *
-   * @type {number}
-   * @memberof Document
-   */
-  organizationId?: number;
-  /**
-   *
-   * @type {User}
-   * @memberof Document
-   */
-  uploader?: User;
-  /**
-   *
-   * @type {Array<DocumentTagRelation>}
-   * @memberof Document
-   */
-  documentTagRelations?: Array<DocumentTagRelation> | null;
-  /**
-   *
-   * @type {Array<DocumentPermission>}
-   * @memberof Document
-   */
-  documentPermissions?: Array<DocumentPermission> | null;
-  /**
-   *
-   * @type {Array<BuildingDocumentRelation>}
-   * @memberof Document
-   */
-  buildingDocumentRelations?: Array<BuildingDocumentRelation> | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof Document
+     */
+    'documentId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'title'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'filePath'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'fileType'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof Document
+     */
+    'fileSize'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'categoryName'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof Document
+     */
+    'buildingId'?: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof Document
+     */
+    'uploadedBy'?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'uploadDate'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'lastModified'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'version'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'status'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'description'?: string | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Document
+     */
+    'isPublic'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'metadata'?: string | null;
+    /**
+     * 
+     * @type {any}
+     * @memberof Document
+     */
+    'keyInformation'?: any | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'fileName'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Document
+     */
+    'uploadedAt'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Document
+     */
+    'organizationId'?: number;
+    /**
+     * 
+     * @type {User}
+     * @memberof Document
+     */
+    'uploader'?: User;
+    /**
+     * 
+     * @type {Array<BuildingDocumentRelation>}
+     * @memberof Document
+     */
+    'buildingDocumentRelations'?: Array<BuildingDocumentRelation> | null;
 }
 /**
  * Request model for document chatbot queries
@@ -562,123 +550,6 @@ export interface DocumentMetadataPatchRequest {
    * @memberof DocumentMetadataPatchRequest
    */
   keyInformation?: { [key: string]: string | null } | null;
-}
-/**
- *
- * @export
- * @interface DocumentPermission
- */
-export interface DocumentPermission {
-  /**
-   *
-   * @type {number}
-   * @memberof DocumentPermission
-   */
-  documentId?: number;
-  /**
-   *
-   * @type {Document}
-   * @memberof DocumentPermission
-   */
-  document?: Document;
-  /**
-   *
-   * @type {number}
-   * @memberof DocumentPermission
-   */
-  userId?: number;
-  /**
-   *
-   * @type {User}
-   * @memberof DocumentPermission
-   */
-  user?: User;
-  /**
-   *
-   * @type {string}
-   * @memberof DocumentPermission
-   */
-  permissionType?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof DocumentPermission
-   */
-  grantedAt?: string;
-  /**
-   *
-   * @type {number}
-   * @memberof DocumentPermission
-   */
-  grantedBy?: number | null;
-  /**
-   *
-   * @type {User}
-   * @memberof DocumentPermission
-   */
-  grantedByUser?: User;
-}
-/**
- *
- * @export
- * @interface DocumentTag
- */
-export interface DocumentTag {
-  /**
-   *
-   * @type {number}
-   * @memberof DocumentTag
-   */
-  tagId?: number;
-  /**
-   *
-   * @type {string}
-   * @memberof DocumentTag
-   */
-  name?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof DocumentTag
-   */
-  createdAt?: string;
-  /**
-   *
-   * @type {Array<DocumentTagRelation>}
-   * @memberof DocumentTag
-   */
-  documentTagRelations?: Array<DocumentTagRelation> | null;
-}
-/**
- *
- * @export
- * @interface DocumentTagRelation
- */
-export interface DocumentTagRelation {
-  /**
-   *
-   * @type {number}
-   * @memberof DocumentTagRelation
-   */
-  documentId?: number;
-  /**
-   *
-   * @type {Document}
-   * @memberof DocumentTagRelation
-   */
-  document?: Document;
-  /**
-   *
-   * @type {number}
-   * @memberof DocumentTagRelation
-   */
-  tagId?: number;
-  /**
-   *
-   * @type {DocumentTag}
-   * @memberof DocumentTagRelation
-   */
-  tag?: DocumentTag;
 }
 /**
  *
@@ -863,90 +734,84 @@ export interface ProblemDetails {
  * @interface User
  */
 export interface User {
-  /**
-   *
-   * @type {number}
-   * @memberof User
-   */
-  userId?: number;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  username?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  email?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  passwordHash?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  firstName?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  lastName?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  role?: string | null;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  createdAt?: string;
-  /**
-   *
-   * @type {string}
-   * @memberof User
-   */
-  lastLogin?: string | null;
-  /**
-   *
-   * @type {boolean}
-   * @memberof User
-   */
-  isActive?: boolean;
-  /**
-   *
-   * @type {number}
-   * @memberof User
-   */
-  organizationId?: number;
-  /**
-   *
-   * @type {Organization}
-   * @memberof User
-   */
-  organization?: Organization;
-  /**
-   *
-   * @type {Array<Document>}
-   * @memberof User
-   */
-  uploadedDocuments?: Array<Document> | null;
-  /**
-   *
-   * @type {Array<DocumentPermission>}
-   * @memberof User
-   */
-  documentPermissions?: Array<DocumentPermission> | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof User
+     */
+    'userId'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'username'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'email'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'passwordHash'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'firstName'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'lastName'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'role'?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'createdAt'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'lastLogin'?: string | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof User
+     */
+    'isActive'?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof User
+     */
+    'organizationId'?: number;
+    /**
+     * 
+     * @type {Organization}
+     * @memberof User
+     */
+    'organization'?: Organization;
+    /**
+     * 
+     * @type {Array<Document>}
+     * @memberof User
+     */
+    'uploadedDocuments'?: Array<Document> | null;
 }
 
 /**
