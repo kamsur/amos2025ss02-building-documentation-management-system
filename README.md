@@ -18,7 +18,6 @@
 ## Quick Links
 
 - **Production Web Service**: [amos.b-iq.net](http://amos.b-iq.net/)
-- **Production AI Status**: [amos-gpu.b-iq.net:11434/api/tags](http://amos-gpu.b-iq.net:11434/api/tags)
 
 
 ## Project Mission
