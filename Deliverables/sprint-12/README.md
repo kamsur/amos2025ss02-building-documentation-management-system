@@ -7,8 +7,8 @@ This folder contains the deliverables for Sprint 12.
 - [x] Snapshot of the feature board (.tsv & .jpg)
 - [x] Planning documents (.pdf & .xlsx)
 - [x] Snapshot of the imp-squared backlog (.tsv & .jpg)
-- [ ] Demo Day Slide (demo-day-slide.pdf)
-- [ ] Demo Video (demo-video.mkv)
+- [x] Demo Day Slide (demo-day-slide.pdf)
+- [x] Demo Video (demo-video.mkv)
 
 ---
 
