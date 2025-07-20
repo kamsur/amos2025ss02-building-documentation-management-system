@@ -6,10 +6,10 @@ This folder contains the deliverables for Sprint 13.
 
 - [x] Snapshot of the feature board (.tsv & .jpg)
 - [x] Planning documents (.pdf & .xlsx)
-- [ ] Snapshot of the imp-squared backlog (.tsv & .jpg)
-- [ ] User Documentation (.pdf)
-- [ ] (Technical) Design Documentation (.pdf)
-- [ ] Build & Deploy Documentation (.pdf)
+- [X] Snapshot of the imp-squared backlog (.tsv & .jpg)
+- [X] User Documentation (.pdf)
+- [X] (Technical) Design Documentation (.pdf)
+- [X] Build & Deploy Documentation (.pdf)
 
 ---
 
